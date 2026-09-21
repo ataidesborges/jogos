@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Fábrica de Palavras — Jogo das Sílabas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+</div>
+<div class="wrap">
+  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
+  <header>
+    <img class="factory-icon" src="assets/images/logo.webp" alt="Logo da Fábrica de Palavras" width="92" height="92" loading="eager">
+    <h1>Fábrica de Palavras</h1>
+    <p class="subtitle">Toque numa sílaba para ouvi-la e enviá-la direto para a caixa mágica! Quando a palavra estiver certa, uma imagem vai aparecer. Se a combinação não formar uma palavra, toque na borracha 🧽 para apagar e tentar de novo.</p>
+  </header>
+
+  <div class="levels">
+    <button class="level-btn active" data-level="facil">🧩 Fácil (2 sílabas)</button>
+    <button class="level-btn" data-level="medio">🌟 Médio (3+ sílabas)</button>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-pill" id="progressText">0 / 5 palavras nesta rodada</span>
+    <span class="progress-pill score-pill" id="scoreText">⭐ 0 pontos</span>
+    <button id="newRoundBtn">🔄 Nova rodada</button>
+    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+  </div>
+
+  <div class="stage">
+    <div class="chest-area">
+      <div class="chest" id="chest">
+        <div class="chest-label-row">
+          <div class="chest-label">CAIXA MÁGICA</div>
+          <button id="eraseBtn" class="erase-btn" title="Apagar tudo">🧽 Apagar</button>
+        </div>
+        <div class="box-slots" id="boxSlots">
+          <span class="box-hint" id="boxHint">toque nas sílabas para colocá-las aqui</span>
+        </div>
+      </div>
+      <div class="reveal" id="reveal">
+        <img class="word-art" id="revealEmoji" src="assets/images/cat-nature.webp" alt="Figurinha">
+        <span class="word" id="revealWord">PALAVRA</span>
+        <span class="points" id="revealPoints">+10 pontos</span>
+      </div>
+    </div>
+
+    <div class="tray" id="tray">
+      <div class="tray-label">SÍLABAS</div>
+    </div>
+
+    <div class="round-complete" id="roundComplete">
+      <div class="msg">🎉 Muito bem! Novas sílabas chegando... 🎉</div>
+      <div class="round-score" id="roundScoreText">+0 pontos nesta rodada</div>
+    </div>
+  </div>
+
+  <div class="gallery-wrap">
+    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
+    <button id="albumToggleBtn">Ver álbum completo</button>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <div class="gallery-wrap" id="rankingWrap">
+    <div class="gallery-title">🏅 Ranking da Sessão</div>
+    <div id="rankingList" class="ranking-list">
+      <div class="ranking-empty">Complete uma rodada inteira para entrar no ranking!</div>
+    </div>
+  </div>
+
+  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Ilustrações geradas para este jogo</footer>
+</div>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/silabas.js"></script>
+</body>
+</html>

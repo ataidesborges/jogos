@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Caça-Palavras — Fábrica de Palavras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/caca-palavras.css">
+
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+</div>
+<div class="wrap">
+  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
+  <header>
+    <h1>🔎 Caça-Palavras</h1>
+    <p class="subtitle">Arraste o dedo (ou clique e arraste) sobre as letrinhas para encontrar as palavras escondidas! Quando achar, uma figurinha aparece.</p>
+  </header>
+
+  <div class="levels">
+    <button class="caca-level-btn level-btn active" data-level="facil">🧩 Fácil (8 palavras)</button>
+    <button class="caca-level-btn level-btn" data-level="medio">🌟 Médio (10 palavras)</button>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-pill" id="cacaProgressText">0 / 8 palavras encontradas</span>
+    <span class="progress-pill score-pill" id="cacaScoreText">⭐ 0 pontos</span>
+    <button id="cacaNewBtn">🔄 Novo caça-palavras</button>
+    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+  </div>
+
+  <div class="caca-stage">
+    <div class="caca-grid-wrap">
+      <div class="caca-grid" id="cacaGrid"></div>
+      <div class="reveal" id="cacaReveal">
+        <img class="word-art" id="cacaRevealImg" src="" alt="">
+        <span class="word" id="cacaRevealWord">PALAVRA</span>
+        <span class="points" id="cacaRevealPoints">+10 pontos</span>
+      </div>
+    </div>
+    <div class="caca-wordlist" id="cacaWordList"></div>
+    <div class="caca-congrats" id="cacaCongrats">
+      <div class="msg">🎉 Você encontrou todas as palavras! 🎉</div>
+    </div>
+  </div>
+
+  <div class="gallery-wrap">
+    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
+    <button id="albumToggleBtn">Ver álbum completo</button>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Caça-Palavras · Ilustrações geradas para este jogo</footer>
+</div>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/caca-palavras.js"></script>
+</body>
+</html>

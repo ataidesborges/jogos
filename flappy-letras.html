@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Letra Voadora — Fábrica de Palavras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/flappy-letras.css">
+
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+</div>
+<div class="wrap">
+  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
+  <header>
+    <h1>🐦 Letra Voadora</h1>
+    <p class="subtitle">Toque para o passarinho voar e pegue as letras da palavra mostrada no topo, em qualquer ordem!</p>
+  </header>
+
+  <div class="levels">
+    <button class="f-level-btn level-btn active" data-level="facil">🧩 Fácil (palavras curtas)</button>
+    <button class="f-level-btn level-btn" data-level="medio">🌟 Médio (palavras longas)</button>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-pill score-pill" id="fScoreText">⭐ 0 pontos</span>
+    <span class="progress-pill lives-pill" id="fLivesText">❤️❤️❤️</span>
+    <button id="fRestartBtn" class="flappy-restart-btn small">🔄 Reiniciar</button>
+    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+  </div>
+
+  <div class="flappy-stage">
+    <div class="flappy-canvas-wrap" id="fCanvasWrap">
+      <canvas id="fCanvas" width="640" height="400"></canvas>
+      <div class="flappy-topbar">
+        <img class="flappy-topbar-img" id="fTargetImg" src="" alt="">
+        <div class="flappy-word-progress" id="fWordProgress"></div>
+        <button id="fFullscreenBtn" class="fullscreen-btn" title="Tela cheia">⛶</button>
+      </div>
+      <div class="flappy-overlay show" id="fStartOverlay">
+        <div class="flappy-overlay-msg">👆 Toque ou aperte espaço para o passarinho voar!</div>
+      </div>
+      <div class="flappy-overlay" id="fWordCompleteOverlay">
+        <div class="flappy-overlay-msg">🎉 Palavra completa! 🎉</div>
+      </div>
+      <div class="flappy-overlay" id="fGameOverOverlay">
+        <div class="flappy-overlay-content">
+          <div class="flappy-overlay-msg">💥 Fim de jogo!</div>
+          <button id="fGameOverRestartBtn" class="flappy-restart-btn">🔄 Jogar novamente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gallery-wrap">
+    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
+    <button id="albumToggleBtn">Ver álbum completo</button>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Letra Voadora · Ilustrações geradas para este jogo</footer>
+</div>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/flappy-letras.js"></script>
+</body>
+</html>
