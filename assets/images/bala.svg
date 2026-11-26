@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+  <defs>
+    <radialGradient id="corpo" cx="40%" cy="32%" r="75%">
+      <stop offset="0" stop-color="#FF9CC8"/>
+      <stop offset=".55" stop-color="#F45A9E"/>
+      <stop offset="1" stop-color="#D12F7C"/>
+    </radialGradient>
+    <linearGradient id="papel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE27A"/>
+      <stop offset="1" stop-color="#F7B92B"/>
+    </linearGradient>
+    <clipPath id="clipCorpo">
+      <ellipse cx="240" cy="240" rx="118" ry="96"/>
+    </clipPath>
+    <filter id="sombra" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#5A1B3C" flood-opacity=".22"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#sombra)">
+    <!-- contorno branco de figurinha -->
+    <g fill="#fff" stroke="#fff" stroke-width="30" stroke-linejoin="round">
+      <path d="M128 240 L44 170 Q34 240 44 310 Z"/>
+      <path d="M352 240 L436 170 Q446 240 436 310 Z"/>
+      <ellipse cx="240" cy="240" rx="118" ry="96"/>
+    </g>
+
+    <!-- pontas torcidas do papel -->
+    <g stroke="#B77A06" stroke-width="7" stroke-linejoin="round">
+      <path d="M134 240 L48 172 Q38 240 48 308 Z" fill="url(#papel)"/>
+      <path d="M346 240 L432 172 Q442 240 432 308 Z" fill="url(#papel)"/>
+    </g>
+    <g stroke="#E0A11A" stroke-width="5" stroke-linecap="round" fill="none" opacity=".9">
+      <path d="M112 222 L62 196"/><path d="M112 240 L58 240"/><path d="M112 258 L62 284"/>
+      <path d="M368 222 L418 196"/><path d="M368 240 L422 240"/><path d="M368 258 L418 284"/>
+    </g>
+    <!-- nozinho onde o papel torce -->
+    <ellipse cx="134" cy="240" rx="14" ry="30" fill="#F2A81B" stroke="#B77A06" stroke-width="7"/>
+    <ellipse cx="346" cy="240" rx="14" ry="30" fill="#F2A81B" stroke="#B77A06" stroke-width="7"/>
+
+    <!-- corpo da bala -->
+    <ellipse cx="240" cy="240" rx="118" ry="96" fill="url(#corpo)"/>
+    <!-- listras -->
+    <g clip-path="url(#clipCorpo)" fill="#FFFFFF" opacity=".55">
+      <path d="M150 120 l34 0 l-70 240 l-34 0 z"/>
+      <path d="M222 120 l34 0 l-70 240 l-34 0 z"/>
+      <path d="M294 120 l34 0 l-70 240 l-34 0 z"/>
+      <path d="M366 120 l34 0 l-70 240 l-34 0 z"/>
+    </g>
+    <ellipse cx="240" cy="240" rx="118" ry="96" fill="none" stroke="#A3205F" stroke-width="7"/>
+
+    <!-- brilho -->
+    <ellipse cx="196" cy="186" rx="44" ry="20" fill="#fff" opacity=".75" transform="rotate(-18 196 186)"/>
+    <circle cx="252" cy="172" r="9" fill="#fff" opacity=".8"/>
+
+    <!-- carinha -->
+    <ellipse cx="208" cy="246" rx="13" ry="16" fill="#3A1830"/>
+    <ellipse cx="272" cy="246" rx="13" ry="16" fill="#3A1830"/>
+    <circle cx="212" cy="240" r="5" fill="#fff"/>
+    <circle cx="276" cy="240" r="5" fill="#fff"/>
+    <ellipse cx="184" cy="272" rx="15" ry="9" fill="#FF7FB0" opacity=".85"/>
+    <ellipse cx="296" cy="272" rx="15" ry="9" fill="#FF7FB0" opacity=".85"/>
+    <path d="M226 274 Q240 290 254 274" fill="none" stroke="#3A1830" stroke-width="7" stroke-linecap="round"/>
+  </g>
+</svg>
