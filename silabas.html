@@ -36,26 +36,23 @@
 <main class="wrap wrap-overlap">
   <div class="game-window" id="gameWindow">
   <div class="levels" role="group" aria-label="Nível">
-    <button class="level-btn active" data-level="simples">Sílabas simples <small>BA, CA, DA…</small></button>
-    <button class="level-btn" data-level="complexas">Sílabas complexas <small>CHA, BRA, NHA…</small></button>
+    <button class="level-btn active" data-level="facil">Fácil <small>palavras de 2 sílabas</small></button>
+    <button class="level-btn" data-level="medio">Médio <small>palavras maiores</small></button>
+    <button class="level-btn" data-level="desafio">Desafio <small>sílabas complexas</small></button>
   </div>
 
   <div class="progress-row">
     <span class="progress-pill" id="progressText">0 de 0 palavras</span>
     <span class="progress-pill score-pill" id="scoreText">0 pontos</span>
     <button id="hintBtn" class="hint-btn">Dica</button>
+    <button id="newRoundBtn">Novo quadro</button>
     <button id="soundBtn" title="Ligar/desligar o som"></button>
   </div>
 
   <div class="sb-stage" id="sbStage">
-    <div class="sb-board-wrap">
-      <div class="sb-tabs" id="sbTabs" role="tablist" aria-label="Tipo de sílaba" hidden>
-        <button class="sb-tab active" data-tab="complexas" role="tab">Complexas</button>
-        <button class="sb-tab" data-tab="simples" role="tab">Simples</button>
-      </div>
-      <div class="sb-board" id="sbBoard" role="group" aria-label="Quadro de sílabas"></div>
-    </div>
+    <div class="sb-board" id="sbBoard" role="group" aria-label="Quadro de sílabas"></div>
 
+    <div class="sb-side">
     <div class="sb-notebook" id="sbNotebook">
       <div class="sb-rings" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <div class="sb-page" id="sbPage">
@@ -82,11 +79,13 @@
         </svg>
       </button>
     </div>
+    <div class="sb-targets" id="sbTargets" aria-label="Figuras deste quadro" hidden></div>
+    </div>
   </div>
 
   <div class="round-complete" id="roundComplete">
-    <div class="msg">🎉 Parabéns! Você achou todas as palavras deste quadro!</div>
-    <div class="round-score" id="roundScoreText">Experimente o outro tipo de sílabas.</div>
+    <div class="msg">🎉 Muito bem! Você achou todas as palavras do quadro!</div>
+    <div class="round-score" id="roundScoreText">Um quadro novo está chegando…</div>
   </div>
   </div>
 

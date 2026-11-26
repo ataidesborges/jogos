@@ -1,17 +1,16 @@
 // ============================================================
 // Lógica específica do jogo — Formar Palavras
-// Quadro fixo de sílabas + caderno.
-//  • Sílabas simples: vogais e BA…ZU de todas as consoantes do quadro.
-//  • Sílabas complexas: CH, LH, NH, QU, GU, encontros (BR, CL…) e as
-//    outras sílabas das palavras do jogo; dá para misturar com as simples.
-// A criança toca nas sílabas, elas são "escritas" no caderno e, quando
-// formam uma palavra do banco, a figura aparece. Acentos não importam
-// (SO + FA = SOFÁ).
+// Quadro fixo com 6 famílias de sílabas simples (ex.: BA BE BI BO BU)
+// + caderno. A criança escreve livremente tocando nas sílabas; quando
+// as sílabas formam uma palavra que tem figura, a figura aparece. Se não
+// aparecer figura, a palavra não existe — aí é só passar a borracha.
+// As palavras descobertas ficam salvas no aparelho.
+// "Novo quadro" troca as consoantes, dando preferência às palavras que
+// ainda faltam. Acentos não importam (SO + FA = SOFÁ).
 // (depende de word-bank.js e shared-utils.js já carregados antes)
 // ============================================================
 
 const sbBoard = document.getElementById('sbBoard');
-const sbTabs = document.getElementById('sbTabs');
 const sbNotebook = document.getElementById('sbNotebook');
 const sbArt = document.getElementById('sbArt');
 const sbWord = document.getElementById('sbWord');
@@ -19,148 +18,215 @@ const sbMsg = document.getElementById('sbMsg');
 const sbEraser = document.getElementById('sbEraser');
 const progressText = document.getElementById('progressText');
 const scoreText = document.getElementById('scoreText');
+const newRoundBtn = document.getElementById('newRoundBtn');
 const hintBtn = document.getElementById('hintBtn');
 const roundCompleteEl = document.getElementById('roundComplete');
+const sbTargets = document.getElementById('sbTargets');
+const roundMsgEl = roundCompleteEl.querySelector('.msg');
+const roundSubEl = document.getElementById('roundScoreText');
 
-// ---------- Sílabas ----------
 const VOWELS = ['A','E','I','O','U'];
-const SIMPLE_CONSONANTS = 'B C D F G H J L M N P R S T V X Z'.split(' ');
-const COMPLEX_FAMILIES = [
-  // dígrafos
-  {label:'CH', syl:['CHA','CHE','CHI','CHO','CHU']},
-  {label:'LH', syl:['LHA','LHE','LHI','LHO','LHU']},
-  {label:'NH', syl:['NHA','NHE','NHI','NHO','NHU']},
-  {label:'QU', syl:['QUA','QUE','QUI','QUO']},
-  {label:'GU', syl:['GUA','GUE','GUI']},
-  // encontros com R
-  ...['BR','CR','DR','FR','GR','PR','TR','VR'].map(p => ({label:p, syl:VOWELS.map(v => p + v)})),
-  // encontros com L
-  ...['BL','CL','FL','GL','PL'].map(p => ({label:p, syl:VOWELS.map(v => p + v)})),
-];
+const CONSONANTS = 'BCDFGJLMNPRSTVXZ'.split('');
+const FAMILIES_PER_BOARD = 6;   // 6 linhas de 5 sílabas, como no quadro da sala
+const MAX_SYLLABLES = 6;        // o caderno aceita até 6 sílabas
 
-// tira acentos para comparar (SOFÁ = SOFA)
+// tira acentos para comparar (SOFÁ = SOFA, BEBÊ = BEBE, LEÃO = LEAO)
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+const SIMPLE_SYL = /^[BCDFGJLMNPRSTVXZ]?[AEIOU]$/; // vogal sozinha ou consoante + vogal
 
-const SIMPLE_SET = new Set([...VOWELS, ...SIMPLE_CONSONANTS.flatMap(c => VOWELS.map(v => c + v))]);
-const STANDARD_COMPLEX = new Set(COMPLEX_FAMILIES.flatMap(f => f.syl));
-
-// "Outras sílabas": as sílabas das palavras do jogo que não estão nos quadros acima
-// (BAR, POR, PEI, ÃO, PIN…), para que todas as palavras possam ser escritas.
-const EXTRA_COMPLEX = (()=>{
-  const seen = new Map();
-  ALL_WORDS.forEach(w => w.syl.forEach(s=>{
-    const n = norm(s);
-    if(!SIMPLE_SET.has(n) && !STANDARD_COMPLEX.has(n) && !seen.has(n)) seen.set(n, s);
-  }));
-  return [...seen.values()].sort((a, b) => norm(a).localeCompare(norm(b)));
-})();
-const COMPLEX_SET = new Set([...STANDARD_COMPLEX, ...EXTRA_COMPLEX.map(norm)]);
-
-// A palavra pode ser escrita com estas sílabas? (divide as letras em pedaços do quadro)
-function canWrite(word, sylSet){
+// Divide a palavra (sem acentos) em sílabas simples do quadro, se der.
+// Ex.: LEITE -> LE + I + TE, LEÃO -> LE + A + O. Devolve null se não der.
+function splitSimple(word){
   const w = norm(word);
-  const ok = Array(w.length + 1).fill(false);
-  ok[0] = true;
-  for(let i = 0; i < w.length; i++){
-    if(!ok[i]) continue;
-    for(let len = 1; len <= 4 && i + len <= w.length; len++){
-      if(sylSet.has(w.slice(i, i + len))) ok[i + len] = true;
+  const memo = {};
+  const go = i => {
+    if(i === w.length) return [];
+    if(i in memo) return memo[i];
+    memo[i] = null;
+    for(const len of [2, 1]){ // prefere consoante + vogal
+      const s = w.slice(i, i + len);
+      if(s.length === len && SIMPLE_SYL.test(s)){
+        const rest = go(i + len);
+        if(rest){ memo[i] = [s, ...rest]; break; }
+      }
     }
-  }
-  return ok[w.length];
+    return memo[i];
+  };
+  return go(0);
 }
-const ALL_SET = new Set([...SIMPLE_SET, ...COMPLEX_SET]);
-// palavras de cada nível
-const SIMPLE_WORDS = ALL_WORDS.filter(w => canWrite(w.word, SIMPLE_SET));
-const COMPLEX_WORDS = ALL_WORDS.filter(w => !canWrite(w.word, SIMPLE_SET) && canWrite(w.word, ALL_SET));
 
-// ---------- Estado ----------
-let currentLevel = 'simples';
-let currentTab = 'complexas';
-let levelWords = [];
-let validWords = [];     // tudo que dá para escrever neste nível (mostra a figura)
-let found = new Set(JSON.parse(localStorage.getItem('fp-silabas-achadas') || '[]'));
-let typed = [];
+// Palavras com figura que dá para escrever só com sílabas simples
+const SIMPLE_WORDS = ALL_WORDS
+  .map(w => ({...w, nsyl: splitSimple(w.word), nword: norm(w.word)}))
+  .filter(w => w.nsyl);
+const consonantsOf = w => [...new Set(w.nsyl.filter(s => s.length === 2).map(s => s[0]))];
+
+// Palavras "difíceis": precisam de sílabas complexas (CHU, GRE, NHA, BAR, PEI…)
+const COMPLEX_WORDS = ALL_WORDS
+  .filter(w => !splitSimple(w.word))
+  .map(w => ({...w, nword: norm(w.word)}));
+// todas as palavras com figura, para reconhecer o que a criança escreveu
+const ALL_MATCH = ALL_WORDS.map(w => ({...w, nword: norm(w.word)}));
+const levelPool = () => currentLevel === 'desafio' ? COMPLEX_WORDS : SIMPLE_WORDS;
+const CHALLENGE_WORDS = 6;   // figuras por quadro no Desafio
+const CHALLENGE_SLOTS = 30;  // botões no quadro do Desafio (6 linhas de 5)
+
+// ---------- Palavras descobertas (salvas no aparelho) ----------
+const DISCOVERED_KEY = 'fp-silabas-descobertas';
+const discovered = new Set((()=>{
+  try{ return JSON.parse(localStorage.getItem(DISCOVERED_KEY) || '[]'); }catch(e){ return []; }
+})());
+function saveDiscovered(){
+  try{ localStorage.setItem(DISCOVERED_KEY, JSON.stringify([...discovered])); }catch(e){}
+}
+
+let currentLevel = 'facil';
+let boardWords = [];     // palavras que podem ser formadas neste quadro
+let typed = [];          // sílabas tocadas até agora
 let score = 0;
-let state = 'idle';      // 'idle' | 'writing' | 'success' | 'wrong' | 'hint'
-let wrongTimer = null;
+let state = 'idle';      // 'idle' | 'writing' | 'success' | 'hint' | 'erasing' | 'done'
+let roundTimer = null;
 let successToken = 0;
+let lastFams = '';
 
-// ---------- Quadro ----------
-function addSection(title, rows, colorOffset){
-  const sec = document.createElement('section');
-  sec.className = 'sb-section';
-  if(title){
-    const h = document.createElement('h3');
-    h.className = 'sb-sec-title';
-    h.textContent = title;
-    sec.appendChild(h);
-  }
-  const grid = document.createElement('div');
-  grid.className = 'sb-grid';
-  rows.forEach((row, r)=>{
-    row.forEach(syl=>{
-      const btn = document.createElement('button');
-      btn.className = 'sb-syl f' + ((r + colorOffset) % 6); // cada família tem uma cor
-      btn.textContent = syl;
-      btn.dataset.syl = syl;
-      if(syl.length >= 3) btn.classList.add('long');
-      btn.addEventListener('click', ()=> tapSyllable(btn));
-      grid.appendChild(btn);
-    });
-    // completa a linha para as famílias ficarem alinhadas (QU e GU têm menos de 5)
-    for(let i = row.length; i < 5 && rows.length > 1 && row.length > 1; i++){
-      const gap = document.createElement('span');
-      gap.className = 'sb-gap';
-      grid.appendChild(gap);
+// ---------- Monta um quadro ----------
+// Escolhe 6 consoantes que formem várias palavras — principalmente as que
+// a criança ainda não descobriu.
+function buildBoard(level){
+  const isLevelWord = w => level === 'facil' ? w.syl.length === 2 : w.syl.length >= 3;
+  const missing = SIMPLE_WORDS.filter(w => !discovered.has(w.word));
+  let best = null;
+  for(let attempt = 0; attempt < 120; attempt++){
+    const fams = new Set();
+    const missingLevel = missing.filter(isLevelWord);
+    const seeds = shuffle(missingLevel.length ? missingLevel : SIMPLE_WORDS.filter(isLevelWord));
+    const others = shuffle(missing.length ? [...missing, ...SIMPLE_WORDS] : [...SIMPLE_WORDS]);
+    for(const w of [...seeds.slice(0, 3), ...others]){
+      const merged = new Set([...fams, ...consonantsOf(w)]);
+      if(merged.size <= FAMILIES_PER_BOARD) merged.forEach(c => fams.add(c));
+      if(fams.size === FAMILIES_PER_BOARD) break;
     }
-  });
-  sec.appendChild(grid);
-  sbBoard.appendChild(sec);
-}
-
-function renderBoard(){
-  sbBoard.innerHTML = '';
-  const showComplex = currentLevel === 'complexas' && currentTab === 'complexas';
-  sbTabs.hidden = currentLevel !== 'complexas';
-  sbTabs.querySelectorAll('.sb-tab').forEach(t=>{
-    const on = t.dataset.tab === currentTab;
-    t.classList.toggle('active', on);
-    t.setAttribute('aria-selected', on);
-  });
-  if(showComplex){
-    addSection('Dígrafos e encontros', COMPLEX_FAMILIES.map(f => f.syl), 0);
-    const extraRows = [];
-    for(let i = 0; i < EXTRA_COMPLEX.length; i += 5) extraRows.push(EXTRA_COMPLEX.slice(i, i + 5));
-    addSection('Outras sílabas', extraRows, 3);
-  } else {
-    addSection('Vogais', [VOWELS], 5);
-    addSection('Sílabas simples', SIMPLE_CONSONANTS.map(c => VOWELS.map(v => c + v)), 0);
+    for(const c of shuffle([...CONSONANTS])){
+      if(fams.size >= FAMILIES_PER_BOARD) break;
+      fams.add(c);
+    }
+    const sorted = [...fams].sort();
+    if(sorted.join('') === lastFams) continue; // não repete o quadro anterior
+    const words = SIMPLE_WORDS.filter(w => consonantsOf(w).every(c => fams.has(c)));
+    const fresh = words.filter(w => !discovered.has(w.word));
+    const value = fresh.filter(isLevelWord).length * 6 + fresh.length * 3
+                + words.filter(isLevelWord).length * 2 + words.length;
+    if(!best || value > best.value) best = {fams:sorted, words, value};
   }
+  lastFams = best.fams.join('');
+  return best;
 }
 
-function setLevel(level){
-  currentLevel = level;
-  currentTab = level === 'complexas' ? 'complexas' : 'simples';
-  levelWords = level === 'simples' ? SIMPLE_WORDS : COMPLEX_WORDS;
-  validWords = level === 'simples' ? SIMPLE_WORDS : ALL_WORDS.filter(w => canWrite(w.word, ALL_SET));
+// ---------- Desafio: quadro montado com as sílabas de 6 palavras difíceis ----------
+let lastChallenge = '';
+function buildChallenge(){
+  const missing = shuffle(COMPLEX_WORDS.filter(w => !discovered.has(w.word)));
+  const done = shuffle(COMPLEX_WORDS.filter(w => discovered.has(w.word)));
+  let words = [], syls = new Map(); // sílaba sem acento -> como aparece no botão
+  for(let attempt = 0; attempt < 20; attempt++){
+    words = []; syls = new Map();
+    for(const w of [...shuffle([...missing]), ...done]){
+      if(words.length >= CHALLENGE_WORDS) break;
+      const merged = new Map(syls);
+      w.syl.forEach(s => { if(!merged.has(norm(s))) merged.set(norm(s), s); });
+      if(merged.size > CHALLENGE_SLOTS) continue;
+      words.push(w); syls = merged;
+    }
+    if(words.map(w => w.word).sort().join() !== lastChallenge) break;
+  }
+  lastChallenge = words.map(w => w.word).sort().join();
+  // completa o quadro com sílabas "pegadinha" de outras palavras difíceis
+  const extras = shuffle(COMPLEX_WORDS.filter(w => !words.includes(w)).flatMap(w => w.syl));
+  for(const s of extras){
+    if(syls.size >= CHALLENGE_SLOTS) break;
+    if(!syls.has(norm(s))) syls.set(norm(s), s);
+  }
+  // em ordem alfabética, para ficar fácil de achar a sílaba
+  const list = [...syls.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(e => e[1]);
+  return {words, syls:list};
+}
+
+function renderChallenge(syls){
+  sbBoard.innerHTML = '';
+  syls.forEach((syl, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'sb-syl f' + (Math.floor(i / 5) % 6) + (norm(syl).length >= 3 ? ' long' : '');
+    btn.textContent = syl;
+    btn.dataset.syl = syl;
+    btn.addEventListener('click', ()=> tapSyllable(btn));
+    sbBoard.appendChild(btn);
+  });
+}
+
+// sombras das figuras do quadro: acendem quando a palavra é descoberta
+function renderTargets(justFound){
+  const isChallenge = currentLevel === 'desafio';
+  sbTargets.hidden = !isChallenge;
+  document.getElementById('sbStage').classList.toggle('is-challenge', isChallenge);
+  if(!isChallenge){ sbTargets.innerHTML = ''; return; }
+  sbTargets.innerHTML = '';
+  boardWords.forEach(w=>{
+    const lit = discovered.has(w.word);
+    const el = document.createElement('div');
+    el.className = 'sb-target' + (lit ? ' lit' : '') + (w.word === justFound ? ' pop' : '');
+    el.title = lit ? w.word : 'Figura escondida';
+    el.innerHTML = `<img src="${w.art}" alt="${lit ? w.word.toLowerCase() : 'figura escondida'}">`;
+    sbTargets.appendChild(el);
+  });
+}
+
+function startRound(){
+  clearTimeout(roundTimer);
   roundCompleteEl.classList.remove('show');
-  renderBoard();
+  if(currentLevel === 'desafio'){
+    const ch = buildChallenge();
+    boardWords = ch.words;
+    renderChallenge(ch.syls);
+  } else {
+    const board = buildBoard(currentLevel);
+    boardWords = board.words;
+    renderBoard(board.fams);
+  }
+  renderTargets();
   clearNotebook();
   updateProgress();
 }
 
+function renderBoard(fams){
+  sbBoard.innerHTML = '';
+  const addBtn = (syl, cls)=>{
+    const btn = document.createElement('button');
+    btn.className = 'sb-syl ' + cls;
+    btn.textContent = syl;
+    btn.dataset.syl = syl;
+    btn.addEventListener('click', ()=> tapSyllable(btn));
+    sbBoard.appendChild(btn);
+  };
+  // 1ª fileira: as vogais (para OVO, UVA, LUA, AVÔ, ABACATE…)
+  VOWELS.forEach(v => addBtn(v, 'vowel'));
+  // depois, 6 famílias de consoantes — cada família (linha) tem uma cor
+  fams.forEach((c, row) => VOWELS.forEach(v => addBtn(c + v, 'f' + (row % 6))));
+}
+
 function updateProgress(){
-  const done = levelWords.filter(w => found.has(w.word)).length;
-  progressText.textContent = `${done} de ${levelWords.length} palavras`;
+  const pool = levelPool();
+  const total = pool.filter(w => discovered.has(w.word)).length;
+  const tipo = currentLevel === 'desafio' ? 'palavras difíceis' : 'palavras';
+  progressText.textContent = `${total} de ${pool.length} ${tipo} descobertas`;
   scoreText.textContent = `${score} pontos`;
 }
 
 // ---------- Caderno ----------
 function setNotebook(newState, word, msg){
   state = newState;
-  sbNotebook.classList.remove('writing', 'success', 'wrong', 'hinting');
-  if(newState !== 'idle') sbNotebook.classList.add(newState === 'hint' ? 'hinting' : newState);
+  sbNotebook.classList.remove('writing', 'success', 'hinting', 'erasing');
+  if(newState === 'writing' || newState === 'success') sbNotebook.classList.add(newState);
+  if(newState === 'hint') sbNotebook.classList.add('hinting');
   sbWord.textContent = word || '';
   sbMsg.textContent = msg || '';
 }
@@ -170,13 +236,17 @@ function clearNotebook(){
   setNotebook('idle', '', 'Toque nas sílabas para escrever');
 }
 
-// ---------- Tocar numa sílaba ----------
+// ---------- Tocar numa sílaba: escreve livremente ----------
 function tapSyllable(btn){
-  // depois de acertar (ou de uma dica / erro), a próxima sílaba começa uma palavra nova
-  if(state === 'success' || state === 'hint' || state === 'wrong'){
-    clearTimeout(wrongTimer);
+  if(state === 'done' || state === 'erasing') return;
+  // depois de acertar (ou de uma dica), a próxima sílaba começa uma palavra nova
+  if(state === 'success' || state === 'hint'){
     typed = [];
     successToken++;
+  }
+  if(typed.length >= MAX_SYLLABLES){
+    sbMsg.textContent = 'O caderno está cheio — use a borracha 🧽';
+    return;
   }
   const syl = btn.dataset.syl;
   typed.push(syl);
@@ -184,93 +254,116 @@ function tapSyllable(btn){
   btn.classList.add('flash');
   setTimeout(()=> btn.classList.remove('flash'), 250);
 
-  const written = typed.join('');
-  const nWritten = norm(written);
-  const match = validWords.find(w => norm(w.word) === nWritten);
-  if(match){ onWordFormed(match); return; }
-
-  // ainda pode virar alguma palavra?
-  const canContinue = validWords.some(w => norm(w.word).startsWith(nWritten));
-  if(canContinue) setNotebook('writing', written, '');
-  else onWrong(written);
+  const written = norm(typed.join(''));
+  const match = ALL_MATCH.find(w => w.nword === written); // compara as letras, sem acento
+  if(match) onWordFormed(match);
+  else setNotebook('writing', typed.join(''), '');
 }
 
 function onWordFormed(w){
-  const isNew = !found.has(w.word);
+  const isNew = !discovered.has(w.word);
   const token = ++successToken;
   setNotebook('writing', w.word, '');
   setArt(sbArt, w.art, `Ilustração de ${w.word.toLowerCase()}`).then(()=>{
     if(token !== successToken) return; // a criança já começou outra palavra
     if(isNew){
-      found.add(w.word);
-      localStorage.setItem('fp-silabas-achadas', JSON.stringify([...found]));
+      discovered.add(w.word);
+      saveDiscovered();
       score += 10;
       collectSticker(w.word, 10);
       ping(true);
       confetti(sbNotebook);
     }
-    setNotebook('success', w.word, isNew ? '+10 pontos!' : 'Você já achou essa! 😊');
+    setNotebook('success', w.word, isNew ? 'Palavra nova descoberta! +10 pontos' : 'Você já descobriu essa! 😊');
     speak(w.word.toLowerCase());
     updateProgress();
-    if(isNew && levelWords.length && levelWords.every(x => found.has(x.word))){
-      setTimeout(()=>{ roundCompleteEl.classList.add('show'); confetti(roundCompleteEl); }, 900);
-    }
+    if(isNew){ renderTargets(w.word); checkBoardDone(); }
   });
 }
 
-function onWrong(written){
-  ping(false);
-  setNotebook('wrong', written, 'Essa não forma palavra… tente de novo!');
-  clearTimeout(wrongTimer);
-  wrongTimer = setTimeout(()=>{ if(state === 'wrong') clearNotebook(); }, 1600);
+function checkBoardDone(){
+  const allDone = levelPool().every(w => discovered.has(w.word));
+  const boardDone = boardWords.every(w => discovered.has(w.word));
+  if(!allDone && !boardDone) return;
+  state = 'done';
+  roundMsgEl.textContent = allDone
+    ? (currentLevel === 'desafio' ? '🏆 Incrível! Você descobriu todas as palavras difíceis!' : '🏆 Incrível! Você descobriu todas as palavras!')
+    : '🎉 Muito bem! Você descobriu todas as palavras deste quadro!';
+  roundSubEl.textContent = allDone ? 'Elas estão todas no seu álbum de figurinhas.' : 'Um quadro novo está chegando…';
+  setTimeout(()=>{ roundCompleteEl.classList.add('show'); confetti(roundCompleteEl); }, 900);
+  roundTimer = setTimeout(startRound, allDone ? 6000 : 4200);
 }
 
-// ---------- Borracha ----------
+// ---------- Borracha: passa por cima da palavra e apaga ----------
 sbEraser.addEventListener('click', ()=>{
-  clearTimeout(wrongTimer);
-  sbEraser.classList.remove('rub'); void sbEraser.offsetWidth; sbEraser.classList.add('rub');
-  clearNotebook();
+  if(state === 'done' || state === 'erasing') return;
+  if(!sbWord.textContent && state !== 'hint'){ // nada escrito: só "esfrega"
+    sbEraser.classList.remove('rub'); void sbEraser.offsetWidth; sbEraser.classList.add('rub');
+    return;
+  }
+  successToken++;
+  state = 'erasing';
+  sbEraser.classList.remove('rub');
+  void sbNotebook.offsetWidth;
+  sbNotebook.classList.add('erasing'); // a borracha "passa" pela palavra (CSS)
+  eraserCrumbs();
+  setTimeout(()=>{
+    sbNotebook.classList.remove('erasing');
+    clearNotebook();
+  }, 750);
 });
+
+// farelinhos de borracha caindo do caderno
+function eraserCrumbs(){
+  const page = document.getElementById('sbPage');
+  const r = sbWord.getBoundingClientRect();
+  const pr = page.getBoundingClientRect();
+  const y = (r.height ? r.top + r.height / 2 : pr.top + pr.height / 2) - pr.top;
+  for(let i = 0; i < 14; i++){
+    const c = document.createElement('span');
+    c.className = 'sb-crumb';
+    c.style.left = (pr.width * (0.2 + Math.random() * 0.6)) + 'px';
+    c.style.top = (y + (Math.random() * 20 - 10)) + 'px';
+    c.style.animationDelay = (i * 35) + 'ms';
+    c.style.setProperty('--dx', (Math.random() * 40 - 20) + 'px');
+    page.appendChild(c);
+    setTimeout(()=> c.remove(), 1200);
+  }
+}
 
 // ---------- Dica: mostra a figura de uma palavra que falta e pisca a 1ª sílaba ----------
 hintBtn.addEventListener('click', ()=>{
-  let pool = levelWords.filter(w => !found.has(w.word));
-  if(!pool.length) pool = levelWords;
+  if(state === 'done' || state === 'erasing') return;
+  let pool = boardWords.filter(w => !discovered.has(w.word));
+  if(!pool.length) pool = boardWords;
   if(!pool.length) return;
   const w = pool[Math.floor(Math.random() * pool.length)];
-  clearTimeout(wrongTimer);
   typed = [];
   const token = ++successToken;
   setArt(sbArt, w.art, `Dica: ${w.word.toLowerCase()}`).then(()=>{
     if(token !== successToken) return;
-    setNotebook('hint', '', 'Que palavra é essa? Comece por aqui 👇');
+    setNotebook('hint', '', 'Que palavra é essa? Comece pela sílaba que está piscando');
     speak(w.word.toLowerCase());
-    // primeira sílaba: se estiver na outra aba, troca de aba
-    const first = norm(w.syl[0]);
-    if(currentLevel === 'complexas'){
-      const wantTab = SIMPLE_SET.has(first) ? 'simples' : 'complexas';
-      if(wantTab !== currentTab){ currentTab = wantTab; renderBoard(); }
-    }
-    const btn = [...sbBoard.querySelectorAll('.sb-syl')].find(b => norm(b.dataset.syl) === first);
-    if(btn){
-      btn.classList.remove('hint'); void btn.offsetWidth; btn.classList.add('hint');
-      btn.scrollIntoView({block:'nearest', behavior:'smooth'});
-    }
+    const firstSyl = norm(w.nsyl ? w.nsyl[0] : w.syl[0]);
+    const first = [...sbBoard.querySelectorAll('.sb-syl')].find(b => norm(b.dataset.syl) === firstSyl);
+    if(first){ first.classList.remove('hint'); void first.offsetWidth; first.classList.add('hint'); }
   });
 });
 
-// ---------- Níveis e abas ----------
+// ---------- Níveis e novo quadro ----------
 document.querySelectorAll('.level-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    setLevel(btn.dataset.level);
+    currentLevel = btn.dataset.level;
+    startRound();
   });
 });
-sbTabs.querySelectorAll('.sb-tab').forEach(t=>{
-  t.addEventListener('click', ()=>{ currentTab = t.dataset.tab; renderBoard(); });
-});
+newRoundBtn.addEventListener('click', startRound);
 
 // ---------- Init ----------
 initCommon('silabas');
-setLevel('simples');
+// figurinhas já coletadas neste jogo (versões anteriores) contam como descobertas
+ALL_WORDS.forEach(w => { if(collectedScores.has(w.word)) discovered.add(w.word); });
+saveDiscovered();
+startRound();
