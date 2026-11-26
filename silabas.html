@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/silabas.css">
 </head>
 <body style="--accent:#6C47FF; --accent-50:#F0EBFF; --grad:linear-gradient(135deg, #7C3AED 0%, #C026D3 100%); --glow:rgba(124,58,237,.45);">
 <header class="topbar">
@@ -25,7 +26,7 @@
     <span class="page-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/><rect x="8" y="3" width="8" height="8" rx="2"/></svg></span>
     <div>
       <h1>Formar Palavras</h1>
-      <p class="subtitle">Toque nas sílabas para ouvi-las e colocá-las na caixa mágica. Quando a palavra estiver certa, a figurinha aparece.</p>
+      <p class="subtitle">Toque nas sílabas do quadro para escrever no caderno. Quando formar uma palavra, a figura aparece!</p>
     </div>
   </div>
   <img class="page-art" src="assets/images/bola.webp" alt="" aria-hidden="true">
@@ -35,43 +36,57 @@
 <main class="wrap wrap-overlap">
   <div class="game-window" id="gameWindow">
   <div class="levels" role="group" aria-label="Nível">
-    <button class="level-btn active" data-level="facil">Fácil <small>2 sílabas</small></button>
-    <button class="level-btn" data-level="medio">Médio <small>3 ou mais</small></button>
+    <button class="level-btn active" data-level="simples">Sílabas simples <small>BA, CA, DA…</small></button>
+    <button class="level-btn" data-level="complexas">Sílabas complexas <small>CHA, BRA, NHA…</small></button>
   </div>
 
   <div class="progress-row">
-    <span class="progress-pill" id="progressText">0 / 8 palavras nesta rodada</span>
+    <span class="progress-pill" id="progressText">0 de 0 palavras</span>
     <span class="progress-pill score-pill" id="scoreText">0 pontos</span>
-    <button id="newRoundBtn">Nova rodada</button>
+    <button id="hintBtn" class="hint-btn">Dica</button>
     <button id="soundBtn" title="Ligar/desligar o som"></button>
   </div>
 
-  <div class="stage">
-    <div class="chest-area">
-      <div class="chest" id="chest">
-        <div class="chest-label-row">
-          <div class="chest-label">Caixa mágica</div>
-          <button id="eraseBtn" class="erase-btn" title="Apagar tudo">Apagar</button>
-        </div>
-        <div class="box-slots" id="boxSlots">
-          <span class="box-hint" id="boxHint">toque nas sílabas para colocá-las aqui</span>
-        </div>
+  <div class="sb-stage" id="sbStage">
+    <div class="sb-board-wrap">
+      <div class="sb-tabs" id="sbTabs" role="tablist" aria-label="Tipo de sílaba" hidden>
+        <button class="sb-tab active" data-tab="complexas" role="tab">Complexas</button>
+        <button class="sb-tab" data-tab="simples" role="tab">Simples</button>
       </div>
-      <div class="reveal" id="reveal">
-        <img class="word-art" id="revealEmoji" src="assets/images/logo.webp" alt="Figurinha">
-        <span class="word" id="revealWord">PALAVRA</span>
-        <span class="points" id="revealPoints">+10 pontos</span>
-      </div>
+      <div class="sb-board" id="sbBoard" role="group" aria-label="Quadro de sílabas"></div>
     </div>
 
-    <div class="tray" id="tray">
-      <div class="tray-label">Sílabas</div>
+    <div class="sb-notebook" id="sbNotebook">
+      <div class="sb-rings" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="sb-page" id="sbPage">
+        <div class="sb-art-wrap">
+          <img class="sb-art" id="sbArt" src="assets/images/logo.webp" alt="">
+          <span class="sb-spark s1"></span><span class="sb-spark s2"></span><span class="sb-spark s3"></span>
+          <span class="sb-spark s4"></span><span class="sb-spark s5"></span><span class="sb-spark s6"></span>
+        </div>
+        <div class="sb-word" id="sbWord" aria-live="polite"></div>
+        <div class="sb-msg" id="sbMsg" aria-live="polite"></div>
+      </div>
+      <button class="sb-eraser" id="sbEraser" title="Apagar" aria-label="Apagar o caderno">
+        <svg viewBox="0 0 140 90" aria-hidden="true">
+          <g transform="rotate(-16 70 45)">
+            <path d="M26 30h86l12 10v26l-12-10H26z" fill="#F472B6"/>
+            <path d="M26 30h86v26H26z" fill="#F9A8D4"/>
+            <path d="M112 30l12 10v26l-12-10z" fill="#DB2777"/>
+            <path d="M26 56h86l12 10H38z" fill="#BE185D"/>
+            <path d="M26 30h32v26H26z" fill="#FBFBF7"/>
+            <path d="M26 56h32l12 10H38z" fill="#DADAD3"/>
+            <path d="M26 30v26l12 10V40z" fill="#EDEDE6"/>
+            <path d="M26 30h32" stroke="#fff" stroke-width="2" opacity=".8"/>
+          </g>
+        </svg>
+      </button>
     </div>
+  </div>
 
-    <div class="round-complete" id="roundComplete">
-      <div class="msg">🎉 Muito bem! Novas sílabas chegando...</div>
-      <div class="round-score" id="roundScoreText">+0 pontos nesta rodada</div>
-    </div>
+  <div class="round-complete" id="roundComplete">
+    <div class="msg">🎉 Parabéns! Você achou todas as palavras deste quadro!</div>
+    <div class="round-score" id="roundScoreText">Experimente o outro tipo de sílabas.</div>
   </div>
   </div>
 
@@ -85,13 +100,6 @@
     </div>
     <div class="album-bar"><span id="albumBar"></span></div>
     <div class="gallery" id="gallery"></div>
-  </section>
-
-  <section class="card gallery-wrap" id="rankingWrap" aria-labelledby="rankingTitle">
-    <h2 class="gallery-title" id="rankingTitle">Ranking da sessão</h2>
-    <div id="rankingList" class="ranking-list">
-      <div class="ranking-empty">Complete uma rodada inteira para entrar no ranking!</div>
-    </div>
   </section>
 </main>
 

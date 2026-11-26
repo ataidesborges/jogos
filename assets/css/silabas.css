@@ -1,0 +1,296 @@
+/* ============================================================
+   Formar Palavras — quadro de sílabas + caderno
+   ============================================================ */
+.sb-stage{
+  --sb-ink:#2A1B5C;
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0, 1.45fr) minmax(0, 1fr);
+  gap:clamp(18px, 2.6vw, 34px);
+  align-items:start;
+  padding:clamp(14px, 2.6vw, 30px);
+  border-radius:22px;
+  /* lousa roxo-anil com pontinhos e brilhos suaves */
+  background:
+    radial-gradient(rgba(255,255,255,.14) 1.4px, transparent 1.8px) 0 0/22px 22px,
+    radial-gradient(520px 320px at 100% 0%, rgba(236,72,153,.35), transparent 60%),
+    radial-gradient(480px 300px at 0% 100%, rgba(34,211,238,.25), transparent 60%),
+    linear-gradient(150deg, #3B1E8F 0%, #4C2BB8 50%, #2E1A78 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* nesta página o jogo usa uma área mais larga, para as sílabas ficarem maiores */
+.wrap-overlap{max-width:1240px;}
+
+/* ---------- Quadro de sílabas (fixo) ---------- */
+.sb-board-wrap{min-width:0; align-self:start;}
+.sb-board{display:flex; flex-direction:column; gap:16px;}
+.sb-sec-title{
+  margin:0 0 8px;
+  font-family:var(--font-body); font-weight:800;
+  font-size:12.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:rgba(255,255,255,.75);
+}
+.sb-grid{
+  display:grid;
+  grid-template-columns:repeat(10, 1fr);   /* duas famílias por linha */
+  gap:clamp(5px, .8vw, 9px);
+}
+.sb-gap{display:block;}
+.sb-syl.long{font-size:clamp(13px, 1.5vw, 20px);}
+
+/* abas Complexas / Simples */
+.sb-tabs{
+  display:inline-flex; gap:4px; padding:4px;
+  margin-bottom:14px;
+  background:rgba(0,0,0,.22);
+  border-radius:14px;
+}
+.sb-tabs[hidden]{display:none;}
+.sb-tab{
+  font-family:var(--font-body); font-weight:800; font-size:14px;
+  color:rgba(255,255,255,.75);
+  background:transparent; border:none; cursor:pointer;
+  padding:8px 18px; border-radius:10px;
+}
+.sb-tab.active{background:#fff; color:#3B1E8F; box-shadow:0 4px 10px -4px rgba(0,0,0,.4);}
+/* botões "bala": cada família de sílabas tem uma cor */
+.sb-syl{
+  --c1:#FF7A7A; --c2:#E5484D;
+  aspect-ratio:1.12;
+  display:grid; place-items:center;
+  padding:0;
+  border:none;
+  border-radius:50% / 46%;
+  background:
+    radial-gradient(70% 55% at 35% 22%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%),
+    linear-gradient(180deg, var(--c1), var(--c2));
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(14px, 1.8vw, 24px);
+  letter-spacing:.02em;
+  color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.18);
+  cursor:pointer;
+  user-select:none; -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:
+    inset 0 -5px 0 rgba(0,0,0,.18),
+    inset 0 2px 0 rgba(255,255,255,.35),
+    0 6px 14px -6px rgba(0,0,0,.55);
+  transition:transform .1s ease, box-shadow .1s ease, filter .15s ease;
+}
+.sb-syl.f0{--c1:#FF8A80; --c2:#E5484D;}  /* coral */
+.sb-syl.f1{--c1:#FFB35C; --c2:#F2780C;}  /* laranja */
+.sb-syl.f2{--c1:#5EE0A0; --c2:#15A866;}  /* verde */
+.sb-syl.f3{--c1:#5CCBFF; --c2:#1E88E5;}  /* azul */
+.sb-syl.f4{--c1:#FF8FD0; --c2:#D6338F;}  /* rosa */
+.sb-syl.f5{--c1:#FFDF70; --c2:#F2B705; color:#5A3300; text-shadow:0 1px 0 rgba(255,255,255,.45);}  /* amarelo (letra escura para ler bem) */
+.sb-syl:hover{filter:brightness(1.08) saturate(1.05); transform:translateY(-2px);}
+.sb-syl:active, .sb-syl.press{
+  transform:translateY(3px) scale(.97);
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.35), 0 2px 6px -3px rgba(0,0,0,.5);
+}
+.sb-syl.flash{filter:brightness(1.25); transform:scale(1.06);}
+.sb-syl.hint{animation:sbHint 1.2s ease-in-out 3;}
+@keyframes sbHint{
+  0%,100%{outline:0 solid rgba(255,255,255,0);}
+  50%{outline:5px solid rgba(255,255,255,.95); outline-offset:2px;}
+}
+
+/* ---------- Caderno ---------- */
+/* o caderno fica "grudado" na tela enquanto a criança rola as sílabas */
+.sb-notebook{
+  position:sticky; top:84px; z-index:5;
+  padding-top:16px;
+  width:100%;
+  max-width:460px;
+  justify-self:center;
+}
+.game-window.is-fs .sb-notebook{top:8px;}
+.sb-rings{
+  position:absolute; z-index:3;
+  top:0; left:16%; right:16%;
+  display:flex; justify-content:space-between;
+  pointer-events:none;
+}
+.sb-rings i{ /* espiral prateada */
+  width:13px; height:42px;
+  border-radius:8px;
+  background:linear-gradient(90deg, #C9CDD8, #FFFFFF 45%, #AEB4C2);
+  border:3px solid var(--sb-ink);
+}
+.sb-page{
+  position:relative; z-index:2;
+  aspect-ratio:1 / 1.02;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:62px 18px 34px;
+  /* folha pautada: linhas azul-claras e margem rosa */
+  background:
+    linear-gradient(90deg, transparent 38px, rgba(244,114,182,.55) 38px, rgba(244,114,182,.55) 40px, transparent 40px),
+    repeating-linear-gradient(180deg, transparent 0 31px, rgba(96,165,250,.22) 31px 32px),
+    #FFFFFF;
+  background-position:0 0, 0 52px, 0 0;
+  border:4px solid var(--sb-ink);
+  border-radius:30px;
+  overflow:hidden;
+  /* folhas de baixo do caderno */
+  box-shadow:
+    0 7px 0 -1px #C4B5FD,
+    0 7px 0 3px var(--sb-ink),
+    0 14px 0 -1px #A78BFA,
+    0 14px 0 3px var(--sb-ink),
+    0 26px 30px -12px rgba(0,0,0,.5);
+}
+.sb-page::before{ /* faixa colorida do topo */
+  content:""; position:absolute; left:0; right:0; top:0;
+  height:46px;
+  background:linear-gradient(90deg, #EC4899 0%, #F97316 100%);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.12);
+}
+
+.sb-art-wrap{
+  position:relative;
+  width:min(60%, 270px);
+  aspect-ratio:1;
+  display:none;
+}
+.sb-art{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
+.sb-word{
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(34px, 5.6vw, 66px);
+  line-height:1.05;
+  letter-spacing:.03em;
+  color:var(--sb-ink);
+  min-height:1.05em;
+  text-align:center;
+  word-break:break-word;
+}
+.sb-msg{
+  min-height:1.4em;
+  margin-top:6px;
+  font-weight:800; font-size:clamp(13px, 1.6vw, 16px);
+  color:#8C7B63;
+  text-align:center;
+}
+
+/* escrevendo: cursor piscando depois das sílabas */
+.sb-notebook.writing .sb-word::after{
+  content:""; display:inline-block;
+  width:.08em; height:.8em; margin-left:.06em;
+  background:#121212; vertical-align:-.04em;
+  animation:sbCaret 1s steps(1) infinite;
+}
+@keyframes sbCaret{50%{opacity:0;}}
+
+/* acertou: mostra a figura com brilhinhos */
+.sb-notebook.success .sb-art-wrap{display:block; animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
+.sb-notebook.success .sb-word{margin-top:4px;}
+.sb-notebook.success .sb-msg{color:#2F8F2F;}
+
+/* dica: mostra a figura apagadinha */
+.sb-notebook.hinting .sb-art-wrap{display:block; opacity:.35; filter:grayscale(.3);}
+
+/* errou: o caderno balança */
+.sb-notebook.wrong .sb-page{animation:sbShake .45s ease;}
+.sb-notebook.wrong .sb-msg{color:#C2386F;}
+@keyframes sbShake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-8px) rotate(-1deg);}
+  40%{transform:translateX(8px) rotate(1deg);}
+  60%{transform:translateX(-5px);}
+  80%{transform:translateX(5px);}
+}
+
+/* brilhinhos em volta da figura */
+.sb-spark{
+  position:absolute; width:26px; height:26px;
+  background:#F2A06B;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c.8 6.6 5.4 11.2 12 12-6.6.8-11.2 5.4-12 12-.8-6.6-5.4-11.2-12-12 6.6-.8 11.2-5.4 12-12z'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c.8 6.6 5.4 11.2 12 12-6.6.8-11.2 5.4-12 12-.8-6.6-5.4-11.2-12-12 6.6-.8 11.2-5.4 12-12z'/%3E%3C/svg%3E") center/contain no-repeat;
+  opacity:0;
+}
+.sb-notebook.success .sb-spark{animation:sbTwinkle 1.4s ease-in-out infinite;}
+.sb-spark.s1{top:4%;   right:2%;  animation-delay:0s !important;}
+.sb-spark.s2{top:30%;  left:-4%;  width:20px; height:20px; animation-delay:.3s !important; background:#E98A55;}
+.sb-spark.s3{bottom:8%; left:12%; width:18px; height:18px; animation-delay:.6s !important;}
+.sb-spark.s4{bottom:2%; right:14%; animation-delay:.9s !important; background:#8C5A3C;}
+.sb-spark.s5{top:52%;  right:-2%; width:20px; height:20px; animation-delay:.45s !important;}
+.sb-spark.s6{top:-2%;  left:24%;  width:16px; height:16px; animation-delay:.75s !important; background:#8C5A3C;}
+@keyframes sbTwinkle{
+  0%,100%{opacity:0; transform:scale(.4) rotate(0deg);}
+  50%{opacity:1; transform:scale(1) rotate(20deg);}
+}
+
+/* borracha */
+.sb-eraser{
+  position:absolute; z-index:4;
+  right:-22px; bottom:-30px;
+  width:clamp(96px, 13vw, 150px);
+  padding:0; border:none; background:none;
+  cursor:pointer;
+  filter:drop-shadow(0 6px 6px rgba(0,0,0,.25));
+  transition:transform .15s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.sb-eraser svg{display:block; width:100%; height:auto;}
+.sb-eraser:hover{transform:rotate(-6deg) translateY(-3px);}
+.sb-eraser:active{transform:rotate(4deg) translateX(-6px);}
+.sb-eraser.rub{animation:sbRub .5s ease;}
+@keyframes sbRub{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-14px) rotate(-6deg);}
+  50%{transform:translateX(6px) rotate(3deg);}
+  75%{transform:translateX(-10px) rotate(-4deg);}
+}
+
+/* ---------- Telas menores ---------- */
+@media (max-width:980px) and (min-width:761px){
+  .sb-grid{grid-template-columns:repeat(5, 1fr);}
+  .sb-syl{font-size:clamp(16px, 2.6vw, 24px);}
+}
+@media (max-width:760px){
+  /* celular: caderno compacto e fixo no topo, quadro de sílabas embaixo */
+  .sb-stage{grid-template-columns:1fr; gap:18px; padding:12px 10px 16px;}
+  .sb-notebook{order:-1; top:60px; max-width:none; padding-top:12px;}
+  .sb-page{
+    aspect-ratio:auto; height:178px;
+    flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:center; column-gap:14px;
+    padding:40px 14px 10px; border-radius:22px;
+    background-position:0 0, 0 40px, 0 0;
+  }
+  .sb-page::before{height:30px;}
+  .sb-rings i{height:28px; width:10px; border-width:2.5px;}
+  .sb-art-wrap{width:auto; height:100px;}
+  .sb-word{font-size:clamp(28px, 9vw, 40px);}
+  .sb-msg{width:100%; margin-top:2px; min-height:1.2em; font-size:13px;}
+  .sb-eraser{right:-6px; bottom:-20px; width:78px;}
+  .sb-grid{grid-template-columns:repeat(5, 1fr); gap:7px;}
+  .sb-syl{font-size:clamp(17px, 5.4vw, 23px);}
+  .sb-syl.long{font-size:clamp(14px, 4.4vw, 19px);}
+  .sb-tabs{display:flex;}
+  .sb-tab{flex:1;}
+}
+
+/* ---------- Tela cheia ---------- */
+.game-window.is-fs .sb-stage{width:100%; max-width:1400px; margin-left:auto; margin-right:auto;}
+@media (min-width:761px){
+  /* sílabas altas o bastante para tocar, mas cabendo na altura da tela */
+  .game-window.is-fs .sb-syl{aspect-ratio:auto; height:clamp(34px, calc((100vh - 360px) / 10), 70px); font-size:clamp(14px, 3vh, 28px);}
+  .game-window.is-fs .sb-syl.long{font-size:clamp(12px, 2.4vh, 22px);}
+}
+@media (max-width:760px){
+  .game-window.is-fs .sb-notebook{top:0;}
+}
+@media (max-height:500px) and (min-aspect-ratio:5/4){
+  /* celular deitado em tela cheia: quadro e caderno lado a lado */
+  .game-window.is-fs .sb-stage{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); padding:10px 12px; gap:14px;}
+  .game-window.is-fs .sb-notebook{order:0; top:4px;}
+  .game-window.is-fs .sb-grid{grid-template-columns:repeat(10, 1fr); gap:5px;}
+  .game-window.is-fs .sb-syl{height:36px; font-size:15px; border-radius:12px;}
+  .game-window.is-fs .sb-syl.long{font-size:12.5px;}
+  .game-window.is-fs .sb-page{aspect-ratio:auto; height:calc(100vh - 120px); min-height:0; padding:40px 10px 10px;}
+  .game-window.is-fs .sb-page::before{height:30px;}
+  .game-window.is-fs .sb-art-wrap{width:auto; height:46%;}
+  .game-window.is-fs .sb-word{font-size:clamp(22px, 8vh, 36px);}
+  .game-window.is-fs .sb-eraser{width:80px;}
+}

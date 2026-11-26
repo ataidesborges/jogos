@@ -1,361 +1,276 @@
 // ============================================================
-// Lógica específica do jogo — Formar Palavras (sílabas)
+// Lógica específica do jogo — Formar Palavras
+// Quadro fixo de sílabas + caderno.
+//  • Sílabas simples: vogais e BA…ZU de todas as consoantes do quadro.
+//  • Sílabas complexas: CH, LH, NH, QU, GU, encontros (BR, CL…) e as
+//    outras sílabas das palavras do jogo; dá para misturar com as simples.
+// A criança toca nas sílabas, elas são "escritas" no caderno e, quando
+// formam uma palavra do banco, a figura aparece. Acentos não importam
+// (SO + FA = SOFÁ).
 // (depende de word-bank.js e shared-utils.js já carregados antes)
 // ============================================================
 
-// ---------- State ----------
-let currentLevel = "facil";
-let targets = [];      // {word, syl, emoji, formed}
-let resetTimer = null;
-let roundTimer = null;
-let celebrating = false; // enquanto a figurinha aparece, as sílabas ficam travadas
-let formedCount = 0;
-
-// ---------- Scoring ----------
-let currentAttemptPoints = 10; // starts at 10, drops by 1 each time "Apagar" is used, resets to 10 after each word formed
-let roundScore = 0;            // points earned in the current round
-let totalScore = 0;            // cumulative points this session
-let roundNumber = 1;
-let sessionRanking = [];       // {round, score} for each completed round, this session only
-
-// ---------- DOM refs ----------
-const trayEl = document.getElementById('tray');
-const boxSlots = document.getElementById('boxSlots');
-const boxHint = document.getElementById('boxHint');
-const chestEl = document.getElementById('chest');
-const revealEl = document.getElementById('reveal');
-const revealEmoji = document.getElementById('revealEmoji');
-const revealWord = document.getElementById('revealWord');
+const sbBoard = document.getElementById('sbBoard');
+const sbTabs = document.getElementById('sbTabs');
+const sbNotebook = document.getElementById('sbNotebook');
+const sbArt = document.getElementById('sbArt');
+const sbWord = document.getElementById('sbWord');
+const sbMsg = document.getElementById('sbMsg');
+const sbEraser = document.getElementById('sbEraser');
 const progressText = document.getElementById('progressText');
-const roundCompleteEl = document.getElementById('roundComplete');
-const newRoundBtn = document.getElementById('newRoundBtn');
-const eraseBtn = document.getElementById('eraseBtn');
 const scoreText = document.getElementById('scoreText');
-const revealPoints = document.getElementById('revealPoints');
-const roundScoreText = document.getElementById('roundScoreText');
-const rankingList = document.getElementById('rankingList');
+const hintBtn = document.getElementById('hintBtn');
+const roundCompleteEl = document.getElementById('roundComplete');
 
+// ---------- Sílabas ----------
+const VOWELS = ['A','E','I','O','U'];
+const SIMPLE_CONSONANTS = 'B C D F G H J L M N P R S T V X Z'.split(' ');
+const COMPLEX_FAMILIES = [
+  // dígrafos
+  {label:'CH', syl:['CHA','CHE','CHI','CHO','CHU']},
+  {label:'LH', syl:['LHA','LHE','LHI','LHO','LHU']},
+  {label:'NH', syl:['NHA','NHE','NHI','NHO','NHU']},
+  {label:'QU', syl:['QUA','QUE','QUI','QUO']},
+  {label:'GU', syl:['GUA','GUE','GUI']},
+  // encontros com R
+  ...['BR','CR','DR','FR','GR','PR','TR','VR'].map(p => ({label:p, syl:VOWELS.map(v => p + v)})),
+  // encontros com L
+  ...['BL','CL','FL','GL','PL'].map(p => ({label:p, syl:VOWELS.map(v => p + v)})),
+];
+
+// tira acentos para comparar (SOFÁ = SOFA)
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+
+const SIMPLE_SET = new Set([...VOWELS, ...SIMPLE_CONSONANTS.flatMap(c => VOWELS.map(v => c + v))]);
+const STANDARD_COMPLEX = new Set(COMPLEX_FAMILIES.flatMap(f => f.syl));
+
+// "Outras sílabas": as sílabas das palavras do jogo que não estão nos quadros acima
+// (BAR, POR, PEI, ÃO, PIN…), para que todas as palavras possam ser escritas.
+const EXTRA_COMPLEX = (()=>{
+  const seen = new Map();
+  ALL_WORDS.forEach(w => w.syl.forEach(s=>{
+    const n = norm(s);
+    if(!SIMPLE_SET.has(n) && !STANDARD_COMPLEX.has(n) && !seen.has(n)) seen.set(n, s);
+  }));
+  return [...seen.values()].sort((a, b) => norm(a).localeCompare(norm(b)));
+})();
+const COMPLEX_SET = new Set([...STANDARD_COMPLEX, ...EXTRA_COMPLEX.map(norm)]);
+
+// A palavra pode ser escrita com estas sílabas? (divide as letras em pedaços do quadro)
+function canWrite(word, sylSet){
+  const w = norm(word);
+  const ok = Array(w.length + 1).fill(false);
+  ok[0] = true;
+  for(let i = 0; i < w.length; i++){
+    if(!ok[i]) continue;
+    for(let len = 1; len <= 4 && i + len <= w.length; len++){
+      if(sylSet.has(w.slice(i, i + len))) ok[i + len] = true;
+    }
+  }
+  return ok[w.length];
+}
+const ALL_SET = new Set([...SIMPLE_SET, ...COMPLEX_SET]);
+// palavras de cada nível
+const SIMPLE_WORDS = ALL_WORDS.filter(w => canWrite(w.word, SIMPLE_SET));
+const COMPLEX_WORDS = ALL_WORDS.filter(w => !canWrite(w.word, SIMPLE_SET) && canWrite(w.word, ALL_SET));
+
+// ---------- Estado ----------
+let currentLevel = 'simples';
+let currentTab = 'complexas';
+let levelWords = [];
+let validWords = [];     // tudo que dá para escrever neste nível (mostra a figura)
+let found = new Set(JSON.parse(localStorage.getItem('fp-silabas-achadas') || '[]'));
+let typed = [];
+let score = 0;
+let state = 'idle';      // 'idle' | 'writing' | 'success' | 'wrong' | 'hint'
+let wrongTimer = null;
+let successToken = 0;
+
+// ---------- Quadro ----------
+function addSection(title, rows, colorOffset){
+  const sec = document.createElement('section');
+  sec.className = 'sb-section';
+  if(title){
+    const h = document.createElement('h3');
+    h.className = 'sb-sec-title';
+    h.textContent = title;
+    sec.appendChild(h);
+  }
+  const grid = document.createElement('div');
+  grid.className = 'sb-grid';
+  rows.forEach((row, r)=>{
+    row.forEach(syl=>{
+      const btn = document.createElement('button');
+      btn.className = 'sb-syl f' + ((r + colorOffset) % 6); // cada família tem uma cor
+      btn.textContent = syl;
+      btn.dataset.syl = syl;
+      if(syl.length >= 3) btn.classList.add('long');
+      btn.addEventListener('click', ()=> tapSyllable(btn));
+      grid.appendChild(btn);
+    });
+    // completa a linha para as famílias ficarem alinhadas (QU e GU têm menos de 5)
+    for(let i = row.length; i < 5 && rows.length > 1 && row.length > 1; i++){
+      const gap = document.createElement('span');
+      gap.className = 'sb-gap';
+      grid.appendChild(gap);
+    }
+  });
+  sec.appendChild(grid);
+  sbBoard.appendChild(sec);
+}
+
+function renderBoard(){
+  sbBoard.innerHTML = '';
+  const showComplex = currentLevel === 'complexas' && currentTab === 'complexas';
+  sbTabs.hidden = currentLevel !== 'complexas';
+  sbTabs.querySelectorAll('.sb-tab').forEach(t=>{
+    const on = t.dataset.tab === currentTab;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on);
+  });
+  if(showComplex){
+    addSection('Dígrafos e encontros', COMPLEX_FAMILIES.map(f => f.syl), 0);
+    const extraRows = [];
+    for(let i = 0; i < EXTRA_COMPLEX.length; i += 5) extraRows.push(EXTRA_COMPLEX.slice(i, i + 5));
+    addSection('Outras sílabas', extraRows, 3);
+  } else {
+    addSection('Vogais', [VOWELS], 5);
+    addSection('Sílabas simples', SIMPLE_CONSONANTS.map(c => VOWELS.map(v => c + v)), 0);
+  }
+}
+
+function setLevel(level){
+  currentLevel = level;
+  currentTab = level === 'complexas' ? 'complexas' : 'simples';
+  levelWords = level === 'simples' ? SIMPLE_WORDS : COMPLEX_WORDS;
+  validWords = level === 'simples' ? SIMPLE_WORDS : ALL_WORDS.filter(w => canWrite(w.word, ALL_SET));
+  roundCompleteEl.classList.remove('show');
+  renderBoard();
+  clearNotebook();
+  updateProgress();
+}
+
+function updateProgress(){
+  const done = levelWords.filter(w => found.has(w.word)).length;
+  progressText.textContent = `${done} de ${levelWords.length} palavras`;
+  scoreText.textContent = `${score} pontos`;
+}
+
+// ---------- Caderno ----------
+function setNotebook(newState, word, msg){
+  state = newState;
+  sbNotebook.classList.remove('writing', 'success', 'wrong', 'hinting');
+  if(newState !== 'idle') sbNotebook.classList.add(newState === 'hint' ? 'hinting' : newState);
+  sbWord.textContent = word || '';
+  sbMsg.textContent = msg || '';
+}
+function clearNotebook(){
+  typed = [];
+  successToken++;
+  setNotebook('idle', '', 'Toque nas sílabas para escrever');
+}
+
+// ---------- Tocar numa sílaba ----------
+function tapSyllable(btn){
+  // depois de acertar (ou de uma dica / erro), a próxima sílaba começa uma palavra nova
+  if(state === 'success' || state === 'hint' || state === 'wrong'){
+    clearTimeout(wrongTimer);
+    typed = [];
+    successToken++;
+  }
+  const syl = btn.dataset.syl;
+  typed.push(syl);
+  speak(syl.toLowerCase());
+  btn.classList.add('flash');
+  setTimeout(()=> btn.classList.remove('flash'), 250);
+
+  const written = typed.join('');
+  const nWritten = norm(written);
+  const match = validWords.find(w => norm(w.word) === nWritten);
+  if(match){ onWordFormed(match); return; }
+
+  // ainda pode virar alguma palavra?
+  const canContinue = validWords.some(w => norm(w.word).startsWith(nWritten));
+  if(canContinue) setNotebook('writing', written, '');
+  else onWrong(written);
+}
+
+function onWordFormed(w){
+  const isNew = !found.has(w.word);
+  const token = ++successToken;
+  setNotebook('writing', w.word, '');
+  setArt(sbArt, w.art, `Ilustração de ${w.word.toLowerCase()}`).then(()=>{
+    if(token !== successToken) return; // a criança já começou outra palavra
+    if(isNew){
+      found.add(w.word);
+      localStorage.setItem('fp-silabas-achadas', JSON.stringify([...found]));
+      score += 10;
+      collectSticker(w.word, 10);
+      ping(true);
+      confetti(sbNotebook);
+    }
+    setNotebook('success', w.word, isNew ? '+10 pontos!' : 'Você já achou essa! 😊');
+    speak(w.word.toLowerCase());
+    updateProgress();
+    if(isNew && levelWords.length && levelWords.every(x => found.has(x.word))){
+      setTimeout(()=>{ roundCompleteEl.classList.add('show'); confetti(roundCompleteEl); }, 900);
+    }
+  });
+}
+
+function onWrong(written){
+  ping(false);
+  setNotebook('wrong', written, 'Essa não forma palavra… tente de novo!');
+  clearTimeout(wrongTimer);
+  wrongTimer = setTimeout(()=>{ if(state === 'wrong') clearNotebook(); }, 1600);
+}
+
+// ---------- Borracha ----------
+sbEraser.addEventListener('click', ()=>{
+  clearTimeout(wrongTimer);
+  sbEraser.classList.remove('rub'); void sbEraser.offsetWidth; sbEraser.classList.add('rub');
+  clearNotebook();
+});
+
+// ---------- Dica: mostra a figura de uma palavra que falta e pisca a 1ª sílaba ----------
+hintBtn.addEventListener('click', ()=>{
+  let pool = levelWords.filter(w => !found.has(w.word));
+  if(!pool.length) pool = levelWords;
+  if(!pool.length) return;
+  const w = pool[Math.floor(Math.random() * pool.length)];
+  clearTimeout(wrongTimer);
+  typed = [];
+  const token = ++successToken;
+  setArt(sbArt, w.art, `Dica: ${w.word.toLowerCase()}`).then(()=>{
+    if(token !== successToken) return;
+    setNotebook('hint', '', 'Que palavra é essa? Comece por aqui 👇');
+    speak(w.word.toLowerCase());
+    // primeira sílaba: se estiver na outra aba, troca de aba
+    const first = norm(w.syl[0]);
+    if(currentLevel === 'complexas'){
+      const wantTab = SIMPLE_SET.has(first) ? 'simples' : 'complexas';
+      if(wantTab !== currentTab){ currentTab = wantTab; renderBoard(); }
+    }
+    const btn = [...sbBoard.querySelectorAll('.sb-syl')].find(b => norm(b.dataset.syl) === first);
+    if(btn){
+      btn.classList.remove('hint'); void btn.offsetWidth; btn.classList.add('hint');
+      btn.scrollIntoView({block:'nearest', behavior:'smooth'});
+    }
+  });
+});
+
+// ---------- Níveis e abas ----------
 document.querySelectorAll('.level-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    currentLevel = btn.dataset.level;
-    startRound();
+    setLevel(btn.dataset.level);
   });
 });
-newRoundBtn.addEventListener('click', startRound);
-
-eraseBtn.addEventListener('click', ()=>{
-  if(celebrating) return;
-  clearTimeout(resetTimer);
-  const boxTiles = Array.from(boxSlots.querySelectorAll('.tile'));
-  boxTiles.forEach(t=> trayEl.appendChild(t));
-  boxHint.style.display = 'block';
-  revealEl.classList.remove('show');
-  updateEraseBtn();
-
-  // erasing a failed attempt costs a point off the next word's score (never below 1)
-  if(boxTiles.length > 0){
-    currentAttemptPoints = Math.max(1, currentAttemptPoints - 1);
-    ping(false);
-  }
+sbTabs.querySelectorAll('.sb-tab').forEach(t=>{
+  t.addEventListener('click', ()=>{ currentTab = t.dataset.tab; renderBoard(); });
 });
-
-function updateEraseBtn(){
-  const hasTiles = boxSlots.querySelectorAll('.tile').length > 0;
-  eraseBtn.classList.toggle('visible', hasTiles);
-}
-
-function updateScoreDisplay(){
-  scoreText.textContent = `${totalScore} pontos`;
-}
-
-function renderRanking(){
-  if(sessionRanking.length === 0){
-    rankingList.innerHTML = '<div class="ranking-empty">Complete uma rodada inteira para entrar no ranking!</div>';
-    return;
-  }
-  const medals = ['🥇','🥈','🥉'];
-  const sorted = [...sessionRanking].sort((a,b)=> b.score - a.score);
-  rankingList.innerHTML = sorted.map((r,i)=>
-    `<div class="ranking-row"><span><span class="medal">${medals[i] || (i+1)+'º'}</span>Rodada ${r.round}</span><span class="score">${r.score} pontos</span></div>`
-  ).join('');
-}
-
-// ---------- Round setup ----------
-function pickRandom(arr, n){
-  const copy = [...arr];
-  const picked = [];
-  for(let i=0;i<n && copy.length;i++){
-    const idx = Math.floor(Math.random()*copy.length);
-    picked.push(copy.splice(idx,1)[0]);
-  }
-  return picked;
-}
-function startRound(){
-  clearTimeout(resetTimer);
-  clearTimeout(roundTimer);
-  celebrating = false;
-  revealEl.classList.remove('show');
-  roundCompleteEl.classList.remove('show');
-  formedCount = 0;
-  roundScore = 0;
-  currentAttemptPoints = 10;
-
-  const pool = WORDS[currentLevel];
-  const n = Math.min(WORDS_PER_ROUND, pool.length);
-  targets = pickRandom(pool, n).map(w=>({...w, formed:false}));
-
-  // build tile list
-  let tiles = [];
-  targets.forEach((t, wIdx)=>{
-    t.syl.forEach(s=>{
-      tiles.push({syl:s, wordIdx:wIdx, colorIdx: Math.floor(Math.random()*7)});
-    });
-  });
-  shuffle(tiles);
-
-  // render tray
-  trayEl.innerHTML = '<div class="tray-label">SÍLABAS</div>';
-  tiles.forEach((t,i)=>{
-    const el = document.createElement('div');
-    el.className = `tile c${t.colorIdx} pop-in`;
-    el.textContent = t.syl;
-    el.dataset.syl = t.syl;
-    el.dataset.wordIdx = t.wordIdx;
-    attachDrag(el);
-    trayEl.appendChild(el);
-  });
-
-  // render empty box
-  boxSlots.innerHTML = '';
-  boxSlots.appendChild(boxHint);
-  boxHint.style.display = 'block';
-  updateEraseBtn();
-
-  updateProgress();
-  roundTilesHtml = Array.from(trayEl.querySelectorAll('.tile')).map(t => t.outerHTML).join('');
-  lockTrayHeight();
-}
-let roundTilesHtml = '';
-
-// A bandeja guarda a altura do começo da rodada: quando as sílabas saem dela,
-// ela não encolhe e o jogo não "pula" na tela (principalmente em tela cheia).
-function lockTrayHeight(){
-  trayEl.style.minHeight = '';
-  trayEl.style.minHeight = trayEl.offsetHeight + 'px';
-}
-// Ao mudar o tamanho da tela (ex.: entrar na tela cheia), mede de novo a altura
-// que a bandeja teria com TODAS as sílabas da rodada, usando uma cópia invisível.
-let trayResizeTimer = null;
-window.addEventListener('resize', ()=>{
-  clearTimeout(trayResizeTimer);
-  trayResizeTimer = setTimeout(()=>{
-    const clone = trayEl.cloneNode(false);
-    clone.removeAttribute('id');
-    clone.style.cssText = 'position:absolute; visibility:hidden; pointer-events:none; left:0; top:0; min-height:0; width:' + trayEl.offsetWidth + 'px';
-    clone.innerHTML = '<div class="tray-label">SÍLABAS</div>' + roundTilesHtml;
-    trayEl.parentElement.appendChild(clone);
-    trayEl.style.minHeight = clone.offsetHeight + 'px';
-    clone.remove();
-  }, 120);
-});
-
-function updateProgress(){
-  progressText.textContent = `${formedCount} / ${targets.length} palavras nesta rodada`;
-}
-
-// ---------- Drag & drop (pointer events, works for mouse & touch) ----------
-function attachDrag(tile){
-  let startParent, shiftX, shiftY, moved, startX, startY;
-
-  tile.addEventListener('pointerdown', (e)=>{
-    e.preventDefault();
-    if(celebrating) return;
-    startParent = tile.parentElement;
-    const rect = tile.getBoundingClientRect();
-    shiftX = e.clientX - rect.left;
-    shiftY = e.clientY - rect.top;
-    startX = e.clientX; startY = e.clientY;
-    moved = false;
-
-    tile.classList.add('dragging');
-    tile.style.position = 'fixed';
-    tile.style.width = rect.width+'px';
-    tile.style.left = rect.left+'px';
-    tile.style.top = rect.top+'px';
-    tile.style.zIndex = 1000;
-    overlayRoot().appendChild(tile); // em tela cheia, precisa ficar dentro da janela do jogo
-    // "segura" o dedo/mouse DEPOIS de mover a sílaba (mover o elemento solta a captura;
-    // sem isso, um arrasto rápido deixava a sílaba presa no ar)
-    try{ tile.setPointerCapture(e.pointerId); }catch(err){}
-    tile.dataset.lastMove = Date.now();
-    speak(tile.dataset.syl);
-  });
-
-  tile.addEventListener('pointermove', (e)=>{
-    if(!tile.classList.contains('dragging')) return;
-    tile.dataset.lastMove = Date.now();
-    if(Math.abs(e.clientX-startX) > 4 || Math.abs(e.clientY-startY) > 4) moved = true;
-    tile.style.left = (e.clientX - shiftX)+'px';
-    tile.style.top = (e.clientY - shiftY)+'px';
-
-    const chestRect = chestEl.getBoundingClientRect();
-    const tRect = tile.getBoundingClientRect();
-    const cx = tRect.left + tRect.width/2;
-    const cy = tRect.top + tRect.height/2;
-    const over = cx > chestRect.left && cx < chestRect.right && cy > chestRect.top && cy < chestRect.bottom;
-    chestEl.classList.toggle('hover-target', over);
-  });
-
-  tile.addEventListener('pointerup', (e)=>{
-    if(!tile.classList.contains('dragging')) return;
-    tile.classList.remove('dragging');
-    tile.style.position = '';
-    tile.style.width = '';
-    tile.style.left = '';
-    tile.style.top = '';
-    tile.style.zIndex = '';
-    chestEl.classList.remove('hover-target');
-
-    const chestRect = chestEl.getBoundingClientRect();
-    const tRect = tile.getBoundingClientRect();
-    const cx = e.clientX, cy = e.clientY;
-    const overChest = cx > chestRect.left && cx < chestRect.right && cy > chestRect.top && cy < chestRect.bottom;
-
-    if(!moved){
-      // it's a tap, not a drag
-      if(startParent === boxSlots){
-        // tap on a tile already in the box -> send it back to the tray
-        trayEl.appendChild(tile);
-        boxHint.style.display = boxSlots.querySelectorAll('.tile').length===0 ? 'block' : 'none';
-        clearTimeout(resetTimer);
-        updateEraseBtn();
-      } else {
-        // tap on a tile in the tray -> send it straight into the box
-        boxHint.style.display = 'none';
-        boxSlots.appendChild(tile);
-        updateEraseBtn();
-        checkBox();
-      }
-      return;
-    }
-
-    if(overChest){
-      boxHint.style.display = 'none';
-      boxSlots.appendChild(tile);
-      updateEraseBtn();
-      checkBox();
-    } else {
-      trayEl.appendChild(tile);
-      boxHint.style.display = boxSlots.querySelectorAll('.tile').length===0 ? 'block' : 'none';
-      updateEraseBtn();
-    }
-  });
-
-  // Safety net: if the browser interrupts the gesture (finger slips, OS
-  // gesture, tab switch, etc.) a 'pointercancel' fires instead of 'pointerup'
-  // and the tile could otherwise be left floating on screen forever.
-  // Always send it safely back to the tray in that case.
-  tile.addEventListener('pointercancel', ()=>{
-    if(!tile.classList.contains('dragging')) return;
-    tile.classList.remove('dragging');
-    tile.style.position = '';
-    tile.style.width = '';
-    tile.style.left = '';
-    tile.style.top = '';
-    tile.style.zIndex = '';
-    chestEl.classList.remove('hover-target');
-    trayEl.appendChild(tile);
-    boxHint.style.display = boxSlots.querySelectorAll('.tile').length===0 ? 'block' : 'none';
-    updateEraseBtn();
-  });
-}
-
-// ---------- Check box contents against target words ----------
-function checkBox(){
-  clearTimeout(resetTimer);
-  const boxTiles = Array.from(boxSlots.querySelectorAll('.tile'));
-  const attempt = boxTiles.map(t=>t.dataset.syl).join('');
-
-  const matchIdx = targets.findIndex(t => !t.formed && t.syl.join('') === attempt && boxTiles.length === t.syl.length);
-
-  if(matchIdx !== -1){
-    // success! score = current attempt points (10, or less if "Apagar" was used before)
-    const target = targets[matchIdx];
-    target.formed = true;
-    celebrating = true;
-    formedCount++;
-    updateProgress();
-    ping(true);
-
-    const earned = currentAttemptPoints;
-    roundScore += earned;
-    totalScore += earned;
-    updateScoreDisplay();
-    currentAttemptPoints = 10; // reset for the next word
-
-    celebrate(target, earned);
-
-    resetTimer = setTimeout(()=>{
-      celebrating = false;
-      boxTiles.forEach(t=>t.remove());
-      boxHint.style.display = 'block';
-      revealEl.classList.remove('show');
-      updateEraseBtn();
-      if(formedCount === targets.length){
-        roundScoreText.textContent = `+${roundScore} pontos nesta rodada`;
-        roundCompleteEl.classList.add('show');
-        sessionRanking.push({round: roundNumber, score: roundScore});
-        roundNumber++;
-        renderRanking();
-        roundTimer = setTimeout(startRound, 2200);
-      }
-    }, 3000);
-  }
-  // if no match, the tiles simply stay in the box — the child can keep
-  // adding more, or tap a tile to send it back manually. Points only drop
-  // when "Apagar" is used to clear a failed attempt (see eraseBtn handler).
-}
-
-function celebrate(target, earned){
-  // só mostra a figurinha quando a imagem desta palavra já carregou
-  setArt(revealEmoji, target.art, `Ilustração de ${target.word.toLowerCase()}`).then(()=>{
-    if(!celebrating) return;
-    revealWord.textContent = target.word;
-    revealPoints.textContent = `+${earned} pontos`;
-    revealEl.classList.add('show');
-  });
-
-  collectSticker(target.word, earned);
-  speak(target.word);
-
-  confetti(chestEl);
-}
 
 // ---------- Init ----------
 initCommon('silabas');
-renderRanking();
-updateScoreDisplay();
-startRound();
-
-// Extra safety net: every couple of seconds, check for any syllable that got
-// stuck floating (dragging state with no movement for a while) and gently
-// send it back to the tray. Covers rare edge cases the pointer events miss.
-setInterval(()=>{
-  document.querySelectorAll('.tile.dragging').forEach(tile=>{
-    const last = Number(tile.dataset.lastMove || 0);
-    if(Date.now() - last > 2500){
-      tile.classList.remove('dragging');
-      tile.style.position = '';
-      tile.style.width = '';
-      tile.style.left = '';
-      tile.style.top = '';
-      tile.style.zIndex = '';
-      chestEl.classList.remove('hover-target');
-      trayEl.appendChild(tile);
-      boxHint.style.display = boxSlots.querySelectorAll('.tile').length===0 ? 'block' : 'none';
-      updateEraseBtn();
-    }
-  });
-}, 2000);
+setLevel('simples');
