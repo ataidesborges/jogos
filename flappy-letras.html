@@ -4,70 +4,91 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Letra Voadora — Fábrica de Palavras</title>
+<meta name="theme-color" content="#6C47FF">
+<link rel="icon" href="assets/images/logo.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/flappy-letras.css">
-
 </head>
-<body>
-<div class="bg-decor" aria-hidden="true">
-  <span class="blob b1"></span>
-  <span class="blob b2"></span>
-  <span class="blob b3"></span>
-  <span class="blob b4"></span>
-</div>
-<div class="wrap">
-  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
-  <header>
-    <h1>🐦 Letra Voadora</h1>
-    <p class="subtitle">Toque para o passarinho voar e pegue as letras da palavra mostrada no topo, em qualquer ordem!</p>
-  </header>
+<body style="--accent:#3D7BF2; --accent-50:#E6EFFF; --grad:linear-gradient(135deg, #2563EB 0%, #06B6D4 100%); --glow:rgba(37,99,235,.45);">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="assets/images/logo.webp" alt="" width="36" height="36">Fábrica de Palavras</a>
+    <a class="back-link" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Todos os jogos</a>
+  </div>
+</header>
 
-  <div class="levels">
-    <button class="f-level-btn level-btn active" data-level="facil">🧩 Fácil (palavras curtas)</button>
-    <button class="f-level-btn level-btn" data-level="medio">🌟 Médio (palavras longas)</button>
+<section class="page-hero">
+  <div class="page-hero-inner">
+  <div class="page-head">
+    <span class="page-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>
+    <div>
+      <h1>Letra Voadora</h1>
+      <p class="subtitle">Toque na tela (ou aperte espaço) para o passarinho voar e pegue as letras da palavra, em qualquer ordem.</p>
+    </div>
+  </div>
+  <img class="page-art" src="assets/images/passarinho.webp" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<main class="wrap wrap-overlap">
+  <div class="game-window" id="gameWindow">
+  <div class="levels" role="group" aria-label="Nível">
+    <button class="f-level-btn level-btn active" data-level="facil">Fácil <small>palavras curtas</small></button>
+    <button class="f-level-btn level-btn" data-level="medio">Médio <small>palavras longas</small></button>
   </div>
 
   <div class="progress-row">
-    <span class="progress-pill score-pill" id="fScoreText">⭐ 0 pontos</span>
+    <span class="progress-pill score-pill" id="fScoreText">0 pontos</span>
     <span class="progress-pill lives-pill" id="fLivesText">❤️❤️❤️</span>
-    <button id="fRestartBtn" class="flappy-restart-btn small">🔄 Reiniciar</button>
-    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+    <button id="fRestartBtn" class="flappy-restart-btn small">Reiniciar</button>
+    <button id="soundBtn" title="Ligar/desligar o som"></button>
   </div>
 
   <div class="flappy-stage">
     <div class="flappy-canvas-wrap" id="fCanvasWrap">
       <div class="flappy-topbar">
-        <img class="flappy-topbar-img" id="fTargetImg" src="" alt="">
+        <img class="flappy-topbar-img" id="fTargetImg" src="assets/images/logo.webp" alt="">
         <div class="flappy-word-progress" id="fWordProgress"></div>
-        <button id="fFullscreenBtn" class="fullscreen-btn" title="Tela cheia">⛶</button>
       </div>
       <canvas id="fCanvas" width="640" height="400"></canvas>
       <div class="flappy-overlay show" id="fStartOverlay">
-        <div class="flappy-overlay-msg">👆 Toque ou aperte espaço para o passarinho voar!</div>
+        <div class="flappy-overlay-msg">Toque ou aperte espaço para o passarinho voar!</div>
       </div>
       <div class="flappy-overlay" id="fWordCompleteOverlay">
-        <div class="flappy-overlay-msg">🎉 Palavra completa! 🎉</div>
+        <div class="flappy-overlay-msg">🎉 Palavra completa!</div>
       </div>
       <div class="flappy-overlay" id="fGameOverOverlay">
         <div class="flappy-overlay-content">
-          <div class="flappy-overlay-msg">💥 Fim de jogo!</div>
-          <button id="fGameOverRestartBtn" class="flappy-restart-btn">🔄 Jogar novamente</button>
+          <div class="flappy-overlay-msg">Fim de jogo!</div>
+          <button id="fGameOverRestartBtn" class="flappy-restart-btn">Jogar novamente</button>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="gallery-wrap">
-    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
-    <button id="albumToggleBtn">Ver álbum completo</button>
-    <div class="gallery" id="gallery"></div>
   </div>
 
-  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Letra Voadora · Ilustrações geradas para este jogo</footer>
-</div>
+  <section class="card gallery-wrap" aria-labelledby="albumTitle">
+    <div class="album-head">
+      <div>
+        <h2 class="gallery-title" id="albumTitle">Álbum de figurinhas</h2>
+        <p class="album-sub" id="albumCount">0 figurinhas coletadas</p>
+      </div>
+      <button id="albumToggleBtn" aria-expanded="false">Ver álbum</button>
+    </div>
+    <div class="album-bar"><span id="albumBar"></span></div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>© Fábrica de Palavras · Jogos de alfabetização</span>
+    <a href="index.html">Ver todos os jogos</a>
+  </div>
+</footer>
 <script src="assets/js/word-bank.js"></script>
 <script src="assets/js/shared-utils.js"></script>
 <script src="assets/js/flappy-letras.js"></script>

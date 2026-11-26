@@ -3,213 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fábrica de Palavras — Jogos Educativos</title>
+<title>Fábrica de Palavras — Jogos de alfabetização para a Educação Infantil</title>
+<meta name="description" content="Jogos gratuitos de alfabetização para crianças: formar palavras com sílabas, caça-palavras, desembaralhar letras, letra voadora e jogo da memória. Funciona no computador, tablet e celular.">
+<meta name="theme-color" content="#6C47FF">
+<link rel="icon" href="assets/images/logo.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg-a:#F3EEFF;
-    --bg-b:#FFE9F4;
-    --bg-c:#E6F9FF;
-    --ink:#362A52;
-    --ink-soft:#7B6C99;
-    --card:#FFFFFF;
-    --primary:#7C5CFC;
-    --primary-dark:#5B3FE0;
-    --pink:#FF6FA0;
-    --teal:#2FD1C6;
-    --yellow:#FFC94D;
-    --green:#33D19B;
-    --orange:#FF9F5B;
-    --purple:#A78BFA;
-    --shadow: 0 6px 16px rgba(124,92,252,0.18);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    min-height:100vh;
-    font-family:'Nunito', sans-serif;
-    color:var(--ink);
-    background:
-      radial-gradient(circle at 10% 12%, var(--bg-b) 0%, transparent 42%),
-      radial-gradient(circle at 90% 10%, var(--bg-c) 0%, transparent 42%),
-      radial-gradient(circle at 12% 92%, var(--bg-c) 0%, transparent 46%),
-      radial-gradient(circle at 92% 90%, var(--bg-b) 0%, transparent 46%),
-      linear-gradient(180deg, var(--bg-a), #fff 60%);
-    background-attachment:fixed;
-    padding:40px 16px 60px;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .menu-wrap{max-width:820px; width:100%; text-align:center;}
-  h1{
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:clamp(32px, 6vw, 52px);
-    margin:0 0 10px;
-    background:linear-gradient(90deg, var(--primary), var(--pink));
-    -webkit-background-clip:text;
-    background-clip:text;
-    -webkit-text-fill-color:transparent;
-  }
-  .menu-subtitle{
-    font-size:16px;
-    font-weight:700;
-    color:var(--ink-soft);
-    max-width:520px;
-    margin:0 auto 40px;
-  }
-  .game-cards{
-    display:flex; flex-wrap:wrap; gap:26px; justify-content:center;
-  }
-  .game-card{
-    display:flex; flex-direction:column; align-items:center; gap:12px;
-    width:280px;
-    background:var(--card);
-    border-radius:28px;
-    padding:34px 24px;
-    text-decoration:none;
-    color:var(--ink);
-    box-shadow:0 10px 30px rgba(124,92,252,0.18);
-    transition: transform .18s ease, box-shadow .18s ease;
-  }
-  .game-card:hover{
-    transform:translateY(-6px);
-    box-shadow:0 18px 40px rgba(124,92,252,0.28);
-  }
-  .game-card .icon{
-    font-size:56px;
-    line-height:1;
-  }
-  .game-card h2{
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:22px;
-    margin:0;
-    color:var(--primary-dark);
-  }
-  .game-card p{
-    font-size:14px;
-    font-weight:600;
-    color:var(--ink-soft);
-    margin:0;
-  }
-  .game-card .play-btn{
-    margin-top:8px;
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:14px;
-    padding:10px 24px;
-    border-radius:16px;
-    color:#fff;
-    background:linear-gradient(135deg, var(--primary), var(--pink));
-  }
-  .game-card.caca .play-btn{
-    background:linear-gradient(135deg, var(--green), var(--teal));
-  }
-  .game-card.unscramble .play-btn{
-    background:linear-gradient(135deg, var(--yellow), var(--orange));
-  }
-  .game-card.flappy .play-btn{
-    background:linear-gradient(135deg, var(--purple), var(--primary));
-  }
-  .game-card.memoria .play-btn{
-    background:linear-gradient(135deg, var(--pink), var(--orange));
-  }
-  .game-card .new-badge{
-    font-family:'Fredoka', sans-serif;
-    font-size:12px; font-weight:700;
-    color:#fff; background:var(--pink);
-    border-radius:10px; padding:2px 10px;
-  }
-  .menu-logo{display:block; width:96px; height:96px; object-fit:contain; margin:0 auto 4px; filter:drop-shadow(0 5px 7px rgba(91,63,224,.18));}
-  .game-card:focus-visible{outline:3px solid var(--primary); outline-offset:4px;}
-  @media (max-width:640px){
-    body{padding:24px 12px 40px; align-items:flex-start;}
-    .menu-subtitle{margin-bottom:24px; font-size:15px;}
-    .game-cards{gap:14px;}
-    /* no celular os cartões viram faixas horizontais, mais fáceis de tocar */
-    .game-card{
-      width:100%;
-      display:grid;
-      grid-template-columns:56px 1fr auto;
-      grid-template-areas:"icon title btn" "icon text btn";
-      align-items:center; text-align:left;
-      gap:2px 14px;
-      padding:16px 16px;
-      border-radius:22px;
-    }
-    .game-card .icon{grid-area:icon; font-size:44px;}
-    .game-card h2{grid-area:title; font-size:19px;}
-    .game-card p{grid-area:text; font-size:13px;}
-    .game-card .play-btn{grid-area:btn; margin-top:0; padding:9px 14px;}
-    .game-card .new-badge{display:none;}
-    .menu-logo{width:72px; height:72px;}
-  }
-  .new-window-note{
-    margin-top:36px;
-    font-size:12.5px;
-    color:var(--ink-soft);
-    font-weight:600;
-    opacity:0.8;
-  }
-  footer{
-    margin-top:50px;
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:12px;
-    font-weight:600;
-    opacity:0.65;
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/home.css">
 </head>
 <body>
-  <div class="menu-wrap">
-    <img class="menu-logo" src="assets/images/logo.webp" alt="" width="96" height="96">
-    <h1>Fábrica de Palavras</h1>
-    <p class="menu-subtitle">Jogos educativos para aprender brincando! Escolha um joguinho abaixo.</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-blocks" viewBox="0 0 24 24"><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/><rect x="8" y="3" width="8" height="8" rx="2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h3c4 0 6 10 10 10h5"/><path d="M3 17h3c1.6 0 2.8-1.6 4-3.6"/><path d="M14 10.2C15.2 8.4 16.4 7 18 7h3"/><path d="m18 4 3 3-3 3"/><path d="m18 14 3 3-3 3"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="15" rx="2"/><path d="M9 3h10a2 2 0 0 1 2 2v12"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></symbol>
+</svg>
 
-    <div class="game-cards">
-      <a class="game-card silabas" href="silabas.html">
-        <span class="icon">🧩</span>
-        <h2>Formar Palavras</h2>
-        <p>Junte as sílabas certas para formar a palavra e ganhar uma figurinha!</p>
-        <span class="play-btn">Jogar &rarr;</span>
-      </a>
+<header class="topbar topbar-dark">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="assets/images/logo.webp" alt="" width="36" height="36">Fábrica de Palavras</a>
+    <nav class="topbar-nav" aria-label="Principal">
+      <a href="#jogos">Jogos</a>
+      <a href="#professores">Para professores</a>
+      <a class="nav-cta" href="silabas.html">Jogar agora</a>
+    </nav>
+  </div>
+</header>
 
-      <a class="game-card caca" href="caca-palavras.html">
-        <span class="icon">🔎</span>
-        <h2>Caça-Palavras</h2>
-        <p>Encontre as palavras escondidas na grade de letrinhas!</p>
-        <span class="play-btn">Jogar &rarr;</span>
-      </a>
+<main>
+  <!-- ===== Destaque ===== -->
+  <section class="hero">
+    <div class="hero-glow g1"></div><div class="hero-glow g2"></div><div class="hero-glow g3"></div>
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Alfabetização · Educação Infantil</span>
+        <h1>Aprender a ler <span class="hl">brincando</span>, um jogo de cada vez.</h1>
+        <p class="lead">Cinco jogos ilustrados para trabalhar sílabas, letras e vocabulário. Gratuitos, sem cadastro e prontos para usar na sala de aula ou em casa.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="#jogos">Escolher um jogo <svg class="icon"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-glass btn-lg" href="#professores">Para professores</a>
+        </div>
+        <ul class="hero-stats" aria-label="Números">
+          <li><strong>5</strong><span>jogos</span></li>
+          <li><strong>84</strong><span>palavras ilustradas</span></li>
+          <li><strong>2</strong><span>níveis em cada jogo</span></li>
+        </ul>
+      </div>
 
-      <a class="game-card unscramble" href="desembaralhar.html">
-        <span class="icon">🔀</span>
-        <h2>Desembaralhe a Palavra</h2>
-        <p>Veja a figura e toque nas letras embaralhadas para formar a palavra!</p>
-        <span class="play-btn">Jogar &rarr;</span>
-      </a>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-grid">
+          <figure class="art t1"><img src="assets/images/gato.webp" alt=""></figure>
+          <figure class="art t2"><img src="assets/images/foguete.webp" alt=""></figure>
+          <figure class="art t3"><img src="assets/images/girafa.webp" alt=""></figure>
+          <figure class="art t4"><img src="assets/images/sorvete.webp" alt=""></figure>
+          <figure class="art t5"><img src="assets/images/borboleta.webp" alt=""></figure>
+          <figure class="art t6"><img src="assets/images/bicicleta.webp" alt=""></figure>
+        </div>
+        <div class="art-chip chip-a"><span class="tile c0">GA</span><span class="tile c1">TO</span></div>
+        <div class="art-chip chip-b"><svg class="icon"><use href="#i-trophy"/></svg> +10 pontos</div>
+      </div>
+    </div>
+    <svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40c240 40 480 40 720 20S1200-10 1440 30v50H0z"/></svg>
+  </section>
 
-      <a class="game-card flappy" href="flappy-letras.html">
-        <span class="icon">🐦</span>
-        <h2>Letra Voadora</h2>
-        <p>Guie o passarinho e pegue as letras certas para soletrar a palavra!</p>
-        <span class="play-btn">Jogar &rarr;</span>
-      </a>
-
-      <a class="game-card memoria" href="memoria.html">
-        <span class="icon">🃏</span>
-        <span class="new-badge">NOVO</span>
-        <h2>Jogo da Memória</h2>
-        <p>Vire as cartas e junte cada figura com o nome dela!</p>
-        <span class="play-btn">Jogar &rarr;</span>
-      </a>
+  <!-- ===== Jogos ===== -->
+  <section class="section" id="jogos">
+    <div class="section-head">
+      <h2>Escolha um jogo</h2>
+      <p>Todos têm nível Fácil e Médio, narração das palavras e um álbum de figurinhas para colecionar.</p>
     </div>
 
-    <p class="new-window-note">Cada jogo tem seu próprio Álbum de Figurinhas, que fica salvo neste aparelho.</p>
+    <div class="games">
+      <a class="game" href="silabas.html" style="--accent:#7C3AED; --accent-50:#F3EDFF; --grad:linear-gradient(135deg, #7C3AED 0%, #C026D3 100%); --glow:rgba(124,58,237,.45);">
+        <div class="game-cover">
+          <img src="assets/images/bola.webp" alt="">
+          <div class="cover-tiles"><span class="tile c4">BO</span><span class="tile c2">LA</span></div>
+        </div>
+        <div class="game-body">
+          <div class="game-title"><span class="game-icon"><svg class="icon"><use href="#i-blocks"/></svg></span><h3>Formar Palavras</h3></div>
+          <p>Junte as sílabas na caixa mágica para formar a palavra e ganhar a figurinha.</p>
+          <div class="game-foot"><span class="tag">Sílabas</span><span class="tag">Consciência fonológica</span><span class="go">Jogar <svg class="icon"><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </a>
 
-    <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras</footer>
+      <a class="game" href="caca-palavras.html" style="--accent:#0D9488; --accent-50:#E1F7F1; --grad:linear-gradient(135deg, #0D9488 0%, #10B981 100%); --glow:rgba(16,185,129,.45);">
+        <div class="game-cover">
+          <div class="mini-grid" aria-hidden="true">
+            <span>P</span><span>X</span><span>L</span><span>U</span><span>A</span>
+            <span class="f">G</span><span class="f">A</span><span class="f">T</span><span class="f">O</span><span>M</span>
+            <span>B</span><span>Q</span><span>R</span><span>V</span><span>E</span>
+          </div>
+        </div>
+        <div class="game-body">
+          <div class="game-title"><span class="game-icon"><svg class="icon"><use href="#i-search"/></svg></span><h3>Caça-Palavras</h3></div>
+          <p>Arraste o dedo sobre as letras para encontrar as palavras escondidas na grade.</p>
+          <div class="game-foot"><span class="tag">Leitura</span><span class="tag">Atenção</span><span class="go">Jogar <svg class="icon"><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </a>
+
+      <a class="game" href="desembaralhar.html" style="--accent:#EA6A0C; --accent-50:#FFF1E2; --grad:linear-gradient(135deg, #F59E0B 0%, #F97316 100%); --glow:rgba(249,115,22,.45);">
+        <div class="game-cover">
+          <img src="assets/images/peixe.webp" alt="">
+          <div class="cover-tiles"><span class="tile c5">X</span><span class="tile c3">E</span><span class="tile c0">P</span><span class="tile c1">I</span><span class="tile c4">E</span></div>
+        </div>
+        <div class="game-body">
+          <div class="game-title"><span class="game-icon"><svg class="icon"><use href="#i-shuffle"/></svg></span><h3>Desembaralhe a Palavra</h3></div>
+          <p>Veja a figura e coloque as letras embaralhadas na ordem certa.</p>
+          <div class="game-foot"><span class="tag">Letras</span><span class="tag">Escrita</span><span class="go">Jogar <svg class="icon"><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </a>
+
+      <a class="game" href="flappy-letras.html" style="--accent:#2563EB; --accent-50:#E5EEFF; --grad:linear-gradient(135deg, #2563EB 0%, #06B6D4 100%); --glow:rgba(37,99,235,.45);">
+        <div class="game-cover">
+          <img src="assets/images/passarinho.webp" alt="">
+          <span class="bubble b1">A</span><span class="bubble b2">L</span><span class="bubble b3">O</span>
+        </div>
+        <div class="game-body">
+          <div class="game-title"><span class="game-icon"><svg class="icon"><use href="#i-plane"/></svg></span><h3>Letra Voadora</h3></div>
+          <p>Guie o passarinho e pegue as letras que formam a palavra, desviando das erradas.</p>
+          <div class="game-foot"><span class="tag">Letras</span><span class="tag">Coordenação</span><span class="go">Jogar <svg class="icon"><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </a>
+
+      <a class="game" href="memoria.html" style="--accent:#DB2777; --accent-50:#FDE7F1; --grad:linear-gradient(135deg, #DB2777 0%, #F43F5E 100%); --glow:rgba(219,39,119,.45);">
+        <div class="game-cover">
+          <div class="mini-cards" aria-hidden="true">
+            <span class="mc"><img src="assets/images/urso.webp" alt=""></span>
+            <span class="mc word">URSO</span>
+            <span class="mc back">?</span>
+          </div>
+        </div>
+        <div class="game-body">
+          <div class="game-title"><span class="game-icon"><svg class="icon"><use href="#i-cards"/></svg></span><h3>Jogo da Memória</h3><span class="new">Novo</span></div>
+          <p>Vire as cartas e junte cada figura com a palavra que dá nome a ela.</p>
+          <div class="game-foot"><span class="tag">Vocabulário</span><span class="tag">Memória</span><span class="go">Jogar <svg class="icon"><use href="#i-arrow"/></svg></span></div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Para professores ===== -->
+  <section class="section" id="professores">
+    <div class="section-head">
+      <h2>Feito para a sala de aula</h2>
+      <p>Pensado para professores(as) e famílias de crianças em fase de alfabetização.</p>
+    </div>
+    <div class="features">
+      <div class="feature f1">
+        <span class="feature-icon"><svg class="icon"><use href="#i-expand"/></svg></span>
+        <h3>Tela cheia</h3>
+        <p>Cada jogo abre em tela cheia para projetar na sala ou deixar a criança focada só no jogo.</p>
+      </div>
+      <div class="feature f2">
+        <span class="feature-icon"><svg class="icon"><use href="#i-device"/></svg></span>
+        <h3>Computador, tablet e celular</h3>
+        <p>Funciona com mouse ou com o dedo, em pé ou deitado, sem instalar nada.</p>
+      </div>
+      <div class="feature f3">
+        <span class="feature-icon"><svg class="icon"><use href="#i-volume"/></svg></span>
+        <h3>Palavras narradas</h3>
+        <p>As sílabas e palavras são faladas em voz alta, ajudando a ligar o som à escrita.</p>
+      </div>
+      <div class="feature f4">
+        <span class="feature-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
+        <h3>Sem cadastro e sem anúncios</h3>
+        <p>Nenhum dado é enviado. O álbum de figurinhas fica salvo só no próprio aparelho.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Chamada final ===== -->
+  <section class="section">
+    <div class="cta-band">
+      <div>
+        <h2>Pronto para começar?</h2>
+        <p>Abra um jogo, toque em <strong>Tela cheia</strong> e deixe a turma brincar.</p>
+      </div>
+      <a class="btn btn-lg btn-light" href="silabas.html">Começar agora <svg class="icon"><use href="#i-arrow"/></svg></a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>© Fábrica de Palavras · Jogos de alfabetização</span>
+    <a href="#jogos">Ver todos os jogos</a>
   </div>
+</footer>
 </body>
 </html>

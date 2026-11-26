@@ -229,7 +229,7 @@ function onWrong(){
 }
 
 function updateScore(){
-  uScoreText.textContent = `⭐ ${uScore} pontos`;
+  uScoreText.textContent = `${uScore} pontos`;
 }
 
 function finishGame(){

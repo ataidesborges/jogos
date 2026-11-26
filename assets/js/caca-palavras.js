@@ -148,7 +148,7 @@ function updateCacaProgress(){
   cacaProgressText.textContent = `${cacaFoundCount} / ${cacaPlaced.length} palavras encontradas`;
 }
 function updateCacaScore(){
-  cacaScoreText.textContent = `⭐ ${cacaScore} pontos`;
+  cacaScoreText.textContent = `${cacaScore} pontos`;
 }
 
 let selecting = false;

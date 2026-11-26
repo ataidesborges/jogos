@@ -7,7 +7,6 @@
 const fScoreText = document.getElementById('fScoreText');
 const fLivesText = document.getElementById('fLivesText');
 const fRestartBtn = document.getElementById('fRestartBtn');
-const fFullscreenBtn = document.getElementById('fFullscreenBtn');
 const fTargetImg = document.getElementById('fTargetImg');
 const fWordProgress = document.getElementById('fWordProgress');
 const fCanvasWrap = document.getElementById('fCanvasWrap');
@@ -83,63 +82,9 @@ fGameOverRestartBtn.addEventListener('click', (e)=>{
   resetGame();
 });
 
-let pseudoFullscreen = false;
+// (a tela cheia agora é a mesma de todos os jogos — ver shared-utils.js)
 
-function isInFullscreen(){
-  return !!(document.fullscreenElement || document.webkitFullscreenElement) || pseudoFullscreen;
-}
-
-function activatePseudoFullscreen(){
-  pseudoFullscreen = true;
-  fCanvasWrap.classList.add('pseudo-fullscreen');
-  document.body.classList.add('fs-lock');
-  updateFullscreenBtn();
-}
-function deactivatePseudoFullscreen(){
-  pseudoFullscreen = false;
-  fCanvasWrap.classList.remove('pseudo-fullscreen');
-  document.body.classList.remove('fs-lock');
-  updateFullscreenBtn();
-}
-
-function toggleFullscreen(){
-  if(isInFullscreen()){
-    if(document.fullscreenElement || document.webkitFullscreenElement){
-      const exit = document.exitFullscreen || document.webkitExitFullscreen;
-      if(exit) exit.call(document);
-    }
-    if(pseudoFullscreen) deactivatePseudoFullscreen();
-    return;
-  }
-  const req = fCanvasWrap.requestFullscreen || fCanvasWrap.webkitRequestFullscreen;
-  if(req){
-    try{
-      const result = req.call(fCanvasWrap);
-      if(result && result.then){
-        result.then(updateFullscreenBtn).catch(()=> activatePseudoFullscreen());
-      } else {
-        setTimeout(()=>{ if(!document.fullscreenElement && !document.webkitFullscreenElement) activatePseudoFullscreen(); }, 250);
-      }
-    } catch(err){
-      activatePseudoFullscreen();
-    }
-  } else {
-    activatePseudoFullscreen();
-  }
-}
-fFullscreenBtn.addEventListener('click', (e)=>{
-  e.stopPropagation();
-  toggleFullscreen();
-});
-document.addEventListener('fullscreenchange', updateFullscreenBtn);
-document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-function updateFullscreenBtn(){
-  const active = isInFullscreen();
-  fFullscreenBtn.textContent = active ? '×' : '⛶';
-  fFullscreenBtn.title = active ? 'Sair da tela cheia' : 'Tela cheia';
-}
-
-function updateScoreUI(){ fScoreText.textContent = `⭐ ${score} pontos`; }
+function updateScoreUI(){ fScoreText.textContent = `${score} pontos`; }
 function updateLivesUI(){
   fLivesText.textContent = lives > 0 ? '❤️'.repeat(lives) : '💔';
 }
@@ -231,7 +176,6 @@ function startRun(){
 }
 
 function handlePointer(e){
-  if(e.target.closest && e.target.closest('#fFullscreenBtn')) return;
   e.preventDefault();
   if(phase === 'over'){ resetGame(); return; }
   if(phase === 'falling' || phase === 'celebrating') return;
@@ -246,9 +190,7 @@ window.addEventListener('keydown', (e)=>{
     if(phase === 'falling' || phase === 'celebrating') return;
     startRun();
     jump();
-  }
-  if(e.key === 'Escape' && pseudoFullscreen){ deactivatePseudoFullscreen(); }
-});
+  }});
 
 function spawnBubble(){
   const cfg = LEVELS[fLevel];

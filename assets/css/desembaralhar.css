@@ -1,158 +1,115 @@
+/* ============================================================
+   Desembaralhe a Palavra
+   ============================================================ */
 .unscramble-card{
-    width:min(92vw, 320px);
-    background:var(--card);
-    border-radius:28px;
-    padding:18px;
-    text-align:center;
-    box-shadow:0 4px 20px rgba(124,92,252,0.12);
-    margin:0 auto 22px;
-  }
-  .unscramble-card .word-art{
-    width:100%;
-    max-width:240px;
-    height:200px;
-    object-fit:contain;
-    margin:0 auto 10px;
-    display:block;
-  }
-  .unscramble-question{
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:16px;
-    color:var(--ink-soft);
-    margin:0;
-  }
+  width:min(100%, 300px);
+  background:var(--surface-2);
+  border-radius:20px;
+  padding:14px 14px 12px;
+  text-align:center;
+  margin:0 auto;
+}
+.unscramble-card .word-art{
+  width:100%; max-width:240px; height:190px;
+  object-fit:contain;
+  margin:0 auto 8px;
+  display:block;
+  border-radius:14px;
+}
+.unscramble-question{
+  font-weight:800; font-size:15px;
+  color:var(--ink-soft);
+  margin:0;
+}
 
-  .reveal-msg{
-    display:block;
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:20px;
-    color:var(--green);
-  }
+.reveal-msg{
+  display:block;
+  font-family:var(--font-display); font-weight:600; font-size:20px;
+  color:#13804B;
+  margin-bottom:4px;
+}
 
-  /* As casinhas encolhem para a palavra inteira caber numa linha só,
-     até nas palavras longas (ex.: PASSARINHO) no celular. */
-  #uSlots{ gap:6px; flex-wrap:nowrap; }
-  .tile-slot{
-    --slot: min(52px, calc((min(92vw, 460px) - 52px) / var(--letters, 4) - 6px));
-    width:var(--slot); height:calc(var(--slot) * 1.15);
-    min-width:0;
-    padding:0;
-    display:inline-flex; align-items:center; justify-content:center;
-    border-radius:12px;
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:calc(var(--slot) * 0.46);
-  }
-  .tile-slot.empty{
-    border:3px dashed rgba(255,255,255,0.6);
-    background:rgba(255,255,255,0.14);
-  }
-  .tile-slot.filled{
-    color:#fff;
-    cursor:pointer;
-  }
-  .tile-slot.shake{animation: shakeSlot .4s ease;}
-  @keyframes shakeSlot{
-    0%,100%{transform:translateX(0);}
-    20%{transform:translateX(-6px);}
-    40%{transform:translateX(6px);}
-    60%{transform:translateX(-4px);}
-    80%{transform:translateX(4px);}
-  }
+/* As casinhas encolhem para a palavra inteira caber numa linha só,
+   até nas palavras longas (ex.: PASSARINHO) no celular. */
+#uSlots{gap:6px; flex-wrap:nowrap;}
+.tile-slot{
+  --slot:min(52px, calc(min(100vw - 96px, 430px) / var(--letters, 4) - 6px));
+  width:var(--slot); height:calc(var(--slot) * 1.15);
+  min-width:0;
+  padding:0;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:12px;
+  font-family:var(--font-display); font-weight:600;
+  font-size:calc(var(--slot) * 0.46);
+}
+.tile-slot.empty{
+  border:2px dashed rgba(255,255,255,.45);
+  background:rgba(255,255,255,.1);
+}
+.tile-slot.filled{color:#fff; cursor:pointer;}
+.tile-slot.shake{animation:shakeSlot .4s ease;}
+@keyframes shakeSlot{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-6px);}
+  40%{transform:translateX(6px);}
+  60%{transform:translateX(-4px);}
+  80%{transform:translateX(4px);}
+}
 
-  .tile.used{
-    display:none;
-  }
-  .tile.hint{
-    animation: hintPulse 1.4s ease infinite;
-  }
-  @keyframes hintPulse{
-    0%,100%{ box-shadow: 0 6px 0 rgba(0,0,0,0.14), 0 10px 18px rgba(0,0,0,0.12); }
-    50%{ box-shadow: 0 0 0 6px rgba(255,201,77,0.55), 0 10px 18px rgba(0,0,0,0.12); }
-  }
+.tile.used{display:none;}
+.tile.hint{animation:hintPulse 1.4s ease infinite;}
+@keyframes hintPulse{
+  0%,100%{box-shadow:inset 0 -4px 0 rgba(0,0,0,.16), 0 2px 6px rgba(30,25,64,.12);}
+  50%{box-shadow:inset 0 -4px 0 rgba(0,0,0,.16), 0 0 0 6px rgba(255,185,56,.55);}
+}
 
-  .try-again-msg{
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:14px;
-    color:var(--pink);
-    text-align:center;
-    min-height:20px;
-    opacity:0;
-    transition: opacity .2s ease;
-  }
-  .try-again-msg.show{opacity:1;}
+.try-again-msg{
+  font-weight:800; font-size:14px;
+  color:#C2386F;
+  text-align:center;
+  min-height:20px;
+  margin:-8px 0;
+  opacity:0;
+  transition:opacity .2s ease;
+}
+.try-again-msg.show{opacity:1;}
 
-  .hint-btn{
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:14px;
-    padding:9px 20px;
-    border-radius:18px;
-    border:none;
-    background:linear-gradient(135deg, var(--yellow), var(--orange));
-    color:#fff;
-    cursor:pointer;
-    box-shadow:0 8px 18px rgba(255,201,77,0.35);
-    transition: transform .15s ease;
-  }
-  .hint-btn:hover{transform:translateY(-2px);}
-  .hint-btn:active{transform:translateY(1px);}
+.next-word-btn{margin-top:12px; pointer-events:auto;}
 
-  .next-word-btn{
-    margin-top:14px;
-    display:inline-block;
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:14px;
-    padding:10px 22px;
-    border-radius:16px;
-    border:none;
-    background:linear-gradient(135deg, var(--primary), var(--pink));
-    color:#fff;
-    cursor:pointer;
-    pointer-events:auto;
-  }
-  .next-word-btn:hover{transform:translateY(-2px);}
+.final-screen{
+  display:none;
+  max-width:440px;
+  text-align:center;
+  margin:8px auto;
+  padding:28px 20px;
+}
+.final-screen.show{display:block; animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
+.final-screen .msg{font-family:var(--font-display); font-weight:600; font-size:26px; color:#13804B; margin-bottom:6px;}
+.final-screen .final-score{font-weight:700; font-size:16px; color:var(--ink-soft); margin-bottom:18px;}
 
-  .final-screen{
-    display:none;
-    width:min(92vw, 460px);
-    background:var(--card);
-    border-radius:28px;
-    padding:34px 24px;
-    text-align:center;
-    box-shadow:0 10px 30px rgba(124,92,252,0.18);
-    margin:0 auto;
+/* Tela cheia: figura menor e menos espaços, para tudo caber sem rolar */
+.game-window.is-fs #uStage{gap:12px;}
+.game-window.is-fs .unscramble-card{padding:10px; width:min(92vw, 280px);}
+.game-window.is-fs .unscramble-card .word-art{height:min(22vh, 200px); margin-bottom:4px;}
+.game-window.is-fs .unscramble-question{font-size:14px;}
+.game-window.is-fs .chest{min-height:0;}
+.game-window.is-fs .tray{min-height:0; padding:12px;}
+.game-window.is-fs .try-again-msg{margin:0;}
+/* tela deitada: figura de um lado, resposta e letras do outro */
+@media (min-aspect-ratio: 5/4){
+  .game-window.is-fs #uStage{
+    display:grid;
+    grid-template-columns:auto minmax(0, 520px);
+    grid-template-areas:"card chest" "card msg" "card tray";
+    justify-content:center; align-items:center;
+    column-gap:20px;
   }
-  .final-screen.show{display:block; animation: popIn .35s cubic-bezier(.34,1.56,.64,1);}
-  .final-screen .msg{
-    font-family:'Fredoka', sans-serif;
-    font-weight:700;
-    font-size:24px;
-    color:var(--green);
-    margin-bottom:8px;
-  }
-  .final-screen .final-score{
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:16px;
-    color:var(--ink-soft);
-    margin-bottom:18px;
-  }
-  .restart-btn{
-    font-family:'Fredoka', sans-serif;
-    font-weight:600;
-    font-size:15px;
-    padding:10px 24px;
-    border-radius:18px;
-    border:none;
-    background:linear-gradient(135deg, var(--green), var(--teal));
-    color:#fff;
-    cursor:pointer;
-    box-shadow:0 8px 18px rgba(51,209,155,0.35);
-    transition: transform .15s ease;
-  }
-  .restart-btn:hover{transform:translateY(-2px);}
+  .game-window.is-fs .unscramble-card{grid-area:card; width:min(34vw, 300px);}
+  .game-window.is-fs .unscramble-card .word-art{height:min(45vh, 220px);}
+  .game-window.is-fs .chest-area{grid-area:chest; width:100%;}
+  .game-window.is-fs .try-again-msg{grid-area:msg;}
+  .game-window.is-fs .tray{grid-area:tray; width:100%;}
+}
+@media (max-width:640px){
+  .unscramble-card .word-art{height:150px;}
+}

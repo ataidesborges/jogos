@@ -67,7 +67,7 @@ function updateEraseBtn(){
 }
 
 function updateScoreDisplay(){
-  scoreText.textContent = `⭐ ${totalScore} pontos`;
+  scoreText.textContent = `${totalScore} pontos`;
 }
 
 function renderRanking(){
@@ -147,7 +147,6 @@ function attachDrag(tile){
   tile.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
     if(celebrating) return;
-    tile.setPointerCapture(e.pointerId);
     startParent = tile.parentElement;
     const rect = tile.getBoundingClientRect();
     shiftX = e.clientX - rect.left;
@@ -161,7 +160,10 @@ function attachDrag(tile){
     tile.style.left = rect.left+'px';
     tile.style.top = rect.top+'px';
     tile.style.zIndex = 1000;
-    document.body.appendChild(tile);
+    overlayRoot().appendChild(tile); // em tela cheia, precisa ficar dentro da janela do jogo
+    // "segura" o dedo/mouse DEPOIS de mover a sílaba (mover o elemento solta a captura;
+    // sem isso, um arrasto rápido deixava a sílaba presa no ar)
+    try{ tile.setPointerCapture(e.pointerId); }catch(err){}
     tile.dataset.lastMove = Date.now();
     speak(tile.dataset.syl);
   });

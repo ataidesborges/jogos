@@ -4,80 +4,102 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Desembaralhe a Palavra — Fábrica de Palavras</title>
+<meta name="theme-color" content="#6C47FF">
+<link rel="icon" href="assets/images/logo.webp" type="image/webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/desembaralhar.css">
-
 </head>
-<body>
-<div class="bg-decor" aria-hidden="true">
-  <span class="blob b1"></span>
-  <span class="blob b2"></span>
-  <span class="blob b3"></span>
-  <span class="blob b4"></span>
-</div>
-<div class="wrap">
-  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
-  <header>
-    <h1>🔀 Desembaralhe a Palavra</h1>
-    <p class="subtitle">Olhe a figura e toque nas letras embaralhadas, na ordem certa, para formar o nome dela!</p>
-  </header>
+<body style="--accent:#E58A00; --accent-50:#FFF3DC; --grad:linear-gradient(135deg, #F59E0B 0%, #F97316 100%); --glow:rgba(249,115,22,.45);">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="assets/images/logo.webp" alt="" width="36" height="36">Fábrica de Palavras</a>
+    <a class="back-link" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Todos os jogos</a>
+  </div>
+</header>
 
-  <div class="levels">
-    <button class="u-level-btn level-btn active" data-level="facil">🧩 Fácil (palavras curtas)</button>
-    <button class="u-level-btn level-btn" data-level="medio">🌟 Médio (palavras longas)</button>
+<section class="page-hero">
+  <div class="page-hero-inner">
+  <div class="page-head">
+    <span class="page-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3c4 0 6 10 10 10h5"/><path d="M3 17h3c1.6 0 2.8-1.6 4-3.6"/><path d="M14 10.2C15.2 8.4 16.4 7 18 7h3"/><path d="m18 4 3 3-3 3"/><path d="m18 14 3 3-3 3"/></svg></span>
+    <div>
+      <h1>Desembaralhe a Palavra</h1>
+      <p class="subtitle">Olhe a figura e toque nas letras embaralhadas, na ordem certa, para formar o nome dela.</p>
+    </div>
+  </div>
+  <img class="page-art" src="assets/images/peixe.webp" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<main class="wrap wrap-overlap">
+  <div class="game-window" id="gameWindow">
+  <div class="levels" role="group" aria-label="Nível">
+    <button class="u-level-btn level-btn active" data-level="facil">Fácil <small>palavras curtas</small></button>
+    <button class="u-level-btn level-btn" data-level="medio">Médio <small>palavras longas</small></button>
   </div>
 
   <div class="progress-row">
-    <span class="progress-pill" id="uProgressText">Palavra 1 de 1</span>
-    <span class="progress-pill score-pill" id="uScoreText">⭐ 0 pontos</span>
-    <button id="uHintBtn" class="hint-btn">💡 Dica</button>
-    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+    <span class="progress-pill" id="uProgressText">Palavra 1 de 10</span>
+    <span class="progress-pill score-pill" id="uScoreText">0 pontos</span>
+    <button id="uHintBtn" class="hint-btn">Dica</button>
+    <button id="soundBtn" title="Ligar/desligar o som"></button>
   </div>
 
   <div class="stage" id="uStage">
     <div class="unscramble-card">
-      <img class="word-art" id="uImage" src="" alt="">
-      <p class="unscramble-question">Qual é o nome dessa imagem?</p>
+      <img class="word-art" id="uImage" src="assets/images/logo.webp" alt="">
+      <p class="unscramble-question">Qual é o nome dessa figura?</p>
     </div>
 
     <div class="chest-area">
       <div class="chest" id="uChest">
         <div class="chest-label-row">
-          <div class="chest-label">SUA RESPOSTA</div>
-          <button id="uEraseBtn" class="erase-btn visible" title="Apagar tudo">🧽 Apagar</button>
+          <div class="chest-label">Sua resposta</div>
+          <button id="uEraseBtn" class="erase-btn visible" title="Apagar tudo">Apagar</button>
         </div>
         <div class="box-slots" id="uSlots"></div>
       </div>
       <div class="reveal" id="uReveal">
-        <span class="reveal-msg" id="uRevealMsg">🎉 Você acertou! 🎉</span>
+        <span class="reveal-msg" id="uRevealMsg">🎉 Você acertou!</span>
         <span class="word" id="uRevealWord">PALAVRA</span>
         <span class="points" id="uRevealPoints">+10 pontos</span>
-        <button id="uNextBtn" class="next-word-btn">➡️ Próxima palavra</button>
+        <button id="uNextBtn" class="next-word-btn">Próxima palavra</button>
       </div>
     </div>
 
-    <p class="try-again-msg" id="uTryAgainMsg">Quase lá! Tente de novo 😊</p>
+    <p class="try-again-msg" id="uTryAgainMsg">Quase lá! Tente de novo.</p>
 
     <div class="tray" id="uTray"></div>
   </div>
 
   <div class="final-screen" id="uFinalScreen">
-    <div class="msg">🎉 PARABÉNS! 🎉</div>
+    <div class="msg">🎉 Parabéns!</div>
     <div class="final-score" id="uFinalScoreText">Você terminou o jogo! Pontuação final: 0 pontos</div>
-    <button id="uRestartBtn" class="restart-btn">🔄 Jogar novamente</button>
+    <button id="uRestartBtn" class="restart-btn">Jogar novamente</button>
+  </div>
   </div>
 
-  <div class="gallery-wrap">
-    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
-    <button id="albumToggleBtn">Ver álbum completo</button>
+  <section class="card gallery-wrap" aria-labelledby="albumTitle">
+    <div class="album-head">
+      <div>
+        <h2 class="gallery-title" id="albumTitle">Álbum de figurinhas</h2>
+        <p class="album-sub" id="albumCount">0 figurinhas coletadas</p>
+      </div>
+      <button id="albumToggleBtn" aria-expanded="false">Ver álbum</button>
+    </div>
+    <div class="album-bar"><span id="albumBar"></span></div>
     <div class="gallery" id="gallery"></div>
-  </div>
+  </section>
+</main>
 
-  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Desembaralhe a Palavra · Ilustrações geradas para este jogo</footer>
-</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>© Fábrica de Palavras · Jogos de alfabetização</span>
+    <a href="index.html">Ver todos os jogos</a>
+  </div>
+</footer>
 <script src="assets/js/word-bank.js"></script>
 <script src="assets/js/shared-utils.js"></script>
 <script src="assets/js/desembaralhar.js"></script>

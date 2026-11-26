@@ -6,6 +6,17 @@
 // ---------- Todas as palavras (para o álbum de figurinhas) ----------
 const ALL_WORDS = [...WORDS.facil, ...WORDS.medio];
 
+// ---------- Ícones (traço simples, herdam a cor do texto) ----------
+const ICONS = {
+  soundOn:  '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+  soundOff: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>',
+  expand:   '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  shrink:   '<path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/>',
+};
+function icon(name){
+  return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+}
+
 // ---------- Som ligado/desligado (lembrado entre visitas) ----------
 let audioEnabled = localStorage.getItem('fp-som') !== 'off';
 
@@ -13,7 +24,7 @@ function setupSoundButton(){
   const btn = document.getElementById('soundBtn');
   if(!btn) return;
   const paint = ()=>{
-    btn.textContent = audioEnabled ? '🔊' : '🔇';
+    btn.innerHTML = icon(audioEnabled ? 'soundOn' : 'soundOff');
     btn.classList.toggle('muted', !audioEnabled);
     btn.setAttribute('aria-label', audioEnabled ? 'Desligar o som' : 'Ligar o som');
   };
@@ -84,7 +95,7 @@ function confetti(anchor){
       borderRadius:Math.random()>0.5 ? '50%' : '3px',
       zIndex:3000, pointerEvents:'none',
     });
-    document.body.appendChild(p);
+    overlayRoot().appendChild(p);
     const angle = (Math.random()*Math.PI) - Math.PI;
     const dist = 80 + Math.random()*140;
     const dx = Math.cos(angle)*dist;
@@ -122,7 +133,7 @@ function setupAlbum(gameId){
   const gallery = document.getElementById('gallery');
   toggle.addEventListener('click', ()=>{
     const open = gallery.classList.toggle('open');
-    toggle.textContent = open ? 'Esconder álbum' : 'Ver álbum completo';
+    toggle.textContent = open ? 'Esconder álbum' : 'Ver álbum';
     toggle.setAttribute('aria-expanded', open);
   });
   renderAlbum();
@@ -136,10 +147,12 @@ function collectSticker(word, earned){
 }
 
 function renderAlbum(){
-  const title = document.getElementById('albumTitle');
+  const count = document.getElementById('albumCount');
+  const bar = document.getElementById('albumBar');
   const gallery = document.getElementById('gallery');
   const total = ALL_WORDS.filter(w => collectedScores.has(w.word)).length;
-  title.textContent = `🏆 Álbum de Figurinhas — ${total}/${ALL_WORDS.length} coletadas`;
+  if(count) count.textContent = `${total} de ${ALL_WORDS.length} figurinhas coletadas`;
+  if(bar) bar.style.width = (100 * total / ALL_WORDS.length) + '%';
   gallery.innerHTML = '';
   ALL_WORDS.forEach(w=>{
     const pts = collectedScores.get(w.word);
@@ -147,13 +160,77 @@ function renderAlbum(){
     el.className = 'sticker ' + (pts ? 'unlocked' : 'locked');
     el.innerHTML = pts
       ? `<img class="word-art" src="${w.art}" alt="${w.word.toLowerCase()}" loading="lazy"><span>${w.word}</span><span class="sticker-score">+${pts} pts</span>`
-      : `<img class="word-art" src="${LOCKED_ART}" alt="Figurinha bloqueada" loading="lazy"><span>?????</span>`;
+      : `<span class="sticker-lock" aria-hidden="true">?</span><span>???</span>`;
     gallery.appendChild(el);
   });
 }
 
-// Liga o botão de som e o álbum de um jogo
+// ---------- Tela cheia (só a "janela do jogo": níveis, pontos e o jogo) ----------
+// Usa o elemento #gameWindow da página. Onde o navegador não deixa colocar um
+// elemento em tela cheia (ex.: iPhone), a janela ocupa a tela inteira da página.
+const gameWindow = document.getElementById('gameWindow');
+
+// Onde colocar elementos flutuantes (confete, sílaba sendo arrastada): em tela
+// cheia de verdade, só o que está dentro da janela do jogo aparece.
+function overlayRoot(){
+  if(gameWindow && gameWindow.classList.contains('is-fs')) return gameWindow;
+  return document.fullscreenElement || document.webkitFullscreenElement || document.body;
+}
+
+function setupFullscreen(){
+  if(!gameWindow) return;
+  const row = gameWindow.querySelector('.progress-row');
+  const btn = document.createElement('button');
+  btn.id = 'fsBtn';
+  btn.className = 'fs-btn';
+  row.appendChild(btn);
+
+  let pseudo = false;
+  const isNative = ()=> (document.fullscreenElement || document.webkitFullscreenElement) === gameWindow;
+
+  const paint = ()=>{
+    const on = isNative() || pseudo;
+    gameWindow.classList.toggle('is-fs', on);
+    gameWindow.classList.toggle('is-pseudo', pseudo);
+    document.body.classList.toggle('fs-lock', on);
+    btn.innerHTML = on
+      ? `${icon('shrink')}<span class="fs-label">Sair da tela cheia</span>`
+      : `${icon('expand')}<span class="fs-label">Tela cheia</span>`;
+    btn.setAttribute('aria-label', on ? 'Sair da tela cheia' : 'Tela cheia');
+    btn.setAttribute('aria-pressed', on);
+    window.dispatchEvent(new Event('resize'));
+  };
+  const setPseudo = (v)=>{ pseudo = v; paint(); };
+
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    btn.blur(); // evita que a barra de espaço do jogo aperte o botão de novo
+    if(isNative()){
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      return;
+    }
+    if(pseudo){ setPseudo(false); return; }
+    const req = gameWindow.requestFullscreen || gameWindow.webkitRequestFullscreen;
+    if(!req){ setPseudo(true); return; }
+    try{
+      const r = req.call(gameWindow);
+      if(r && r.catch) r.catch(()=> setPseudo(true));
+      // se o navegador não responder (alguns apps e tablets), usa o modo da página
+      setTimeout(()=>{ if(!isNative() && !pseudo) setPseudo(true); }, 700);
+    }catch(err){ setPseudo(true); }
+  });
+  const onChange = ()=>{ if(isNative()) pseudo = false; paint(); };
+  document.addEventListener('fullscreenchange', onChange);
+  document.addEventListener('webkitfullscreenchange', onChange);
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && pseudo) setPseudo(false);
+  });
+  paint();
+}
+
+// Liga o botão de som, o álbum e a tela cheia de um jogo
 function initCommon(gameId){
   setupSoundButton();
   setupAlbum(gameId);
+  setupFullscreen();
 }

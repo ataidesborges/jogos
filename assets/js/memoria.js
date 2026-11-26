@@ -114,7 +114,7 @@ function flipCard(card){
 
 function updateMemoryUI(){
   mProgressText.textContent = `${mPairsFound} / ${mCards.length/2} pares · ${mMoves} jogadas`;
-  mScoreText.textContent = `⭐ ${mScore} pontos`;
+  mScoreText.textContent = `${mScore} pontos`;
 }
 
 function finishMemory(){
