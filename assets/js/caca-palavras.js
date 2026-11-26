@@ -210,14 +210,19 @@ function sameCellSet(a,b){
   return A === B;
 }
 
+let cacaRevealToken = 0;
 function cacaCelebrate(match, earned){
-  cacaRevealImg.src = match.art;
-  cacaRevealImg.alt = `Ilustração de ${match.word.toLowerCase()}`;
-  cacaRevealWord.textContent = match.word;
-  cacaRevealPoints.textContent = `+${earned} pontos`;
-  cacaReveal.classList.add('show');
+  // esconde a figurinha anterior e só mostra a nova quando a imagem certa carregou
+  const token = ++cacaRevealToken;
   clearTimeout(cacaRevealTimer);
-  cacaRevealTimer = setTimeout(()=> cacaReveal.classList.remove('show'), 1700);
+  cacaReveal.classList.remove('show');
+  setArt(cacaRevealImg, match.art, `Ilustração de ${match.word.toLowerCase()}`).then(()=>{
+    if(token !== cacaRevealToken) return; // outra palavra foi achada nesse meio-tempo
+    cacaRevealWord.textContent = match.word;
+    cacaRevealPoints.textContent = `+${earned} pontos`;
+    cacaReveal.classList.add('show');
+    cacaRevealTimer = setTimeout(()=> cacaReveal.classList.remove('show'), 1700);
+  });
 
   collectSticker(match.word, earned);
   speak(match.word);

@@ -108,6 +108,35 @@ function confetti(anchor){
   }
 }
 
+// ---------- Imagens das palavras ----------
+// Troca a imagem de um <img> e só avisa quando a nova já carregou — assim a
+// figurinha nunca aparece com a imagem da palavra anterior.
+function setArt(img, src, alt){
+  img.alt = alt || '';
+  return new Promise(resolve=>{
+    let finished = false;
+    const done = ()=>{
+      if(finished) return;
+      finished = true;
+      img.style.visibility = '';
+      resolve();
+    };
+    if(img.getAttribute('src') === src && img.complete && img.naturalWidth){ done(); return; }
+    img.style.visibility = 'hidden';
+    img.onload = img.onerror = done;
+    img.src = src;
+    if(img.complete && img.naturalWidth) done();
+    setTimeout(done, 1500); // se a internet estiver lenta, mostra mesmo assim
+  });
+}
+
+// Baixa todas as imagens em segundo plano, para aparecerem na hora no jogo
+function preloadArt(){
+  const run = ()=> ALL_WORDS.forEach(w=>{ const i = new Image(); i.src = w.art; });
+  if('requestIdleCallback' in window) requestIdleCallback(run, {timeout:3000});
+  else setTimeout(run, 1200);
+}
+
 // ---------- Embaralhar array ----------
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
@@ -172,13 +201,19 @@ const gameWindow = document.getElementById('gameWindow');
 
 // Onde colocar elementos flutuantes (confete, sílaba sendo arrastada): em tela
 // cheia de verdade, só o que está dentro da janela do jogo aparece.
+// Usa uma camada própria (não muda o layout da janela; antes a sílaba arrastada
+// virava o "último item" da janela e a página inteira pulava para baixo).
+let fsLayer = null;
 function overlayRoot(){
-  if(gameWindow && gameWindow.classList.contains('is-fs')) return gameWindow;
+  if(gameWindow && gameWindow.classList.contains('is-fs') && fsLayer) return fsLayer;
   return document.fullscreenElement || document.webkitFullscreenElement || document.body;
 }
 
 function setupFullscreen(){
   if(!gameWindow) return;
+  fsLayer = document.createElement('div');
+  fsLayer.className = 'fs-layer';
+  gameWindow.appendChild(fsLayer);
   const row = gameWindow.querySelector('.progress-row');
   const btn = document.createElement('button');
   btn.id = 'fsBtn';
@@ -233,4 +268,5 @@ function initCommon(gameId){
   setupSoundButton();
   setupAlbum(gameId);
   setupFullscreen();
+  preloadArt();
 }

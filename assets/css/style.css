@@ -481,9 +481,19 @@ h1,h2,h3{font-family:var(--font-display); font-weight:600; line-height:1.15; mar
   border:none; border-radius:0; box-shadow:none;
   background:var(--bg);
 }
-/* centraliza na vertical sem cortar o topo quando o jogo é mais alto que a tela */
-.game-window.is-fs > :first-child{margin-top:auto;}
-.game-window.is-fs > :last-child{margin-bottom:auto;}
+/* centraliza na vertical sem cortar o topo quando o jogo é mais alto que a tela
+   (o primeiro item é sempre .levels; o último real fica antes da .fs-layer) */
+.game-window.is-fs > .levels{margin-top:auto;}
+.game-window.is-fs > :nth-last-child(2){margin-bottom:auto;}
+/* camada para o que flutua na tela cheia (sílaba arrastada, confete) */
+.fs-layer{display:none;}
+.game-window.is-fs > .fs-layer{
+  display:block;
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:2500;
+}
+.fs-layer > *{pointer-events:auto;}
 .game-window.is-pseudo{
   position:fixed; inset:0;
   height:100vh; height:100dvh;
@@ -492,9 +502,12 @@ h1,h2,h3{font-family:var(--font-display); font-weight:600; line-height:1.15; mar
 .game-window.is-fs .levels{margin-bottom:10px;}
 .game-window.is-fs .progress-row{margin-bottom:16px; padding-bottom:14px;}
 body.fs-lock{overflow:hidden;}
+/* o painel do jogo fica acima da barra do topo do site enquanto está em tela cheia */
+body.fs-lock .wrap-overlap{z-index:3000;}
 /* celular deitado: esconde os botões de nível para sobrar espaço pro jogo */
 @media (max-height:500px){
   .game-window.is-fs .levels{display:none;}
+  .game-window.is-fs > .progress-row{margin-top:auto;}
   .game-window.is-fs{padding-top:8px;}
   .game-window.is-fs .progress-row{margin:0 0 8px; padding-bottom:8px;}
 }

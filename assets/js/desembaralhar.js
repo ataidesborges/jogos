@@ -95,8 +95,7 @@ function loadWord(){
   uSolved = false;
   const w = uWordList[uWordIdx];
   uSlots.style.setProperty('--letters', w.word.length);
-  uImage.src = w.art;
-  uImage.alt = `Ilustração de ${w.word.toLowerCase()}`;
+  setArt(uImage, w.art, `Ilustração de ${w.word.toLowerCase()}`); // não mostra a figura anterior
   uProgressText.textContent = `Palavra ${uWordIdx+1} de ${uWordList.length}`;
 
   uTiles = scrambledLetters(w.word);

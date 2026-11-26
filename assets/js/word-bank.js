@@ -101,7 +101,8 @@ const LOCKED_ART = IMG_DIR + 'cat-nature.webp'; // figurinha ainda não coletada
 
 // Imagem de cada palavra (arquivos em assets/images/).
 // Palavras do banco que NÃO estão nesta lista ficam fora dos jogos
-// (ex.: VACA e VELA, que ainda não têm imagem). Para incluir uma palavra nova:
+// (ex.: VACA, VELA e AVÓ, que ainda não têm imagem — a antiga "avó" era a
+// mesma figura do avô). Para incluir uma palavra nova:
 //   1. coloque a imagem em assets/images/ (ex.: vaca.webp)
 //   2. adicione a linha  "VACA": 'vaca.webp',  aqui embaixo
 const INDIVIDUAL_ART = {
@@ -151,8 +152,7 @@ const INDIVIDUAL_ART = {
   "LEITE": 'leite.webp',
   "BALÃO": 'balao.webp',
   "ANEL": 'anel.webp',
-  "AVÓ": 'avo.webp',
-  "AVÔ": 'avo-2.webp',
+  "AVÔ": 'avo.webp',
   "FITA": 'fita.webp',
   "TORRE": 'torre.webp',
   "PINGUIM": 'pinguim.webp',

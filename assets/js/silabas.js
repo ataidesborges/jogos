@@ -134,7 +134,32 @@ function startRound(){
   updateEraseBtn();
 
   updateProgress();
+  roundTilesHtml = Array.from(trayEl.querySelectorAll('.tile')).map(t => t.outerHTML).join('');
+  lockTrayHeight();
 }
+let roundTilesHtml = '';
+
+// A bandeja guarda a altura do começo da rodada: quando as sílabas saem dela,
+// ela não encolhe e o jogo não "pula" na tela (principalmente em tela cheia).
+function lockTrayHeight(){
+  trayEl.style.minHeight = '';
+  trayEl.style.minHeight = trayEl.offsetHeight + 'px';
+}
+// Ao mudar o tamanho da tela (ex.: entrar na tela cheia), mede de novo a altura
+// que a bandeja teria com TODAS as sílabas da rodada, usando uma cópia invisível.
+let trayResizeTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(trayResizeTimer);
+  trayResizeTimer = setTimeout(()=>{
+    const clone = trayEl.cloneNode(false);
+    clone.removeAttribute('id');
+    clone.style.cssText = 'position:absolute; visibility:hidden; pointer-events:none; left:0; top:0; min-height:0; width:' + trayEl.offsetWidth + 'px';
+    clone.innerHTML = '<div class="tray-label">SÍLABAS</div>' + roundTilesHtml;
+    trayEl.parentElement.appendChild(clone);
+    trayEl.style.minHeight = clone.offsetHeight + 'px';
+    clone.remove();
+  }, 120);
+});
 
 function updateProgress(){
   progressText.textContent = `${formedCount} / ${targets.length} palavras nesta rodada`;
@@ -294,11 +319,13 @@ function checkBox(){
 }
 
 function celebrate(target, earned){
-  revealEmoji.src = target.art;
-  revealEmoji.alt = `Ilustração de ${target.word.toLowerCase()}`;
-  revealWord.textContent = target.word;
-  revealPoints.textContent = `+${earned} pontos`;
-  revealEl.classList.add('show');
+  // só mostra a figurinha quando a imagem desta palavra já carregou
+  setArt(revealEmoji, target.art, `Ilustração de ${target.word.toLowerCase()}`).then(()=>{
+    if(!celebrating) return;
+    revealWord.textContent = target.word;
+    revealPoints.textContent = `+${earned} pontos`;
+    revealEl.classList.add('show');
+  });
 
   collectSticker(target.word, earned);
   speak(target.word);

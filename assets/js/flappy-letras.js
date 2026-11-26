@@ -136,8 +136,7 @@ function loadWord(){
   popEffects = [];
   spawnTimer = 0;
   waitSinceCorrect = 0;
-  fTargetImg.src = currentWordObj.art;
-  fTargetImg.alt = `Ilustração de ${currentWordObj.word.toLowerCase()}`;
+  setArt(fTargetImg, currentWordObj.art, `Ilustração de ${currentWordObj.word.toLowerCase()}`);
   updateProgressUI();
 }
 
