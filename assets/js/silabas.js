@@ -250,7 +250,7 @@ function tapSyllable(btn){
   }
   const syl = btn.dataset.syl;
   typed.push(syl);
-  speak(syl.toLowerCase());
+  speakSyllable(syl);
   btn.classList.add('flash');
   setTimeout(()=> btn.classList.remove('flash'), 250);
 

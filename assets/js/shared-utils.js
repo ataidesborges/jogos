@@ -37,17 +37,93 @@ function setupSoundButton(){
   });
 }
 
-// ---------- Fala (voz do navegador, pt-BR) ----------
-function speak(text){
-  if(!audioEnabled || !('speechSynthesis' in window)) return;
+// ---------- Fala (voz do navegador, sempre em português) ----------
+// Escolhe a melhor voz em português que o aparelho tiver (as vozes "naturais"
+// soam bem menos robóticas) e NUNCA usa voz em inglês: se o aparelho não tiver
+// voz em português, o jogo fica em silêncio em vez de falar errado.
+let ptVoice = null;
+let voicesReady = false;
+
+function scoreVoice(v){
+  const name = v.name.toLowerCase();
+  const lang = (v.lang || '').toLowerCase().replace('_', '-');
+  let s = 0;
+  if(lang === 'pt-br') s += 100;            // português do Brasil
+  else if(lang.startsWith('pt')) s += 40;   // português de Portugal (melhor que inglês)
+  else return -1;                           // qualquer outra língua: nunca
+  if(/natural|neural|online|premium|enhanced|aprimorad/.test(name)) s += 50; // vozes naturais
+  if(/francisca|thalita|leticia|letícia|brenda|giovanna|yara|elza|manuela/.test(name)) s += 25; // Edge (Microsoft)
+  if(/google/.test(name)) s += 30;          // Chrome / Android
+  if(/luciana|felipe|fernanda/.test(name)) s += 20; // iPhone / iPad / Mac
+  if(/maria|daniel|heloisa|helena/.test(name) && !/natural|online/.test(name)) s -= 10; // antigas do Windows (robóticas)
+  if(/daniel|antonio|antônio|felipe|ricardo/.test(name)) s -= 3; // empate: prefere voz feminina, como a da professora
+  if(v.localService === false) s += 5;      // vozes na nuvem costumam ser melhores
+  return s;
+}
+
+function pickVoice(){
+  if(!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  if(!voices.length) return;
+  voicesReady = true;
+  let best = null, bestScore = -1;
+  voices.forEach(v => { const s = scoreVoice(v); if(s > bestScore){ best = v; bestScore = s; } });
+  ptVoice = best; // null se não houver nenhuma voz em português
+  const btn = document.getElementById('soundBtn');
+  if(btn) btn.title = ptVoice ? `Som ligado · voz: ${ptVoice.name}` : 'Este aparelho não tem voz em português';
+}
+if('speechSynthesis' in window){
+  pickVoice();
+  speechSynthesis.addEventListener ? speechSynthesis.addEventListener('voiceschanged', pickVoice)
+                                   : (speechSynthesis.onvoiceschanged = pickVoice);
+}
+
+function say(text, rate){
+  if(!audioEnabled || !('speechSynthesis' in window) || !text) return;
+  if(!voicesReady) pickVoice();
+  if(!ptVoice){
+    // as vozes ainda estão carregando: tenta de novo em instantes
+    if(!voicesReady) setTimeout(()=>{ pickVoice(); if(ptVoice) say(text, rate); }, 400);
+    return;
+  }
   try{
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'pt-BR';
-    u.rate = 0.85;
+    u.voice = ptVoice;
+    u.lang = ptVoice.lang;
+    u.rate = rate;
     u.pitch = 1.05;
     speechSynthesis.speak(u);
   }catch(e){ /* fala indisponível, ignora */ }
+}
+
+// Palavras: sempre em minúsculas (em MAIÚSCULAS a voz às vezes soletra, como se fosse sigla)
+function speak(text){
+  say(String(text).toLocaleLowerCase('pt-BR'), 0.85);
+}
+
+// Sílabas soltas: escreve do jeito que se fala, para a voz não soletrar
+// ("BA" virava "bê-á") nem ler em inglês. Ex.: BA → bá, CE → sé, GI → jí, HA → á.
+const SYLLABLE_SAY = {
+  A:'á', E:'é', I:'í', O:'ó', U:'ú',
+  CE:'sé', CI:'sí', GE:'jé', GI:'jí',
+  HA:'á', HE:'é', HI:'í', HO:'ó', HU:'ú',
+  XA:'chá', XE:'ché', XI:'chí', XO:'chó', XU:'chú',
+  QUE:'kê', QUI:'kí', GUE:'guê', GUI:'guí',
+};
+const ACUTE = {a:'á', e:'é', i:'í', o:'ó', u:'ú'};
+function syllableToSpeech(syl){
+  const up = String(syl).toUpperCase();
+  if(SYLLABLE_SAY[up]) return SYLLABLE_SAY[up];
+  const low = up.toLocaleLowerCase('pt-BR');
+  if(/[áéíóúâêôãõ]/.test(low)) return low; // já tem acento (ex.: lão, péu)
+  // uma só vogal no fim (ba, cho, gre, nha): põe acento nela → bá, chó, gré, nhá
+  const m = low.match(/^([^aeiou]*)([aeiou])$/);
+  if(m) return m[1] + ACUTE[m[2]];
+  return low; // sílabas como bar, pin, pei, ão ficam como estão
+}
+function speakSyllable(syl){
+  say(syllableToSpeech(syl), 0.8);
 }
 
 // ---------- Efeitos sonoros (sem arquivos externos) ----------
