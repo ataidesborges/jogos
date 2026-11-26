@@ -21,38 +21,7 @@ const uStage = document.getElementById('uStage');
 const uFinalScreen = document.getElementById('uFinalScreen');
 const uFinalScoreText = document.getElementById('uFinalScoreText');
 const uRestartBtn = document.getElementById('uRestartBtn');
-const soundBtn = document.getElementById('soundBtn');
-const albumTitle = document.getElementById('albumTitle');
-const albumToggleBtn = document.getElementById('albumToggleBtn');
-const galleryEl = document.getElementById('gallery');
-
-let audioEnabled = true;
-soundBtn.addEventListener('click', ()=>{
-  audioEnabled = !audioEnabled;
-  soundBtn.textContent = audioEnabled ? '🔊' : '🔇';
-  soundBtn.classList.toggle('muted', !audioEnabled);
-  twemojify(soundBtn);
-  if(!audioEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
-});
-albumToggleBtn.addEventListener('click', ()=>{
-  const open = galleryEl.classList.toggle('open');
-  albumToggleBtn.textContent = open ? 'Esconder álbum' : 'Ver álbum completo';
-});
-
-function renderAlbum(){
-  albumTitle.textContent = `🏆 Álbum de Figurinhas — ${collected.size}/${ALL_WORDS.length} coletadas`;
-  galleryEl.innerHTML = '';
-  ALL_WORDS.forEach(w=>{
-    const unlocked = collected.has(w.word);
-    const el = document.createElement('div');
-    el.className = 'sticker ' + (unlocked ? 'unlocked' : 'locked');
-    el.innerHTML = unlocked
-      ? `<img class="word-art" src="${w.art}" alt="Ilustração de ${w.word.toLowerCase()}"><span>${w.word}</span><span class="sticker-score">+${collectedScores.get(w.word)} pts</span>`
-      : `<img class="word-art" src="${WORD_ART.nature}" alt="Figurinha bloqueada"><span>?????</span>`;
-    galleryEl.appendChild(el);
-  });
-  twemojify(galleryEl);
-}
+const WORDS_PER_GAME = 10;
 
 function scrambledLetters(word){
   const letters = word.toUpperCase().split('');
@@ -74,6 +43,7 @@ let uTiles = [];      // [{ch, idx, used}]
 let uSlotsState = [];  // array of {tileArrIdx|null}
 let uRevealTimer = null;
 let uRetryTimer = null;
+let uSolved = false;   // palavra atual já acertada (trava as letras)
 
 document.querySelectorAll('.u-level-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -103,7 +73,7 @@ function startGame(){
   clearTimeout(uRetryTimer);
   uScore = 0;
   uWordIdx = 0;
-  uWordList = shuffle([...wordPoolFor(uLevel)]);
+  uWordList = shuffle([...wordPoolFor(uLevel)]).slice(0, WORDS_PER_GAME);
   uFinalScreen.classList.remove('show');
   uStage.style.display = '';
   updateScore();
@@ -122,7 +92,9 @@ function nextWord(){
 function loadWord(){
   uReveal.classList.remove('show');
   uTryAgainMsg.classList.remove('show');
+  uSolved = false;
   const w = uWordList[uWordIdx];
+  uSlots.style.setProperty('--letters', w.word.length);
   uImage.src = w.art;
   uImage.alt = `Ilustração de ${w.word.toLowerCase()}`;
   uProgressText.textContent = `Palavra ${uWordIdx+1} de ${uWordList.length}`;
@@ -164,7 +136,7 @@ function renderSlots(){
 
 function placeLetter(tileArrIdx){
   const t = uTiles[tileArrIdx];
-  if(t.used) return;
+  if(t.used || uSolved) return;
   const emptyIdx = uSlotsState.findIndex(v => v === null);
   if(emptyIdx === -1) return;
   t.used = true;
@@ -179,7 +151,7 @@ function placeLetter(tileArrIdx){
 
 function removeLetter(slotIdx){
   const tileArrIdx = uSlotsState[slotIdx];
-  if(tileArrIdx === null) return;
+  if(tileArrIdx === null || uSolved) return;
   uTiles[tileArrIdx].used = false;
   uSlotsState[slotIdx] = null;
   renderTray();
@@ -187,6 +159,7 @@ function removeLetter(slotIdx){
 }
 
 function clearSlots(){
+  if(uSolved) return;
   uSlotsState = uSlotsState.map(()=> null);
   uTiles.forEach(t => t.used = false);
   renderTray();
@@ -194,10 +167,18 @@ function clearSlots(){
 }
 
 function giveHint(){
-  const emptyIdx = uSlotsState.findIndex(v => v === null);
-  if(emptyIdx === -1) return;
-  const w = uWordList[uWordIdx];
-  const targetLetter = w.word.toUpperCase()[emptyIdx];
+  if(uSolved) return;
+  const target = uWordList[uWordIdx].word.toUpperCase();
+  // primeira posição vazia OU com a letra errada
+  const pos = uSlotsState.findIndex((v, i) => v === null || uTiles[v].ch !== target[i]);
+  if(pos === -1) return;
+  // se já tem letra errada a partir daí, devolve essas letras para a bandeja
+  for(let i = pos; i < uSlotsState.length; i++){
+    if(uSlotsState[i] !== null){ uTiles[uSlotsState[i]].used = false; uSlotsState[i] = null; }
+  }
+  renderTray();
+  renderSlots();
+  const targetLetter = target[pos];
   const candidate = uTiles.findIndex(t => !t.used && t.ch === targetLetter);
   if(candidate === -1) return;
   const el = uTray.querySelector(`[data-tile-idx="${candidate}"]`);
@@ -218,6 +199,7 @@ function checkAnswer(){
 }
 
 function onCorrect(w){
+  uSolved = true;
   const earned = 10;
   uScore += earned;
   updateScore();
@@ -225,10 +207,7 @@ function onCorrect(w){
   speak(w.word);
   confetti(uStage);
 
-  collected.add(w.word);
-  const best = collectedScores.get(w.word) || 0;
-  if(earned > best) collectedScores.set(w.word, earned);
-  renderAlbum();
+  collectSticker(w.word, earned);
 
   uRevealMsg.textContent = '🎉 Você acertou! 🎉';
   uRevealWord.textContent = w.word;
@@ -262,7 +241,6 @@ function finishGame(){
 }
 
 // ---------- Init ----------
-renderAlbum();
+initCommon('desembaralhar');
 startGame();
-twemojify(document.body);
 

@@ -7,8 +7,9 @@
 let currentLevel = "facil";
 let targets = [];      // {word, syl, emoji, formed}
 let resetTimer = null;
+let roundTimer = null;
+let celebrating = false; // enquanto a figurinha aparece, as sílabas ficam travadas
 let formedCount = 0;
-let audioEnabled = true;
 
 // ---------- Scoring ----------
 let currentAttemptPoints = 10; // starts at 10, drops by 1 each time "Apagar" is used, resets to 10 after each word formed
@@ -26,12 +27,8 @@ const revealEl = document.getElementById('reveal');
 const revealEmoji = document.getElementById('revealEmoji');
 const revealWord = document.getElementById('revealWord');
 const progressText = document.getElementById('progressText');
-const galleryEl = document.getElementById('gallery');
-const albumTitle = document.getElementById('albumTitle');
-const albumToggleBtn = document.getElementById('albumToggleBtn');
 const roundCompleteEl = document.getElementById('roundComplete');
 const newRoundBtn = document.getElementById('newRoundBtn');
-const soundBtn = document.getElementById('soundBtn');
 const eraseBtn = document.getElementById('eraseBtn');
 const scoreText = document.getElementById('scoreText');
 const revealPoints = document.getElementById('revealPoints');
@@ -48,20 +45,8 @@ document.querySelectorAll('.level-btn').forEach(btn=>{
 });
 newRoundBtn.addEventListener('click', startRound);
 
-soundBtn.addEventListener('click', ()=>{
-  audioEnabled = !audioEnabled;
-  soundBtn.textContent = audioEnabled ? '🔊' : '🔇';
-  soundBtn.classList.toggle('muted', !audioEnabled);
-  twemojify(soundBtn);
-  if(!audioEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
-});
-
-albumToggleBtn.addEventListener('click', ()=>{
-  const open = galleryEl.classList.toggle('open');
-  albumToggleBtn.textContent = open ? 'Esconder álbum' : 'Ver álbum completo';
-});
-
 eraseBtn.addEventListener('click', ()=>{
+  if(celebrating) return;
   clearTimeout(resetTimer);
   const boxTiles = Array.from(boxSlots.querySelectorAll('.tile'));
   boxTiles.forEach(t=> trayEl.appendChild(t));
@@ -109,6 +94,8 @@ function pickRandom(arr, n){
 }
 function startRound(){
   clearTimeout(resetTimer);
+  clearTimeout(roundTimer);
+  celebrating = false;
   revealEl.classList.remove('show');
   roundCompleteEl.classList.remove('show');
   formedCount = 0;
@@ -159,6 +146,7 @@ function attachDrag(tile){
 
   tile.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
+    if(celebrating) return;
     tile.setPointerCapture(e.pointerId);
     startParent = tile.parentElement;
     const rect = tile.getBoundingClientRect();
@@ -269,6 +257,7 @@ function checkBox(){
     // success! score = current attempt points (10, or less if "Apagar" was used before)
     const target = targets[matchIdx];
     target.formed = true;
+    celebrating = true;
     formedCount++;
     updateProgress();
     ping(true);
@@ -281,7 +270,8 @@ function checkBox(){
 
     celebrate(target, earned);
 
-    setTimeout(()=>{
+    resetTimer = setTimeout(()=>{
+      celebrating = false;
       boxTiles.forEach(t=>t.remove());
       boxHint.style.display = 'block';
       revealEl.classList.remove('show');
@@ -292,9 +282,9 @@ function checkBox(){
         sessionRanking.push({round: roundNumber, score: roundScore});
         roundNumber++;
         renderRanking();
-        setTimeout(startRound, 2200);
+        roundTimer = setTimeout(startRound, 2200);
       }
-    }, 4500);
+    }, 3000);
   }
   // if no match, the tiles simply stay in the box — the child can keep
   // adding more, or tap a tile to send it back manually. Points only drop
@@ -307,39 +297,18 @@ function celebrate(target, earned){
   revealWord.textContent = target.word;
   revealPoints.textContent = `+${earned} pontos`;
   revealEl.classList.add('show');
-  twemojify(revealEmoji);
 
-  collected.add(target.word);
-  const best = collectedScores.get(target.word) || 0;
-  if(earned > best) collectedScores.set(target.word, earned);
-  renderAlbum();
+  collectSticker(target.word, earned);
   speak(target.word);
 
   confetti(chestEl);
 }
 
-// ---------- Sticker album ----------
-function renderAlbum(){
-  albumTitle.textContent = `🏆 Álbum de Figurinhas — ${collected.size}/${ALL_WORDS.length} coletadas`;
-  galleryEl.innerHTML = '';
-  ALL_WORDS.forEach(w=>{
-    const unlocked = collected.has(w.word);
-    const el = document.createElement('div');
-    el.className = 'sticker ' + (unlocked ? 'unlocked' : 'locked');
-    el.innerHTML = unlocked
-      ? `<img class="word-art" src="${w.art}" alt="Ilustração de ${w.word.toLowerCase()}"><span>${w.word}</span><span class="sticker-score">+${collectedScores.get(w.word)} pts</span>`
-      : `<img class="word-art" src="${WORD_ART.nature}" alt="Figurinha bloqueada"><span>?????</span>`;
-    galleryEl.appendChild(el);
-  });
-  twemojify(galleryEl);
-}
-
 // ---------- Init ----------
-renderAlbum();
+initCommon('silabas');
 renderRanking();
 updateScoreDisplay();
 startRound();
-twemojify(document.body);
 
 // Extra safety net: every couple of seconds, check for any syllable that got
 // stuck floating (dragging state with no movement for a while) and gently

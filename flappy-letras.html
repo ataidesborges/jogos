@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="flappy-letras.css">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/flappy-letras.css">
 
 </head>
 <body>
@@ -39,12 +39,12 @@
 
   <div class="flappy-stage">
     <div class="flappy-canvas-wrap" id="fCanvasWrap">
-      <canvas id="fCanvas" width="640" height="400"></canvas>
       <div class="flappy-topbar">
         <img class="flappy-topbar-img" id="fTargetImg" src="" alt="">
         <div class="flappy-word-progress" id="fWordProgress"></div>
         <button id="fFullscreenBtn" class="fullscreen-btn" title="Tela cheia">⛶</button>
       </div>
+      <canvas id="fCanvas" width="640" height="400"></canvas>
       <div class="flappy-overlay show" id="fStartOverlay">
         <div class="flappy-overlay-msg">👆 Toque ou aperte espaço para o passarinho voar!</div>
       </div>
@@ -68,8 +68,8 @@
 
   <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Letra Voadora · Ilustrações geradas para este jogo</footer>
 </div>
-<script src="word-bank.js"></script>
-<script src="shared-utils.js"></script>
-<script src="flappy-letras.js"></script>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/flappy-letras.js"></script>
 </body>
 </html>

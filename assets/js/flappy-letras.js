@@ -4,10 +4,6 @@
 // ============================================================
 
 // ================= LETRA VOADORA (Flappy + soletrar palavras) =================
-const soundBtn = document.getElementById('soundBtn');
-const albumTitle = document.getElementById('albumTitle');
-const albumToggleBtn = document.getElementById('albumToggleBtn');
-const galleryEl = document.getElementById('gallery');
 const fScoreText = document.getElementById('fScoreText');
 const fLivesText = document.getElementById('fLivesText');
 const fRestartBtn = document.getElementById('fRestartBtn');
@@ -21,34 +17,6 @@ const fStartOverlay = document.getElementById('fStartOverlay');
 const fWordCompleteOverlay = document.getElementById('fWordCompleteOverlay');
 const fGameOverOverlay = document.getElementById('fGameOverOverlay');
 const fGameOverRestartBtn = document.getElementById('fGameOverRestartBtn');
-
-let audioEnabled = true;
-soundBtn.addEventListener('click', ()=>{
-  audioEnabled = !audioEnabled;
-  soundBtn.textContent = audioEnabled ? '🔊' : '🔇';
-  soundBtn.classList.toggle('muted', !audioEnabled);
-  twemojify(soundBtn);
-  if(!audioEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
-});
-albumToggleBtn.addEventListener('click', ()=>{
-  const open = galleryEl.classList.toggle('open');
-  albumToggleBtn.textContent = open ? 'Esconder álbum' : 'Ver álbum completo';
-});
-
-function renderAlbum(){
-  albumTitle.textContent = `🏆 Álbum de Figurinhas — ${collected.size}/${ALL_WORDS.length} coletadas`;
-  galleryEl.innerHTML = '';
-  ALL_WORDS.forEach(w=>{
-    const unlocked = collected.has(w.word);
-    const el = document.createElement('div');
-    el.className = 'sticker ' + (unlocked ? 'unlocked' : 'locked');
-    el.innerHTML = unlocked
-      ? `<img class="word-art" src="${w.art}" alt="Ilustração de ${w.word.toLowerCase()}"><span>${w.word}</span><span class="sticker-score">+${collectedScores.get(w.word)} pts</span>`
-      : `<img class="word-art" src="${WORD_ART.nature}" alt="Figurinha bloqueada"><span>?????</span>`;
-    galleryEl.appendChild(el);
-  });
-  twemojify(galleryEl);
-}
 
 // ---------- Cores (lidas das variáveis CSS do site) ----------
 const rootStyle = getComputedStyle(document.documentElement);
@@ -95,6 +63,11 @@ let neededCounts = {};
 let mistakeCount = 0;
 let lastWord = null;
 let cloudOffset = 0;
+let invulnerable = 0;        // segundos de proteção depois de perder uma vida
+let wordTimer = null;        // timer da comemoração de palavra completa
+const INVULN_TIME = 1.5;
+
+const playTop = 6; // "teto" do jogo (a barra com a palavra agora fica acima do canvas)
 
 document.querySelectorAll('.f-level-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -168,8 +141,7 @@ function updateFullscreenBtn(){
 
 function updateScoreUI(){ fScoreText.textContent = `⭐ ${score} pontos`; }
 function updateLivesUI(){
-  fLivesText.innerHTML = lives > 0 ? '❤️'.repeat(lives) : '💔';
-  twemojify(fLivesText);
+  fLivesText.textContent = lives > 0 ? '❤️'.repeat(lives) : '💔';
 }
 
 function collectedCountFor(letter){
@@ -225,6 +197,8 @@ function loadWord(){
 }
 
 function resetGame(){
+  clearTimeout(wordTimer);
+  invulnerable = 0;
   phase = 'idle';
   lastTime = null;
   score = 0;
@@ -288,15 +262,18 @@ function spawnBubble(){
     const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     letter = ALPHABET[Math.floor(Math.random()*ALPHABET.length)];
   }
-  const margin = 46;
-  const y = margin + Math.random()*(CH - margin*2);
+  const y = randomPlayY();
   bubbles.push({x:CW+30, y, letter, r:24, colorIdx: Math.floor(Math.random()*7)});
 }
 
 function spawnHeart(){
-  const margin = 46;
-  const y = margin + Math.random()*(CH - margin*2);
-  hearts.push({x:CW+30, y, r:22});
+  hearts.push({x:CW+30, y:randomPlayY(), r:22});
+}
+
+// altura aleatória dentro da área visível (abaixo da barra, acima do chão)
+function randomPlayY(){
+  const top = playTop + 40, bottom = CH - 40;
+  return top + Math.random()*Math.max(bottom - top, 1);
 }
 
 function onHeartHit(h){
@@ -345,10 +322,7 @@ function onWordComplete(){
   score += earned;
   updateScoreUI();
 
-  collected.add(currentWordObj.word);
-  const best = collectedScores.get(currentWordObj.word) || 0;
-  if(earned > best) collectedScores.set(currentWordObj.word, earned);
-  renderAlbum();
+  collectSticker(currentWordObj.word, earned);
   speak(currentWordObj.word);
   confetti(fCanvasWrap);
 
@@ -356,10 +330,11 @@ function onWordComplete(){
     mistakeCount === 0 ? `🎉 ${currentWordObj.word}! +${earned} pontos (sem erros!) 🎉` : `🎉 ${currentWordObj.word}! +${earned} pontos 🎉`;
   fWordCompleteOverlay.classList.add('show');
 
-  setTimeout(()=>{
+  wordTimer = setTimeout(()=>{
     fWordCompleteOverlay.classList.remove('show');
     loadWord();
     bird.y = CH/2; bird.vy = 0;
+    hearts = [];
     phase = 'playing';
   }, 1700);
 }
@@ -369,8 +344,9 @@ function onWordComplete(){
 // entra em queda livre (sem controle) até bater no chão; aí sim aparece a
 // tela de "reiniciar".
 function loseLife(causedByFloor){
-  if(phase !== 'playing') return;
+  if(phase !== 'playing' || invulnerable > 0) return;
   lives--;
+  invulnerable = INVULN_TIME; // fica piscando e protegido por um instante
   updateLivesUI();
   if(lives <= 0){
     if(causedByFloor){
@@ -394,22 +370,28 @@ function update(dt){
   const cfg = LEVELS[fLevel];
   bird.vy += cfg.gravity*dt;
   bird.y += bird.vy*dt;
+  if(invulnerable > 0) invulnerable = Math.max(0, invulnerable - dt);
 
-  if(bird.y - bird.r <= 6){
-    bird.y = bird.r + 6;
+  if(bird.y - bird.r <= playTop){
+    bird.y = playTop + bird.r;
     bird.vy = 0;
-    if(phase === 'playing'){
+    if(phase === 'playing' && invulnerable === 0){
       ping(false);
       loseLife(false);
     }
   } else if(bird.y + bird.r >= CH-6){
     bird.y = CH-6-bird.r;
-    bird.vy = 0;
     if(phase === 'playing'){
-      ping(false);
-      loseLife(true);
-    } else if(phase === 'falling'){
-      triggerGameOver();
+      // quica de volta para cima (antes ficava preso no chão e perdia
+      // todas as vidas de uma vez)
+      bird.vy = cfg.jump;
+      if(invulnerable === 0){
+        ping(false);
+        loseLife(true);
+      }
+    } else {
+      bird.vy = 0;
+      if(phase === 'falling') triggerGameOver();
     }
   }
 
@@ -481,6 +463,8 @@ function drawClouds(){
 }
 
 function drawBird(){
+  // pisca enquanto está protegido depois de perder uma vida
+  if(invulnerable > 0 && Math.floor(invulnerable*10) % 2 === 0) return;
   ctx.save();
   ctx.translate(bird.x, bird.y);
   const angle = Math.max(-0.5, Math.min(1.0, bird.vy/600));
@@ -578,8 +562,7 @@ function loop(ts){
 }
 
 // ---------- Init ----------
-renderAlbum();
+initCommon('flappy-letras');
 resetGame();
 requestAnimationFrame(loop);
-twemojify(document.body);
 

@@ -22,38 +22,6 @@ const cacaReveal = document.getElementById('cacaReveal');
 const cacaRevealImg = document.getElementById('cacaRevealImg');
 const cacaRevealWord = document.getElementById('cacaRevealWord');
 const cacaRevealPoints = document.getElementById('cacaRevealPoints');
-const soundBtn = document.getElementById('soundBtn');
-const albumTitle = document.getElementById('albumTitle');
-const albumToggleBtn = document.getElementById('albumToggleBtn');
-const galleryEl = document.getElementById('gallery');
-
-let audioEnabled = true;
-soundBtn.addEventListener('click', ()=>{
-  audioEnabled = !audioEnabled;
-  soundBtn.textContent = audioEnabled ? '🔊' : '🔇';
-  soundBtn.classList.toggle('muted', !audioEnabled);
-  twemojify(soundBtn);
-  if(!audioEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
-});
-albumToggleBtn.addEventListener('click', ()=>{
-  const open = galleryEl.classList.toggle('open');
-  albumToggleBtn.textContent = open ? 'Esconder álbum' : 'Ver álbum completo';
-});
-
-function renderAlbum(){
-  albumTitle.textContent = `🏆 Álbum de Figurinhas — ${collected.size}/${ALL_WORDS.length} coletadas`;
-  galleryEl.innerHTML = '';
-  ALL_WORDS.forEach(w=>{
-    const unlocked = collected.has(w.word);
-    const el = document.createElement('div');
-    el.className = 'sticker ' + (unlocked ? 'unlocked' : 'locked');
-    el.innerHTML = unlocked
-      ? `<img class="word-art" src="${w.art}" alt="Ilustração de ${w.word.toLowerCase()}"><span>${w.word}</span><span class="sticker-score">+${collectedScores.get(w.word)} pts</span>`
-      : `<img class="word-art" src="${WORD_ART.nature}" alt="Figurinha bloqueada"><span>?????</span>`;
-    galleryEl.appendChild(el);
-  });
-  twemojify(galleryEl);
-}
 
 let cacaLevel = 'facil';
 let cacaSize = 10;
@@ -251,10 +219,7 @@ function cacaCelebrate(match, earned){
   clearTimeout(cacaRevealTimer);
   cacaRevealTimer = setTimeout(()=> cacaReveal.classList.remove('show'), 1700);
 
-  collected.add(match.word);
-  const best = collectedScores.get(match.word) || 0;
-  if(earned > best) collectedScores.set(match.word, earned);
-  renderAlbum();
+  collectSticker(match.word, earned);
   speak(match.word);
   confetti(cacaGridWrap);
 }
@@ -298,7 +263,6 @@ cacaGrid.addEventListener('pointercancel', ()=>{
 });
 
 // ---------- Init ----------
-renderAlbum();
+initCommon('caca-palavras');
 startCaca();
-twemojify(document.body);
 

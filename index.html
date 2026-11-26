@@ -113,6 +113,39 @@
   .game-card.flappy .play-btn{
     background:linear-gradient(135deg, var(--purple), var(--primary));
   }
+  .game-card.memoria .play-btn{
+    background:linear-gradient(135deg, var(--pink), var(--orange));
+  }
+  .game-card .new-badge{
+    font-family:'Fredoka', sans-serif;
+    font-size:12px; font-weight:700;
+    color:#fff; background:var(--pink);
+    border-radius:10px; padding:2px 10px;
+  }
+  .menu-logo{display:block; width:96px; height:96px; object-fit:contain; margin:0 auto 4px; filter:drop-shadow(0 5px 7px rgba(91,63,224,.18));}
+  .game-card:focus-visible{outline:3px solid var(--primary); outline-offset:4px;}
+  @media (max-width:640px){
+    body{padding:24px 12px 40px; align-items:flex-start;}
+    .menu-subtitle{margin-bottom:24px; font-size:15px;}
+    .game-cards{gap:14px;}
+    /* no celular os cartões viram faixas horizontais, mais fáceis de tocar */
+    .game-card{
+      width:100%;
+      display:grid;
+      grid-template-columns:56px 1fr auto;
+      grid-template-areas:"icon title btn" "icon text btn";
+      align-items:center; text-align:left;
+      gap:2px 14px;
+      padding:16px 16px;
+      border-radius:22px;
+    }
+    .game-card .icon{grid-area:icon; font-size:44px;}
+    .game-card h2{grid-area:title; font-size:19px;}
+    .game-card p{grid-area:text; font-size:13px;}
+    .game-card .play-btn{grid-area:btn; margin-top:0; padding:9px 14px;}
+    .game-card .new-badge{display:none;}
+    .menu-logo{width:72px; height:72px;}
+  }
   .new-window-note{
     margin-top:36px;
     font-size:12.5px;
@@ -132,40 +165,49 @@
 </head>
 <body>
   <div class="menu-wrap">
+    <img class="menu-logo" src="assets/images/logo.webp" alt="" width="96" height="96">
     <h1>Fábrica de Palavras</h1>
-    <p class="menu-subtitle">Jogos educativos para aprender brincando! Escolha um joguinho abaixo — cada um abre em uma nova janela.</p>
+    <p class="menu-subtitle">Jogos educativos para aprender brincando! Escolha um joguinho abaixo.</p>
 
     <div class="game-cards">
-      <a class="game-card silabas" href="silabas.html" target="_blank" rel="noopener">
+      <a class="game-card silabas" href="silabas.html">
         <span class="icon">🧩</span>
         <h2>Formar Palavras</h2>
         <p>Junte as sílabas certas para formar a palavra e ganhar uma figurinha!</p>
         <span class="play-btn">Jogar &rarr;</span>
       </a>
 
-      <a class="game-card caca" href="caca-palavras.html" target="_blank" rel="noopener">
+      <a class="game-card caca" href="caca-palavras.html">
         <span class="icon">🔎</span>
         <h2>Caça-Palavras</h2>
         <p>Encontre as palavras escondidas na grade de letrinhas!</p>
         <span class="play-btn">Jogar &rarr;</span>
       </a>
 
-      <a class="game-card unscramble" href="desembaralhar.html" target="_blank" rel="noopener">
+      <a class="game-card unscramble" href="desembaralhar.html">
         <span class="icon">🔀</span>
         <h2>Desembaralhe a Palavra</h2>
         <p>Veja a figura e toque nas letras embaralhadas para formar a palavra!</p>
         <span class="play-btn">Jogar &rarr;</span>
       </a>
 
-      <a class="game-card flappy" href="flappy-letras.html" target="_blank" rel="noopener">
+      <a class="game-card flappy" href="flappy-letras.html">
         <span class="icon">🐦</span>
         <h2>Letra Voadora</h2>
         <p>Guie o passarinho e pegue as letras certas para soletrar a palavra!</p>
         <span class="play-btn">Jogar &rarr;</span>
       </a>
+
+      <a class="game-card memoria" href="memoria.html">
+        <span class="icon">🃏</span>
+        <span class="new-badge">NOVO</span>
+        <h2>Jogo da Memória</h2>
+        <p>Vire as cartas e junte cada figura com o nome dela!</p>
+        <span class="play-btn">Jogar &rarr;</span>
+      </a>
     </div>
 
-    <p class="new-window-note">Cada jogo tem seu próprio Álbum de Figurinhas.</p>
+    <p class="new-window-note">Cada jogo tem seu próprio Álbum de Figurinhas, que fica salvo neste aparelho.</p>
 
     <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras</footer>
   </div>

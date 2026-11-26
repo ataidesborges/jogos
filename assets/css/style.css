@@ -465,6 +465,27 @@
     .reveal .emoji{font-size:72px;}
     .reveal .word{font-size:20px;}
     .bg-decor .blob{display:none;}
+    /* cabeçalho mais compacto: o jogo aparece sem precisar rolar tanto */
+    body{padding:12px 10px 40px;}
+    header{margin-bottom:8px;}
+    h1{font-size:28px; margin:4px 0 8px;}
+    .subtitle{font-size:13px; padding:8px 14px;}
+    .factory-icon{width:64px; height:64px;}
+    .levels{margin:10px 0 4px; gap:8px;}
+    .level-btn{font-size:14px; padding:9px 14px;}
+    .progress-row{margin:8px 0 16px; gap:8px; font-size:13px;}
+    .progress-pill{padding:7px 14px;}
+    .word-art{width:200px; height:160px;}
+    .back-link{margin-bottom:8px; font-size:13px; padding:7px 14px;}
+  }
+
+  /* contorno visível para quem navega pelo teclado */
+  button:focus-visible, a:focus-visible{
+    outline:3px solid var(--primary);
+    outline-offset:3px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
   }
 
   .back-link{

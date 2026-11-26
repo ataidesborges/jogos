@@ -96,21 +96,14 @@ const WORDS = {
   ]
 };
 const WORDS_PER_ROUND = 8;
-const WORD_ART = {
-  animal: 'cat-animal.webp',
-  food: 'cat-food.webp',
-  household: 'cat-household.webp',
-  nature: 'cat-nature.webp',
-  transport: 'cat-transport.webp',
-};
+const IMG_DIR = 'assets/images/';
+const LOCKED_ART = IMG_DIR + 'cat-nature.webp'; // figurinha ainda não coletada
 
-const ART_GROUPS = {
-  animal: ['GATO','PATO','SAPO','FOCA','VACA','RATO','TIGRE','URSO','LEÃO','PEIXE','GALO','PINGUIM','CAVALO','MACACO','GALINHA','JACARÉ','COELHO','BORBOLETA','ELEFANTE','PASSARINHO','CACHORRO','TARTARUGA','GORILA','CANGURU','GOLFINHO','MORCEGO','ARANHA','FORMIGA','JOANINHA','GIRAFA'],
-  food: ['OVO','UVA','COPO','QUEIJO','LEITE','TOMATE','BANANA','SORVETE','PANELA','ABACATE','SANDUÍCHE'],
-  household: ['CASA','MESA','BOTA','PENA','MALA','DEDO','ANEL','VELA','FITA','TORRE','CAMISA','JANELA','CADEIRA','BOLSA','LÁPIS','CHAPÉU','SOFÁ','PORTA'],
-  nature: ['ROSA','LUA','FOGO','CHUVA','NUVEM','DADO','BALÃO','FESTA','FADA'],
-  transport: ['PIPA','MOTO','NAVE','PONTE','CARRO','BARCO','FOGUETE','BICICLETA','AVIÃO','BOMBEIRO']
-};
+// Imagem de cada palavra (arquivos em assets/images/).
+// Palavras do banco que NÃO estão nesta lista ficam fora dos jogos
+// (ex.: VACA e VELA, que ainda não têm imagem). Para incluir uma palavra nova:
+//   1. coloque a imagem em assets/images/ (ex.: vaca.webp)
+//   2. adicione a linha  "VACA": 'vaca.webp',  aqui embaixo
 const INDIVIDUAL_ART = {
   "CASA": 'casa.webp',
   "GELO": 'gelo.webp',
@@ -124,7 +117,6 @@ const INDIVIDUAL_ART = {
   "OVO": 'ovo.webp',
   "UVA": 'uva.webp',
   "LUA": 'lua.webp',
-  "VACA": 'vaca.webp',
   "RATO": 'rato.webp',
   "BOTA": 'bota.webp',
   "ROSA": 'rosa.webp',
@@ -159,7 +151,6 @@ const INDIVIDUAL_ART = {
   "LEITE": 'leite.webp',
   "BALÃO": 'balao.webp',
   "ANEL": 'anel.webp',
-  "VELA": 'vela.webp',
   "AVÓ": 'avo.webp',
   "AVÔ": 'avo-2.webp',
   "FITA": 'fita.webp',
@@ -200,6 +191,10 @@ const INDIVIDUAL_ART = {
   "PROFESSORA": 'professora.webp',
 };
 
-const wordArtByName = new Map(Object.entries(ART_GROUPS).flatMap(([kind, words]) => words.map(word => [word, INDIVIDUAL_ART[word] || WORD_ART[kind]])));
-Object.entries(INDIVIDUAL_ART).forEach(([word, art]) => wordArtByName.set(word, art));
+// Mantém só as palavras que têm imagem e guarda o caminho completo em w.art
+for (const level of Object.keys(WORDS)) {
+  WORDS[level] = WORDS[level]
+    .filter(w => INDIVIDUAL_ART[w.word])
+    .map(w => ({ ...w, art: IMG_DIR + INDIVIDUAL_ART[w.word] }));
+}
 

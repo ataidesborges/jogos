@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Jogo da Memória — Fábrica de Palavras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/memoria.css">
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+</div>
+<div class="wrap">
+  <a class="back-link" href="index.html">&larr; Voltar ao menu</a>
+  <header>
+    <h1>🃏 Jogo da Memória</h1>
+    <p class="subtitle">Vire duas cartas e encontre a figura e a palavra que combinam!</p>
+  </header>
+
+  <div class="levels">
+    <button class="m-level-btn level-btn active" data-level="facil">🧩 Fácil (6 pares)</button>
+    <button class="m-level-btn level-btn" data-level="medio">🌟 Médio (8 pares)</button>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-pill" id="mProgressText">0 / 6 pares</span>
+    <span class="progress-pill score-pill" id="mScoreText">⭐ 0 pontos</span>
+    <button id="mNewBtn" class="m-new-btn">🔄 Novo jogo</button>
+    <button id="soundBtn" title="Ligar/desligar o som">🔊</button>
+  </div>
+
+  <div class="memory-stage">
+    <div class="memory-grid" id="mGrid" aria-label="Cartas do jogo da memória"></div>
+    <div class="memory-congrats" id="mCongrats">
+      <div class="msg">🎉 Você achou todos os pares! 🎉</div>
+      <div class="sub" id="mCongratsText"></div>
+      <button id="mAgainBtn" class="m-new-btn">🔄 Jogar de novo</button>
+    </div>
+  </div>
+
+  <div class="gallery-wrap">
+    <div class="gallery-title" id="albumTitle">🏆 Álbum de Figurinhas — 0/0 coletadas</div>
+    <button id="albumToggleBtn">Ver álbum completo</button>
+    <div class="gallery" id="gallery"></div>
+  </div>
+
+  <footer>Feito para professores(as) de Educação Infantil · Fábrica de Palavras · Jogo da Memória · Ilustrações geradas para este jogo</footer>
+</div>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/memoria.js"></script>
+</body>
+</html>

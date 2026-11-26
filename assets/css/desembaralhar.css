@@ -31,14 +31,19 @@
     color:var(--green);
   }
 
+  /* As casinhas encolhem para a palavra inteira caber numa linha só,
+     até nas palavras longas (ex.: PASSARINHO) no celular. */
+  #uSlots{ gap:6px; flex-wrap:nowrap; }
   .tile-slot{
-    width:52px; height:60px;
-    min-width:52px;
+    --slot: min(52px, calc((min(92vw, 460px) - 52px) / var(--letters, 4) - 6px));
+    width:var(--slot); height:calc(var(--slot) * 1.15);
+    min-width:0;
+    padding:0;
     display:inline-flex; align-items:center; justify-content:center;
-    border-radius:14px;
+    border-radius:12px;
     font-family:'Fredoka', sans-serif;
     font-weight:700;
-    font-size:24px;
+    font-size:calc(var(--slot) * 0.46);
   }
   .tile-slot.empty{
     border:3px dashed rgba(255,255,255,0.6);
