@@ -693,3 +693,20 @@ button.sticker.unlocked:focus-visible{outline:3px solid var(--accent); outline-o
 .ask-ok{border:none; background:var(--grad); color:#fff;}
 .ask-ok.danger{background:linear-gradient(135deg, #F43F5E, #E11D48);}
 .ask-btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+
+/* botão de voz (liga/desliga só a fala) — mesmo jeito do botão de som */
+.voice-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  font-family:var(--font-body); font-weight:800; font-size:14px;
+  height:42px; padding:0 12px; border-radius:12px;
+  background:var(--surface); color:var(--ink); border:1px solid var(--border);
+  box-shadow:0 1px 2px rgba(30,25,64,.04);
+  cursor:pointer; white-space:nowrap; -webkit-tap-highlight-color:transparent;
+  transition:background .15s ease, border-color .15s ease, color .15s ease;
+}
+.voice-btn:hover{background:var(--surface-2); border-color:#D8D1EC;}
+.voice-btn.muted{color:var(--ink-muted); background:var(--surface-2);}
+@media (max-width:640px){
+  .voice-btn{height:38px; padding:0 10px; font-size:13px; border-radius:11px;}
+  .voice-btn span{display:none;}
+}

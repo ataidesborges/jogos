@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Tabuada Aventura — Fábrica de Palavras</title>
+<meta name="theme-color" content="#6C47FF">
+<link rel="icon" href="assets/images/logo.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/quiz.css">
+<link rel="stylesheet" href="assets/css/math.css">
+<link rel="stylesheet" href="assets/css/tabuada-aventura.css">
+</head>
+<body style="--accent:#0369A1; --accent-50:#E0F2FE; --grad:linear-gradient(135deg, #0369A1 0%, #22C55E 100%); --glow:rgba(3,105,161,.42);">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="assets/images/logo.webp" alt="" width="36" height="36">Fábrica de Palavras</a>
+    <a class="back-link" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Todos os jogos</a>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="page-hero-inner">
+  <div class="page-head">
+    <span class="page-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>
+    <div>
+      <h1>Tabuada Aventura</h1>
+      <p class="subtitle">Acerte 10 contas da tabuada e ganhe uma corrida para pegar moedinhas até a bandeira!</p>
+    </div>
+  </div>
+  <img class="page-art" src="assets/images/tabuada-aventura.svg" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<main class="wrap wrap-overlap">
+  <div class="game-window" id="gameWindow">
+  <div class="levels" role="group" aria-label="Operação">
+    <button class="level-btn active" data-level="somar">Somar <small>+</small></button>
+    <button class="level-btn" data-level="subtrair">Subtrair <small>−</small></button>
+    <button class="level-btn" data-level="multiplicar">Multiplicar <small>×</small></button>
+    <button class="level-btn" data-level="dividir">Dividir <small>÷</small></button>
+  </div>
+
+  <div class="ta-tables" id="taTables" role="group" aria-label="Qual tabuada"></div>
+
+  <div class="progress-row">
+    <span class="progress-pill" id="qProgress">🏁 0 corridas</span>
+    <span class="progress-pill score-pill" id="qScore">0 pontos</span>
+    <button id="taShopBtn" class="m-new-btn ta-shop-btn" title="Loja: compre coisinhas com as moedas"><span aria-hidden="true">🛒</span><span class="ta-shop-btn-txt">Loja</span><span class="ta-coin-pill"><i class="coin"></i><b data-wallet>0</b></span></button>
+    <button id="taCharBtn" class="m-new-btn ta-char-btn" title="Trocar personagem"><canvas id="taCharIcon" width="34" height="34" aria-hidden="true"></canvas><span>Personagem</span></button>
+    <button id="voiceBtn" class="voice-btn" type="button"></button>
+    <button id="soundBtn" title="Ligar/desligar o som"></button>
+  </div>
+
+  <!-- escolher personagem -->
+  <div class="ta-pick" id="taPick" hidden>
+    <h2 class="ta-pick-title">Quem vai correr na aventura?</h2>
+    <div class="ta-pick-list" id="taPickList"></div>
+  </div>
+
+  <!-- loja -->
+  <div class="ta-shop" id="taShop" hidden>
+    <div class="ta-shop-head">
+      <h2 class="ta-shop-title">🛒 Loja da Aventura</h2>
+      <span class="ta-coin-pill big"><i class="coin"></i><b data-wallet>0</b> moedas</span>
+    </div>
+    <div class="ta-shop-main">
+      <div class="ta-shop-stage">
+        <canvas id="taShopPreview" aria-label="Personagem com os acessórios"></canvas>
+        <div class="ta-shop-chars" id="taShopChars" role="group" aria-label="Quem vai vestir"></div>
+      </div>
+      <div class="ta-shop-side">
+        <div class="ta-shop-tabs" id="taShopTabs" role="group" aria-label="Tipo de acessório"></div>
+        <div class="ta-shop-grid" id="taShopGrid"></div>
+        <p class="ta-shop-hint">Ganhe moedas nas corridas (cada estrela vale 5 moedas). Toque num item que você já tem para usar ou tirar.</p>
+      </div>
+    </div>
+    <div class="ta-shop-tip" id="taShopTip" role="status" aria-live="polite"></div>
+    <button type="button" class="m-new-btn ta-shop-close" id="taShopClose">Voltar às contas ▶</button>
+  </div>
+
+  <!-- contas -->
+  <div class="q-stage ta-quiz" id="taQuiz" hidden>
+    <div class="ta-track" aria-hidden="true">
+      <div class="ta-track-bar"><i id="taFill"></i></div>
+      <canvas class="ta-track-char" id="taTrackChar" width="44" height="44"></canvas>
+      <span class="ta-track-flag">🏁</span>
+    </div>
+    <p class="ta-goal" id="taGoal">Faltam 10 acertos para a corrida!</p>
+    <div class="cs-expr ta-expr" id="taExpr" aria-live="polite"></div>
+    <div class="ct-ask"><p class="q-question" id="qQuestion">Qual é o resultado?</p><button class="q-listen ct-listen" id="qListen" aria-label="Ouvir a conta"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button></div>
+    <div class="q-options" id="qOptions"></div>
+  </div>
+
+  <!-- corrida (minigame) -->
+  <div class="ta-run" id="taRun" hidden>
+    <div class="ta-canvas-wrap" id="taCanvasWrap">
+      <canvas id="taCanvas" aria-label="Corrida da Tabuada Aventura"></canvas>
+      <!-- botões transparentes por cima do jogo -->
+      <div class="ta-pad" id="taPad">
+        <div class="ta-pad-dirs">
+          <button type="button" class="ta-pad-btn" data-k="left" aria-label="Andar para trás"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></button>
+          <button type="button" class="ta-pad-btn" data-k="right" aria-label="Andar para frente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+        </div>
+        <button type="button" class="ta-pad-btn ta-pad-jump" data-k="jump" aria-label="Pular"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6"/><path d="m6 11 6-6 6 6"/></svg><span>PULAR</span></button>
+      </div>
+      <div class="ta-overlay" id="taOverlay"></div>
+    </div>
+    <p class="ta-run-tip">Use as setas ◀ ▶ para andar e o botão PULAR (aperte de novo no ar para o pulo duplo). No teclado: setas e espaço.</p>
+  </div>
+  </div>
+
+  <section class="card gallery-wrap" aria-labelledby="albumTitle">
+    <div class="album-head">
+      <div>
+        <h2 class="gallery-title" id="albumTitle">Álbum de figurinhas</h2>
+        <p class="album-sub" id="albumCount">0 figurinhas coletadas</p>
+      </div>
+      <button id="albumToggleBtn" aria-expanded="false">Ver álbum</button>
+    </div>
+    <div class="album-bar"><span id="albumBar"></span></div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>© Fábrica de Palavras · Jogos de alfabetização</span>
+    <a href="index.html">Ver todos os jogos</a>
+  </div>
+</footer>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/math-utils.js"></script>
+<script src="assets/js/ta-personagens.js"></script>
+<script src="assets/js/ta-corrida.js"></script>
+<script src="assets/js/ta-loja.js"></script>
+<script src="assets/js/tabuada-aventura.js"></script>
+</body>
+</html>
