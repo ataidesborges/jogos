@@ -37,8 +37,9 @@ let nextTimer = null;
 
 function start(){
   clearTimeout(nextTimer);
-  if(level === 'facil'){
-    words = shuffle(ALL_WORDS.filter(w => w.syl.length >= 2)).slice(0, ROUNDS);
+  if(level !== 'medio'){
+    const minSyl = level === 'dificil' ? 3 : 2; // Difícil: palavras grandes
+    words = shuffle(ALL_WORDS.filter(w => w.syl.length >= minSyl)).slice(0, ROUNDS);
   } else {
     // mistura as 4 classes de forma equilibrada
     const byClass = n => shuffle([...MONOS, ...ALL_WORDS].filter(w => classOf(w) === n));
@@ -64,7 +65,7 @@ function load(){
   showPic(w);
   qProgress.textContent = `Palavra ${idx + 1} de ${words.length}`;
   qScore.textContent = `${score} pontos`;
-  if(level === 'facil') loadSeparate(w);
+  if(level !== 'medio') loadSeparate(w);
   else loadClassify(w);
 }
 
@@ -123,7 +124,7 @@ function checkSeparate(){
     const p = +g.dataset.pos;
     if(cuts.has(p) && !answerCuts.has(p)) g.classList.add('bad');
   });
-  if(tries >= 3){
+  if(tries >= 1){ // uma tentativa só: errou, mostra a separação certa
     // mostra a resposta e segue
     locked = true;
     spWord.querySelectorAll('.sp-gap').forEach(g=>{
@@ -148,6 +149,7 @@ function loadClassify(w){
     const b = document.createElement('button');
     b.className = 'tx-class';
     b.innerHTML = `<b>${c.name}</b><small>${c.help}</small>`;
+    b._v = c.n;
     b.addEventListener('click', ()=> chooseClass(b, c));
     qOptions.appendChild(b);
   });
@@ -164,9 +166,13 @@ function chooseClass(btn, c){
     qQuestion.textContent = `✔ ${current.word} tem ${current.syl.length} ${current.syl.length === 1 ? 'sílaba' : 'sílabas'}: é ${c.name.toLowerCase()}.`;
     say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
   } else {
+    // uma tentativa só: errou, mostra a certa
+    locked = true;
     tries++;
-    btn.classList.add('wrong');
-    ping(false);
+    missAnswer(btn, b => b._v === classOf(current), `Ops! ${current.word} tem <b>${current.syl.length}</b> ${current.syl.length === 1 ? 'sílaba' : 'sílabas'}`);
+    spWord.innerHTML = `<span class="tx-big">${current.syl.join(' - ')}</span>`;
+    say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
+    nextTimer = setTimeout(next, MISS_DELAY + 400);
   }
 }
 
@@ -189,6 +195,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, words.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${words.length} palavras!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

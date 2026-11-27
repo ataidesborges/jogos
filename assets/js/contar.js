@@ -34,7 +34,7 @@ function start(){
 
 function loadRound(){
   locked = false; tries = 0;
-  const max = level === 'facil' ? 5 : 10;
+  const max = level === 'facil' ? 5 : level === 'medio' ? 10 : 15;
   let n;
   do{ n = randInt(1, max); } while(n === lastN);
   lastN = n;
@@ -77,9 +77,12 @@ function choose(btn, v){
     });
     items.forEach((el, i) => el.querySelector('.ct-num').textContent = i + 1);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, a voz conta junto e segue
+    locked = true;
+    missAnswer(btn, b => b._v === current.n, `Ops! São <b>${current.n}</b>. Vamos contar juntos!`);
+    const items = [...ctTray.children];
+    items.forEach((el, i) => el.querySelector('.ct-num').textContent = i + 1);
+    setTimeout(()=> countAloud(current.n, i => items[i - 1].classList.add('counted'), ()=>{ nextTimer = setTimeout(next, 900); }), 600);
   }
 }
 
@@ -93,6 +96,7 @@ function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
   qFinalText.textContent = `Você fez ${score} pontos em ${ROUNDS} rodadas!`;
+  levelDone(level, score / 10, ROUNDS);
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);
   ping(true);

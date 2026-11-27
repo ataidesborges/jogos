@@ -63,6 +63,7 @@ uNextBtn.addEventListener('click', ()=>{
 });
 
 function wordPoolFor(level){
+  if(level === 'dificil'){ const p = ALL_WORDS.filter(w => w.word.length >= 8); return p.length >= 10 ? p : ALL_WORDS.filter(w => w.word.length >= 7); }
   return level === 'facil'
     ? ALL_WORDS.filter(w => w.word.length <= 6)
     : ALL_WORDS.filter(w => w.word.length >= 7);
@@ -215,17 +216,24 @@ function onCorrect(w){
   uReveal.classList.add('show');
 }
 
+// uma tentativa só: errou, mostra a palavra certa (0 ponto) e segue
 function onWrong(){
+  uSolved = true;
   ping(false);
-  uTryAgainMsg.textContent = 'Quase lá! Tente de novo 😊';
+  const w = uWordList[uWordIdx];
+  uTryAgainMsg.textContent = 'Ops! Não era essa palavra.';
   uTryAgainMsg.classList.add('show');
   uSlots.querySelectorAll('.tile-slot').forEach(el => el.classList.add('shake'));
   clearTimeout(uRetryTimer);
   uRetryTimer = setTimeout(()=>{
     uSlots.querySelectorAll('.tile-slot').forEach(el => el.classList.remove('shake'));
     uTryAgainMsg.classList.remove('show');
-    clearSlots();
-  }, 900);
+    uRevealMsg.textContent = 'A palavra certa era:';
+    uRevealWord.textContent = w.word;
+    uRevealPoints.textContent = '+0 pontos';
+    uReveal.classList.add('show');
+    speak(w.word);
+  }, 1000);
 }
 
 function updateScore(){
@@ -236,6 +244,7 @@ function finishGame(){
   uStage.style.display = 'none';
   uFinalScoreText.textContent = `Você terminou o jogo! Pontuação final: ${uScore} pontos`;
   uFinalScreen.classList.add('show');
+  levelDone(uLevel, uScore / 10, uWordList.length);
   confetti(uFinalScreen);
   ping(true);
 }

@@ -89,3 +89,9 @@
   .game-window.is-fs .memory-grid.pairs-6{width:min(96vw, calc((100vh - 110px) * 2.25));}
   .game-window.is-fs .memory-grid.pairs-8{width:min(96vw, calc((100vh - 110px) * 3));}
 }
+/* Difícil: 10 pares */
+@media (min-width:760px){ .memory-grid.pairs-10{grid-template-columns:repeat(10, 1fr); width:min(100%, 1000px);} }
+.memory-grid.pairs-10{grid-template-columns:repeat(5, 1fr);}
+@media (min-width:760px){ .memory-grid.pairs-10{grid-template-columns:repeat(10, 1fr);} }
+.game-window.is-fs .memory-grid.pairs-10{width:min(96vw, calc((100vh - 230px) * 1), 900px);}
+@media (min-aspect-ratio: 5/4){ .game-window.is-fs .memory-grid.pairs-10{grid-template-columns:repeat(10, 1fr); width:min(96vw, calc((100vh - 200px) * 3.75), 1300px);} }

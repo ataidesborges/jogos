@@ -42,7 +42,7 @@ function start(){
 }
 
 function loadRound(){
-  const n = level === 'facil' ? 3 : 4;
+  const n = level === 'facil' ? 3 : level === 'medio' ? 4 : 5;
   const maxLen = level === 'facil' ? 6 : 99;
   let candidates = ALL_WORDS.filter(w => w.word.length <= maxLen && !used.has(w.word));
   if(candidates.length < n) candidates = ALL_WORDS.filter(w => w.word.length <= maxLen);
@@ -117,10 +117,23 @@ function pick(side, word, el){
       nextTimer = setTimeout(nextRound, 1500);
     }
   } else {
-    mistakes[other.word] = (mistakes[other.word] || 0) + 1;
+    // uma tentativa só: errou o par, esse item é ligado no certo (sem ponto)
     [other.el, el].forEach(x => { x.classList.remove('wrong'); void x.offsetWidth; x.classList.add('wrong'); });
     ping(false);
+    const w = other.word;
+    links.push({word:w, color:'#CBD5E1'});
+    [lgPics.querySelector(`[data-word="${w}"]`), lgNames.querySelector(`[data-word="${w}"]`)].forEach(x=>{
+      if(!x) return;
+      if(x.classList.contains('shadow')){ x.classList.remove('shadow'); const im = x.querySelector('img'); if(im) im.src = x.dataset.art; }
+      x.classList.add('done', 'missed'); x.style.setProperty('--c', '#CBD5E1'); x.style.borderColor = '#CBD5E1';
+    });
+    missToast(`Ops! O par certo é <b>${w}</b>`);
+    speak(w);
     drawLines();
+    if(links.length === roundWords.length){
+      qQuestion.textContent = 'Fim da rodada!';
+      nextTimer = setTimeout(nextRound, 1800);
+    }
   }
 }
 
@@ -149,6 +162,7 @@ function nextRound(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, ROUNDS * (level === 'facil' ? 3 : level === 'medio' ? 4 : 5));
   qFinalText.textContent = `Você fez ${score} pontos em ${ROUNDS} rodadas!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

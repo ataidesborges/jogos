@@ -9,7 +9,7 @@ const mScoreText = document.getElementById('mScoreText');
 const mCongrats = document.getElementById('mCongrats');
 const mCongratsText = document.getElementById('mCongratsText');
 
-const PAIRS = { facil: 6, medio: 8 };
+const PAIRS = { facil: 6, medio: 8, dificil: 10 };
 let mLevel = 'facil';
 let mCards = [];        // {word, art, kind:'img'|'word', el, matched}
 let mOpen = [];         // cartas viradas aguardando comparação (no máximo 2)
@@ -132,6 +132,7 @@ function finishMemory(){
     mCongrats.classList.add('show');
     confetti(mCongrats);
   }, 600);
+  levelDone(mLevel, 1, 1); // achou todos os pares: ganha a estrela
 }
 
 // ---------- Init ----------

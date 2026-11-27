@@ -41,9 +41,9 @@ function start(){
 function loadRound(){
   locked = false; tries = 0;
   const letter = current = targets[idx];
-  const n = level === 'facil' ? 6 : 12;
+  const n = level === 'facil' ? 6 : level === 'medio' ? 12 : 16;
   // no Médio entram primeiro as letras parecidas com a certa
-  const alike = level === 'medio' ? (LOOK_ALIKE[letter] || '').split('').filter(l => ALPHABET.includes(l)) : [];
+  const alike = level !== 'facil' ? (LOOK_ALIKE[letter] || '').split('').filter(l => ALPHABET.includes(l)) : [];
   const others = shuffle(ALPHABET.filter(l => l !== letter && !alike.includes(l)));
   const letters = shuffle([letter, ...alike, ...others].slice(0, n));
   if(!letters.includes(letter)) letters[0] = letter;
@@ -54,6 +54,7 @@ function loadRound(){
     const b = document.createElement('button');
     b.className = 'ab-letter ' + COLORS[i % COLORS.length];
     b.textContent = l;
+    b._v = l;
     b.addEventListener('click', ()=> choose(b, l));
     qOptions.appendChild(b);
   });
@@ -87,10 +88,11 @@ function choose(btn, l){
     }
     nextTimer = setTimeout(next, 2100);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
-    setTimeout(()=> speakLetter(current), 450); // repete a letra para ajudar
+    // uma tentativa só: errou, perde esta letra
+    locked = true;
+    missAnswer(btn, b => b._v === current, `Ops! A letra certa era <b>${current}</b>`);
+    setTimeout(()=> speakLetter(current), 450);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -104,6 +106,7 @@ function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
   qFinalText.textContent = `Você fez ${score} pontos em ${targets.length} letras!`;
+  levelDone(level, score / 10, targets.length);
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);
   ping(true);

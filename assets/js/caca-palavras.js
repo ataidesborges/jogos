@@ -42,7 +42,7 @@ document.querySelectorAll('.caca-level-btn').forEach(btn=>{
 cacaNewBtn.addEventListener('click', startCaca);
 
 function wordPoolFor(level){
-  const maxLen = level === 'facil' ? 7 : 10;
+  const maxLen = level === 'facil' ? 7 : level === 'medio' ? 10 : 12;
   return ALL_WORDS.filter(w => normalizeLetters(w.word).length <= maxLen);
 }
 
@@ -85,8 +85,8 @@ function startCaca(){
   cacaReveal.classList.remove('show');
   updateCacaScore();
 
-  const wordCount = cacaLevel === 'facil' ? 8 : 10;
-  cacaSize = cacaLevel === 'facil' ? 10 : 13;
+  const wordCount = cacaLevel === 'facil' ? 8 : cacaLevel === 'medio' ? 10 : 12;
+  cacaSize = cacaLevel === 'facil' ? 10 : cacaLevel === 'medio' ? 13 : 14;
   const dirs = cacaLevel === 'facil' ? DIRS_BASIC : DIRS_ALL;
 
   const pool = shuffle([...wordPoolFor(cacaLevel)]);
@@ -248,6 +248,7 @@ function finishSelection(){
     cacaCelebrate(match, earned);
     if(cacaFoundCount === cacaPlaced.length){
       setTimeout(()=>{ cacaCongrats.classList.add('show'); }, 500);
+      levelDone(cacaLevel, 1, 1); // achou todas: ganha a estrela
     }
   } else {
     ping(false);

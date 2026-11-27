@@ -372,3 +372,15 @@ html{scroll-behavior:smooth;}
 
 /* capa da Tabuada Aventura */
 .cover-art{width:140px; height:140px; object-fit:contain; filter:drop-shadow(0 12px 16px rgba(0,0,0,.25));}
+
+/* estrelas ganhas em cada jogo */
+.game-cover{position:relative;}
+.card-stars{
+  position:absolute; left:12px; top:12px; z-index:2;
+  display:flex; gap:1px; padding:3px 8px; border-radius:999px;
+  background:rgba(255,255,255,.92); box-shadow:0 6px 14px -8px rgba(0,0,0,.5);
+  font-size:15px; line-height:1;
+}
+.card-stars i{font-style:normal; color:#E2E8F0; -webkit-text-stroke:1px #CBD5E1;}
+.card-stars i.on{color:#FACC15; -webkit-text-stroke:1px #B45309;}
+.card-stars.all{background:#FEF3C7; box-shadow:0 0 0 2px #FACC15, 0 6px 14px -8px rgba(0,0,0,.5);}

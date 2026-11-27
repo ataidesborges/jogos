@@ -63,6 +63,7 @@ function load(){
     const b = document.createElement('button');
     b.className = 'tx-choice';
     b.textContent = o;
+    b._v = o;
     b.addEventListener('click', ()=> choose(b, o));
     qOptions.appendChild(b);
   });
@@ -87,9 +88,11 @@ function choose(btn, o){
     qQuestion.textContent = mode === 'sinonimo' ? `✔ ${current.word} = ${o}` : `✔ ${current.word} × ${o}`;
     nextTimer = setTimeout(next, 2000);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, mostra a certa
+    locked = true;
+    missAnswer(btn, b => b._v === current.answer, `Ops! A resposta era <b>${current.answer}</b>`);
+    say(`${current.word.toLocaleLowerCase('pt-BR')}... ${current.answer.toLocaleLowerCase('pt-BR')}`, 0.85);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -102,6 +105,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(mode, score / 10, rounds.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${rounds.length} palavras!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

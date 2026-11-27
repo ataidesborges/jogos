@@ -710,3 +710,48 @@ button.sticker.unlocked:focus-visible{outline:3px solid var(--accent); outline-o
   .voice-btn{height:38px; padding:0 10px; font-size:13px; border-radius:11px;}
   .voice-btn span{display:none;}
 }
+
+/* ============================================================
+   Uma tentativa só: botões travados, certa piscando, aviso
+   ============================================================ */
+.opt-locked{pointer-events:none !important;}
+.opt-locked:not(.right):not(.wrong){opacity:.42;}
+.opt-reveal{animation:optReveal .9s ease 3 !important;}
+@keyframes optReveal{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.missed{background:#FEE2E2 !important; color:#B91C1C !important; border-color:#FCA5A5 !important;}
+.lf-tile.missed, .tx-gap.missed{animation:none;}
+.reveal-vowel{background:#FEF3C7 !important; color:#B45309 !important;}
+.miss-toast{
+  position:fixed; left:50%; top:86px; z-index:6500; transform:translate(-50%, -12px);
+  max-width:calc(100vw - 24px); padding:10px 20px; border-radius:999px;
+  background:#1A1238; color:#fff; font-weight:800; font-size:15px; text-align:center;
+  box-shadow:0 14px 30px -12px rgba(0,0,0,.55);
+  opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease;
+}
+.miss-toast b{color:#FDE047;}
+.miss-toast.show{opacity:1; transform:translate(-50%, 0);}
+body.fs-lock .miss-toast{top:16px;}
+
+/* ============================================================
+   Estrelas dos níveis
+   ============================================================ */
+.level-btn{position:relative;}
+.level-btn .lv-star{
+  position:absolute; top:-9px; right:-6px; font-size:17px; line-height:1;
+  color:#FACC15; -webkit-text-stroke:1.3px #B45309; text-shadow:0 2px 4px rgba(180,83,9,.35);
+  pointer-events:none;
+}
+.level-btn.has-star:not(.active){box-shadow:inset 0 0 0 2px #FDE68A;}
+.star-win{
+  position:fixed; left:50%; top:50%; z-index:7200; transform:translate(-50%, -50%) scale(.6);
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;
+  width:min(340px, calc(100vw - 32px)); padding:22px 22px 20px; border-radius:26px;
+  background:linear-gradient(160deg, #FFFBEB, #FEF3C7); box-shadow:0 30px 60px -20px rgba(0,0,0,.5), inset 0 0 0 3px #FCD34D;
+  opacity:0; animation:starWinIn .5s cubic-bezier(.2,1.5,.4,1) forwards;
+}
+.star-win-icon{font-size:72px; line-height:1; filter:drop-shadow(0 8px 10px rgba(180,83,9,.4)); animation:starSpin 1.2s ease;}
+.star-win b{font-family:var(--font-display); font-weight:600; font-size:28px; color:#92400E;}
+.star-win small{font-weight:800; font-size:15px; color:#78350F;}
+.star-win.out{opacity:0 !important; transform:translate(-50%, -60%) scale(.9) !important; transition:all .5s ease; animation:none;}
+@keyframes starWinIn{to{opacity:1; transform:translate(-50%, -50%) scale(1);}}
+@keyframes starSpin{from{transform:rotate(-200deg) scale(.3)} to{transform:none}}

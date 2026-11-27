@@ -109,10 +109,13 @@ function choose(btn, v){
     updateInfo();
     setTimeout(nextProblem, 350);
   } else {
+    // uma tentativa só: errou, perde esta conta e vem a próxima
+    locked = true;
     streak = 0;
-    btn.classList.add('wrong');
-    ping(false);
+    missAnswer(btn, b => b._v === current.answer);
+    rlExpr.querySelector('.ans').textContent = current.answer;
     updateInfo();
+    setTimeout(nextProblem, 900);
   }
 }
 
@@ -128,6 +131,7 @@ function finish(){
     ? `⭐ Novo recorde em ${NAME[mode]}: ${hits} acertos!`
     : `Você acertou ${hits} contas! Seu recorde é ${rec}.`;
   qProgress.textContent = 'Tempo esgotado!';
+  levelDone(mode, hits >= 12 ? 1 : 0, 1, `Faça 12 acertos ou mais em 1 minuto para ganhar a estrela ⭐`);
   confetti(qFinal);
   ping(true);
   say(isRecord ? `Novo recorde! ${hits} acertos!` : `Você acertou ${hits} contas!`, 0.9);

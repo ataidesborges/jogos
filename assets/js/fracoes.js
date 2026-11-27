@@ -54,7 +54,7 @@ let nextTimer = null;
 function makeFrac(){
   let n, k;
   for(let t = 0; t < 20; t++){
-    n = randInt(2, 8); k = randInt(1, n - 1);
+    n = mode === 'dificil' ? randInt(5, 8) : randInt(2, 8); k = randInt(1, n - 1);
     if(`${k}/${n}` !== lastKey) break;
   }
   lastKey = `${k}/${n}`;
@@ -90,13 +90,16 @@ function load(){
   const {k, n} = current = makeFrac();
   const options = shuffle([[k, n], ...wrongFracs(k, n, 3)]);
   qOptions.innerHTML = '';
-  if(mode === 'facil'){
+  // Difícil: alterna as duas perguntas, com pedaços pequenos
+  const view = mode === 'dificil' ? (idx % 2 ? 'medio' : 'facil') : mode;
+  if(view === 'facil'){
     frMain.innerHTML = pizzaSVG(k, n);
     qQuestion.textContent = 'Que fração da pizza tem recheio?';
     options.forEach(([a, b])=>{
       const btn = document.createElement('button');
       btn.className = 'q-opt fr-opt';
       btn.innerHTML = fracHTML(a, b);
+      btn._v = a + '/' + b;
       btn.addEventListener('click', ()=> choose(btn, a, b));
       qOptions.appendChild(btn);
     });
@@ -107,12 +110,13 @@ function load(){
       const btn = document.createElement('button');
       btn.className = 'fr-pick';
       btn.innerHTML = pizzaSVG(a, b);
+      btn._v = a + '/' + b;
       btn.addEventListener('click', ()=> choose(btn, a, b));
       qOptions.appendChild(btn);
     });
     say(fracName(k, n), 0.85);
   }
-  qOptions.classList.toggle('pizzas', mode === 'medio');
+  qOptions.classList.toggle('pizzas', view === 'medio');
   qProgress.textContent = `Rodada ${idx + 1} de ${ROUNDS}`;
   qScore.textContent = `${score} pontos`;
 }
@@ -133,10 +137,12 @@ function choose(btn, a, b){
     qQuestion.innerHTML = `✔ ${current.k} de ${current.n} pedaços = ${fracHTML(current.k, current.n)} (${fracName(current.k, current.n)})`;
     nextTimer = setTimeout(next, 2400);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
-    qQuestion.textContent = 'Dica: o número de baixo é o total de pedaços; o de cima, os pedaços com recheio.';
+    // uma tentativa só: errou, mostra a certa e segue
+    locked = true;
+    missAnswer(btn, x => x._v === current.k + '/' + current.n, `Ops! A resposta era <b>${current.k}/${current.n}</b>`);
+    qQuestion.innerHTML = `${current.k} de ${current.n} pedaços = ${fracHTML(current.k, current.n)} (${fracName(current.k, current.n)}). O de baixo é o total; o de cima, os pedaços com recheio.`;
+    say(fracName(current.k, current.n), 0.85);
+    nextTimer = setTimeout(next, MISS_DELAY + 900);
   }
 }
 
@@ -150,6 +156,7 @@ function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
   qFinalText.textContent = `Você fez ${score} pontos em ${ROUNDS} rodadas!`;
+  levelDone(mode, score / 10, ROUNDS);
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);
   ping(true);

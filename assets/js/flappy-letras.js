@@ -32,10 +32,12 @@ const COLOR_RED = cssVar('--red');
 const LEVELS = {
   facil: {gravity:1250, jump:-380, bubbleSpeed:130, spawnInterval:1300, maxWait:4200},
   medio: {gravity:1500, jump:-410, bubbleSpeed:175, spawnInterval:1000, maxWait:3600},
+  dificil: {gravity:1650, jump:-430, bubbleSpeed:215, spawnInterval:850, maxWait:3200},
 };
 let fLevel = 'facil';
 
 function wordPoolFor(level){
+  if(level === 'dificil'){ const p = ALL_WORDS.filter(w => w.word.length >= 8); if(p.length >= 5) return p; }
   return level === 'facil'
     ? ALL_WORDS.filter(w => w.word.length <= 6)
     : ALL_WORDS.filter(w => w.word.length >= 7);
@@ -146,6 +148,7 @@ function resetGame(){
   phase = 'idle';
   lastTime = null;
   score = 0;
+  wordsThisGame = 0;
   lives = 3;
   bird = {x:90, y:CH/2, vy:0, r:20};
   bubbles = [];
@@ -258,8 +261,11 @@ function onBubbleHit(bubble){
   }
 }
 
+let wordsThisGame = 0; // palavras completas nesta partida (5 = estrela do nível)
 function onWordComplete(){
   phase = 'celebrating';
+  wordsThisGame++;
+  if(wordsThisGame === 5) levelDone(fLevel, 1, 1);
   const earned = 10 + (mistakeCount === 0 ? 5 : 0);
   score += earned;
   addPoints(earned);

@@ -113,10 +113,12 @@ function choose(btn, v){
     pbExplain.classList.add('show');
     nextTimer = setTimeout(next, 2800);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
-    qQuestion.textContent = 'Leia de novo com calma: a história pede para juntar, tirar, repetir ou repartir?';
+    // uma tentativa só: errou, mostra a conta certa
+    locked = true;
+    missAnswer(btn, b => b._v === current.answer, `Ops! A resposta era <b>${current.answer}</b>`);
+    pbExplain.textContent = `A conta é: ${current.expr}`;
+    pbExplain.classList.add('show');
+    nextTimer = setTimeout(next, MISS_DELAY + 1200);
   }
 }
 
@@ -129,6 +131,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, problems.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${problems.length} problemas!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

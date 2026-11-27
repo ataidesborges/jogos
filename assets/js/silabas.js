@@ -217,11 +217,15 @@ function renderBoard(fams){
   fams.forEach((c, row) => VOWELS.forEach(v => addBtn(c + v, 'f' + (row % 6))));
 }
 
+const starredLevels = new Set();
+const hasStarNow = l => !!((starsAll()[PAGE_ID] || {got:{}}).got[l]);
 function updateProgress(){
   const pool = levelPool();
   const total = pool.filter(w => discovered.has(w.word)).length;
   const tipo = currentLevel === 'desafio' ? 'palavras difíceis' : 'palavras';
   progressText.textContent = `${total} de ${pool.length} ${tipo} descobertas`;
+  // descobriu todas as palavras do nível: ganha a estrela
+  if(pool.length && total === pool.length && !starredLevels.has(currentLevel)){ starredLevels.add(currentLevel); if(!hasStarNow(currentLevel)) levelDone(currentLevel, 1, 1); }
   scoreText.textContent = `${score} pontos`;
 }
 

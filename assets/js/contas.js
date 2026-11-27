@@ -92,9 +92,13 @@ function choose(btn, v){
     say(`${current.a} ${SPOKEN[mode]} ${current.b}, igual a ${v}!`, 0.85);
     nextTimer = setTimeout(next, 2300);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, mostra a certa e segue
+    locked = true;
+    missAnswer(btn, b => b._v === current.answer, `Ops! ${current.a} ${SIGN[mode]} ${current.b} = <b>${current.answer}</b>`);
+    const ans = csExpr.querySelector('.ans');
+    ans.textContent = current.answer; ans.classList.add('done', 'missed');
+    say(`${current.a} ${SPOKEN[mode]} ${current.b} é igual a ${current.answer}.`, 0.85);
+    nextTimer = setTimeout(next, MISS_DELAY + 300);
   }
 }
 
@@ -115,6 +119,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(mode, score / 10, ROUNDS);
   qFinalText.textContent = `Você fez ${score} pontos em ${ROUNDS} contas!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

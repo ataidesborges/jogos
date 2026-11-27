@@ -153,6 +153,90 @@ function speakSyllable(syl){
   say(syllableToSpeech(syl), 0.8);
 }
 
+// ---------- Estrelas dos níveis (Fácil, Médio, Difícil) ----------
+// Terminou um nível acertando 70% ou mais = ganha a estrela daquele nível.
+// As estrelas aparecem nos botões de nível e nos cartões da página inicial.
+const STARS_KEY = 'fp-estrelas';
+const PAGE_ID = ((location.pathname.split('/').pop() || 'index').replace('.html', '')) || 'index';
+function starsAll(){ try{ return JSON.parse(localStorage.getItem(STARS_KEY)) || {}; }catch(e){ return {}; } }
+function starsSave(all){ try{ localStorage.setItem(STARS_KEY, JSON.stringify(all)); }catch(e){} }
+function levelName(level){
+  const b = document.querySelector(`.level-btn[data-level="${level}"]`);
+  return b ? (b.childNodes[0].textContent || level).trim() : level;
+}
+function paintLevelStars(){
+  const btns = [...document.querySelectorAll('.level-btn[data-level]')];
+  if(!btns.length) return;
+  const all = starsAll();
+  const s = all[PAGE_ID] = all[PAGE_ID] || {got:{}};
+  s.total = btns.length;
+  starsSave(all);
+  btns.forEach(b=>{
+    const has = !!s.got[b.dataset.level];
+    b.classList.toggle('has-star', has);
+    let st = b.querySelector('.lv-star');
+    if(has && !st){ st = document.createElement('span'); st.className = 'lv-star'; st.textContent = '★'; st.setAttribute('aria-hidden', 'true'); b.appendChild(st); }
+    if(!has && st) st.remove();
+  });
+}
+// ok de total certas. failMsg: aviso quando não ganha (opcional)
+function levelDone(level, ok, total, failMsg){
+  const pass = !total || ok / total >= .7;
+  const name = levelName(level);
+  if(pass){
+    const all = starsAll();
+    const s = all[PAGE_ID] = all[PAGE_ID] || {got:{}};
+    const isNew = !s.got[level];
+    s.got[level] = true;
+    starsSave(all);
+    paintLevelStars();
+    setTimeout(()=> starWin(isNew ? `Você ganhou a estrela do nível ${name}!` : `Muito bem! A estrela do nível ${name} já é sua.`, isNew), 700);
+  } else {
+    setTimeout(()=> missToast(failMsg || `Quase! Acerte ${Math.ceil(total * .7)} de ${total} para ganhar a estrela ⭐`), 700);
+  }
+  return pass;
+}
+function starWin(text, isNew){
+  const el = document.createElement('div');
+  el.className = 'star-win' + (isNew ? ' new' : '');
+  el.innerHTML = `<span class="star-win-icon">⭐</span><b>${isNew ? 'Estrela!' : 'Parabéns!'}</b><small>${text}</small>`;
+  overlayRoot().appendChild(el);
+  confetti(el);
+  if(isNew) ping(true);
+  say(text, 0.95);
+  setTimeout(()=> el.classList.add('out'), 3200);
+  setTimeout(()=> el.remove(), 3800);
+}
+
+// ---------- Uma tentativa só (todos os jogos de escolher resposta) ----------
+// Errou: perde aquela pergunta (0 ponto). Os botões travam, a resposta
+// certa aparece piscando, um aviso mostra qual era, e o jogo segue sozinho.
+// Assim não adianta sair tocando em todas as opções até acertar.
+const MISS_DELAY = 2600;
+function missAnswer(btn, isRight, msg){
+  btn.classList.add('wrong');
+  const box = btn.parentElement;
+  let right = null;
+  if(box) box.querySelectorAll('button').forEach(b=>{
+    b.classList.add('opt-locked');
+    if(!right && isRight && b !== btn && isRight(b)) right = b;
+  });
+  if(right) right.classList.add('right', 'opt-reveal');
+  ping(false);
+  if(msg) missToast(msg);
+  return right;
+}
+let missToastTimer = 0;
+function missToast(msg){
+  let t = document.getElementById('missToast');
+  if(!t){ t = document.createElement('div'); t.id = 'missToast'; t.className = 'miss-toast'; t.setAttribute('role', 'status'); }
+  overlayRoot().appendChild(t);
+  t.innerHTML = msg;
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  clearTimeout(missToastTimer);
+  missToastTimer = setTimeout(()=> t.classList.remove('show'), MISS_DELAY - 200);
+}
+
 // ---------- Efeitos sonoros (sem arquivos externos) ----------
 let audioCtx = null;
 function ping(success){
@@ -376,6 +460,7 @@ function setupFullscreen(){
 function initCommon(gameId){
   setupSoundButton();
   setupVoiceButton();
+  paintLevelStars();
   setupAlbum(gameId);
   setupFullscreen();
   preloadArt();
@@ -466,7 +551,7 @@ function rewardSticker(word, points){
 // aparelho. Mostra o total e o nível da criança num selo no topo.
 // ============================================================
 const POINTS_KEY = 'fp-pontos-total';
-const LEVELS = [
+const PT_LEVELS = [
   {min:0,    name:'Iniciante',  icon:'🌱'},
   {min:100,  name:'Aprendiz',   icon:'✏️'},
   {min:300,  name:'Leitor',     icon:'📘'},
@@ -477,8 +562,8 @@ const LEVELS = [
 ];
 let totalPoints = +(localStorage.getItem(POINTS_KEY) || 0);
 let currentGameId = null;
-const levelOf = p => LEVELS.filter(l => p >= l.min).pop();
-const nextLevelOf = p => LEVELS.find(l => l.min > p);
+const levelOf = p => PT_LEVELS.filter(l => p >= l.min).pop();
+const nextLevelOf = p => PT_LEVELS.find(l => l.min > p);
 const fmt = n => n.toLocaleString('pt-BR');
 
 function gamePointsKey(){ return 'fp-pontos-' + (currentGameId || 'geral'); }

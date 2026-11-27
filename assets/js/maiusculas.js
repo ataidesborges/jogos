@@ -43,7 +43,7 @@ function start(){
 function pickLetters(){
   if(level === 'facil') return shuffle([...ALPHABET]).slice(0, 4);
   const group = LOOK_ALIKE_GROUPS[Math.floor(Math.random() * LOOK_ALIKE_GROUPS.length)];
-  const extra = shuffle(ALPHABET.filter(l => !group.includes(l))).slice(0, 5 - group.length);
+  const extra = shuffle(ALPHABET.filter(l => !group.includes(l))).slice(0, (level === 'dificil' ? 6 : 5) - group.length);
   return [...group, ...extra];
 }
 
@@ -100,9 +100,20 @@ function pick(side, letter, el){
       nextTimer = setTimeout(nextRound, 1500);
     }
   } else {
-    mistakes[other.letter] = (mistakes[other.letter] || 0) + 1;
+    // uma tentativa só: errou o par, essa letra é ligada na certa (sem ponto)
     [other.el, el].forEach(x => { x.classList.remove('wrong'); void x.offsetWidth; x.classList.add('wrong'); });
     ping(false);
+    const L = other.letter;
+    links.push({letter:L, color:'#CBD5E1'});
+    [colUpper.querySelector(`[data-letter="${L}"]`), colLower.querySelector(`[data-letter="${L}"]`)].forEach(x=>{
+      if(x){ x.classList.add('done', 'missed'); x.style.setProperty('--c', '#CBD5E1'); x.style.borderColor = '#CBD5E1'; }
+    });
+    missToast(`Ops! <b>${L}</b> combina com <b>${L.toLowerCase()}</b>`);
+    drawLines();
+    if(links.length === letters.length){
+      qQuestion.textContent = 'Fim da rodada!';
+      nextTimer = setTimeout(nextRound, 1800);
+    }
   }
 }
 
@@ -130,6 +141,7 @@ function nextRound(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, ROUNDS * (level === 'facil' ? 4 : level === 'medio' ? 5 : 6));
   qFinalText.textContent = `Você fez ${score} pontos em ${ROUNDS} rodadas!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

@@ -35,10 +35,10 @@ function start(){
 // opções erradas: no Médio, palavras parecidas com a certa (mesma 1ª letra ou mesmo tamanho)
 function distractors(w){
   const others = ALL_WORDS.filter(x => plain(x.word) !== plain(w.word));
-  if(level === 'medio'){
+  if(level !== 'facil'){
     const similar = shuffle(others.filter(x => x.word[0] === w.word[0] || Math.abs(x.word.length - w.word.length) <= 1));
     const rest = shuffle(others.filter(x => !similar.includes(x)));
-    return [...similar, ...rest].slice(0, OPTIONS - 1);
+    return [...similar, ...rest].slice(0, (level === 'dificil' ? 6 : OPTIONS) - 1);
   }
   return shuffle(others).slice(0, OPTIONS - 1);
 }
@@ -48,7 +48,8 @@ function loadWord(){
   const w = current = words[idx];
   const opts = shuffle([w, ...distractors(w)]);
   qOptions.innerHTML = '';
-  qOptions.classList.toggle('words', level === 'medio');
+  qOptions.classList.toggle('words', level !== 'facil');
+  qOptions.classList.toggle('six', level === 'dificil');
   opts.forEach(o=>{
     const b = document.createElement('button');
     b.className = 'dt-opt';
@@ -57,6 +58,7 @@ function loadWord(){
       ? `<img src="${o.art}" alt="">`
       : `<span class="dt-word">${o.word}</span>`;
     b.setAttribute('aria-label', level === 'facil' ? 'Figura' : o.word);
+    b._v = o.word;
     b.addEventListener('click', ()=> choose(b, o));
     qOptions.appendChild(b);
   });
@@ -72,7 +74,7 @@ function choose(btn, o){
     locked = true;
     btn.classList.add('right');
     // no Médio, revela a figura junto com a palavra certa
-    if(level === 'medio') btn.innerHTML = `<img src="${o.art}" alt=""><span class="dt-word">${o.word}</span>`;
+    if(level !== 'facil') btn.innerHTML = `<img src="${o.art}" alt=""><span class="dt-word">${o.word}</span>`;
     else btn.insertAdjacentHTML('beforeend', `<span class="dt-word small">${o.word}</span>`);
     const earned = tries === 0 ? 10 : 5;
     score += earned;
@@ -84,10 +86,13 @@ function choose(btn, o){
     speak(o.word);
     nextTimer = setTimeout(next, 1700);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
-    setTimeout(()=> speak(current.word), 450); // repete a palavra para ajudar
+    // uma tentativa só: errou, mostra a certa e segue
+    locked = true;
+    const right = missAnswer(btn, b => b._v === current.word, `Ops! A palavra era <b>${current.word}</b>`);
+    if(right && level !== 'facil') right.innerHTML = `<img src="${current.art}" alt=""><span class="dt-word">${current.word}</span>`;
+    else if(right) right.insertAdjacentHTML('beforeend', `<span class="dt-word small">${current.word}</span>`);
+    setTimeout(()=> speak(current.word), 450);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -100,6 +105,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, words.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${words.length} palavras!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

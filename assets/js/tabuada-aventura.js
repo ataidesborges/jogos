@@ -53,7 +53,9 @@ function markProgress(m, t, n){
   if(list.includes(n)) return false;
   list.push(n);
   try{ localStorage.setItem(TABLE_KEY, JSON.stringify(tableProg)); }catch(e){}
-  return list.length === 10; // acabou de completar
+  const done = list.length === 10; // acabou de completar
+  if(done && [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].every(t => isComplete(m, t))) setTimeout(()=> levelDone(m, 1, 1), 2500);
+  return done;
 }
 let nextTimer = null;
 

@@ -459,5 +459,29 @@
     <a href="#jogos">Ver todos os jogos</a>
   </div>
 </footer>
+<script>
+// estrelas ganhas em cada jogo (Fácil, Médio, Difícil) nos cartões
+(function(){
+  var TOTAL = {'contas':3, 'relampago':4, 'sinonimos':2, 'tabuada-aventura':4};
+  var all = {};
+  try{ all = JSON.parse(localStorage.getItem('fp-estrelas')) || {}; }catch(e){}
+  document.querySelectorAll('a.game[href]').forEach(function(a){
+    var id = a.getAttribute('href').replace('.html', '');
+    var s = all[id] || {got:{}};
+    var total = s.total || TOTAL[id] || 3;
+    var got = Object.keys(s.got || {}).length;
+    var cover = a.querySelector('.game-cover');
+    if(!cover) return;
+    var el = document.createElement('span');
+    el.className = 'card-stars' + (got >= total ? ' all' : '');
+    var html = '';
+    for(var i = 0; i < total; i++) html += '<i class="' + (i < got ? 'on' : '') + '">★</i>';
+    el.innerHTML = html;
+    el.title = got + ' de ' + total + ' estrelas';
+    el.setAttribute('aria-label', got + ' de ' + total + ' estrelas');
+    cover.appendChild(el);
+  });
+})();
+</script>
 </body>
 </html>

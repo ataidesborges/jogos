@@ -71,8 +71,10 @@ function loadRound(){
   opts.forEach(o=>{
     const b = document.createElement('button');
     b.className = 'dt-opt';
-    b.innerHTML = `<img src="${o.art}" alt=""><span class="dt-word small">${o.word}</span>`;
+    b.innerHTML = level === 'dificil' ? `<span class="dt-word">${o.word}</span>` : `<img src="${o.art}" alt=""><span class="dt-word small">${o.word}</span>`;
+    b.classList.toggle('word-only', level === 'dificil');
     b.setAttribute('aria-label', o.word);
+    b._v = o.word;
     b.addEventListener('click', ()=> choose(b, o));
     qOptions.appendChild(b);
   });
@@ -100,10 +102,11 @@ function choose(btn, o){
     qQuestion.textContent = `🎉 ${current.target.word} rima com ${o.word}!`;
     nextTimer = setTimeout(next, 2300);
   } else {
-    tries++;
-    speak(o.word);
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, mostra a que rima
+    locked = true;
+    missAnswer(btn, b => b._v === current.answer.word, `Ops! ${current.target.word} rima com <b>${current.answer.word}</b>`);
+    say(`${current.target.word.toLocaleLowerCase('pt-BR')}... ${current.answer.word.toLocaleLowerCase('pt-BR')}!`, 0.8);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -116,6 +119,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, rounds.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${rounds.length} rimas!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

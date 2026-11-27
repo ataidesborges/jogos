@@ -29,6 +29,7 @@ let current = null;
 let nextTimer = null;
 
 function pool(){
+  if(level === 'dificil') return ALL_WORDS.filter(w => w.word.length >= 7); // caça em palavras grandes
   return level === 'facil'
     ? ALL_WORDS.filter(w => isVowel(w.word[0]))   // palavras que começam com vogal
     : ALL_WORDS;
@@ -49,7 +50,7 @@ function loadWord(){
   const letters = [...w.word];
   vgWord.innerHTML = '';
   vgWord.style.setProperty('--n', letters.length);
-  vgWord.classList.toggle('hunt', level === 'medio');
+  vgWord.classList.toggle('hunt', level !== 'facil');
   qOptions.innerHTML = '';
 
   if(level === 'facil'){
@@ -65,6 +66,7 @@ function loadWord(){
       const b = document.createElement('button');
       b.className = 'q-opt';
       b.textContent = v;
+      b._v = v;
       b.addEventListener('click', ()=> chooseStart(b, v));
       qOptions.appendChild(b);
     });
@@ -98,9 +100,15 @@ function chooseStart(btn, v){
     tile.classList.add('filled');
     win(tile);
   } else {
-    mistakes++;
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, mostra a vogal certa e segue
+    locked = true;
+    const v0 = plain(current.word[0]);
+    missAnswer(btn, b => b._v === v0, `Ops! ${current.word} começa com <b>${v0}</b>`);
+    const tile = vgWord.children[0];
+    tile.classList.remove('gap');
+    tile.classList.add('filled', 'missed');
+    setTimeout(()=> speak(current.word), 350);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -113,9 +121,14 @@ function tapLetter(tile, ch){
     const left = [...vgWord.children].filter(t => isVowel(t.textContent) && !t.classList.contains('found'));
     if(!left.length){ locked = true; win(vgWord); }
   } else {
-    mistakes++;
-    tile.classList.remove('nope'); void tile.offsetWidth; tile.classList.add('nope');
+    // uma tentativa só: tocou numa consoante, perde a palavra e vê as vogais
+    locked = true;
+    tile.classList.add('nope');
+    [...vgWord.children].forEach(t => { if(isVowel(t.textContent) && !t.classList.contains('found')) t.classList.add('found', 'reveal-vowel'); });
     ping(false);
+    missToast(`Ops! <b>${ch}</b> não é vogal. As vogais estão marcadas.`);
+    setTimeout(()=> speak(current.word), 350);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -140,6 +153,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, words.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${words.length} palavras!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);

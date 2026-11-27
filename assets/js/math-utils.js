@@ -45,6 +45,7 @@ function renderNumberOptions(container, values, onPick){
     const b = document.createElement('button');
     b.className = 'q-opt num-opt';
     b.textContent = v;
+    b._v = v; // valor do botão (para mostrar a certa quando errar)
     b.addEventListener('click', ()=> onPick(b, v));
     container.appendChild(b);
   });

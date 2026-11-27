@@ -27,13 +27,14 @@ const BALLOON_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#A855F7', '
 const plain = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 let level = 'facil';
-let words = [], idx = 0, score = 0;
+let words = [], idx = 0, score = 0, wins = 0;
 let current = null, letters = [], found = [], balloons = 0, locked = false;
 let nextTimer = null;
 
 function start(){
   clearTimeout(nextTimer);
-  const pool = level === 'facil' ? ALL_WORDS.filter(w => w.word.length <= 5) : ALL_WORDS.filter(w => w.word.length >= 4);
+  const pool = level === 'facil' ? ALL_WORDS.filter(w => w.word.length <= 5) : level === 'medio' ? ALL_WORDS.filter(w => w.word.length >= 4) : ALL_WORDS.filter(w => w.word.length >= 6);
+  wins = 0;
   words = shuffle([...pool]).slice(0, ROUNDS);
   idx = 0; score = 0;
   qFinal.hidden = true;
@@ -46,7 +47,7 @@ function loadWord(){
   current = words[idx];
   letters = [...current.word];
   found = letters.map(() => false);
-  balloons = level === 'facil' ? 6 : 5;
+  balloons = level === 'facil' ? 6 : level === 'medio' ? 5 : 4;
 
   adWord.innerHTML = '';
   adWord.style.setProperty('--n', letters.length);
@@ -74,11 +75,11 @@ function loadWord(){
     adKeys.appendChild(b);
   });
 
-  qCard.classList.toggle('shadow', level === 'medio');
+  qCard.classList.toggle('shadow', level !== 'facil');
   qQuestion.textContent = 'Toque nas letras para descobrir a palavra.';
   qProgress.textContent = `Palavra ${idx + 1} de ${words.length}`;
   qScore.textContent = `${score} pontos`;
-  if(level === 'medio'){ // só a sombra
+  if(level !== 'facil'){ // só a sombra
     const w = current;
     silhouette(w.art).then(u => { if(current === w && qCard.classList.contains('shadow')) setArt(qArt, u, 'Sombra da palavra escondida'); });
   }
@@ -127,6 +128,7 @@ function reveal(){
 function win(){
   locked = true;
   reveal();
+  wins++;
   const earned = 10 + balloons * 2;
   score += earned;
   addPoints(earned);
@@ -157,6 +159,7 @@ function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
   qFinalText.textContent = `Você fez ${score} pontos em ${words.length} palavras!`;
+  levelDone(level, wins, words.length);
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);
   ping(true);

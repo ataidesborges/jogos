@@ -364,3 +364,8 @@
   .game-window.is-fs .ad-key{height:34px; font-size:17px;}
   .game-window.is-fs .ad-balloon{width:24px;}
 }
+/* Ditado difícil: 6 palavras */
+.dt-options.six{grid-template-columns:repeat(3, minmax(0, 1fr));}
+/* Rimas difícil: só a palavra */
+.dt-opt.word-only{aspect-ratio:2.2; justify-content:center;}
+.dt-opt.word-only .dt-word{font-size:clamp(20px, 3.6vw, 28px);}

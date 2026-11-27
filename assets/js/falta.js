@@ -27,6 +27,7 @@ let current = null; // {w, pos, answer}
 let nextTimer = null;
 
 function pool(){
+  if(level === 'dificil') return ALL_WORDS.filter(w => w.word.length >= 6);
   return level === 'facil' ? ALL_WORDS.filter(w => w.word.length <= 6) : ALL_WORDS;
 }
 
@@ -45,7 +46,7 @@ function loadWord(){
   const letters = [...w.word];
   // posição que vai ficar vazia: só letras sem acento (fica mais justo para a criança)
   let pos = 0;
-  if(level === 'medio'){
+  if(level !== 'facil'){
     const options = letters.map((ch, i) => i).filter(i => i > 0 && plain(letters[i]) === letters[i] && /[A-Z]/.test(letters[i]));
     pos = options.length ? options[Math.floor(Math.random() * options.length)] : 0;
   }
@@ -63,7 +64,7 @@ function loadWord(){
   });
 
   // opções: a certa + letras do mesmo tipo (vogal com vogal, consoante com consoante)
-  const n = level === 'facil' ? 3 : 4;
+  const n = level === 'facil' ? 3 : level === 'medio' ? 4 : 5;
   // (nunca oferece uma letra que formaria outra palavra do jogo: GATO sem o G não pode ter P de PATO)
   const known = new Set(ALL_WORDS.map(x => plain(x.word)));
   const makesWord = l => { const t = [...plain(w.word)]; t[pos] = l; return known.has(t.join('')); };
@@ -74,6 +75,7 @@ function loadWord(){
     const b = document.createElement('button');
     b.className = 'q-opt';
     b.textContent = l;
+    b._v = l;
     b.addEventListener('click', ()=> choose(b, l));
     qOptions.appendChild(b);
   });
@@ -102,9 +104,14 @@ function choose(btn, letter){
     speak(current.w.word);
     nextTimer = setTimeout(next, 1600);
   } else {
-    tries++;
-    btn.classList.add('wrong');
-    ping(false);
+    // uma tentativa só: errou, mostra a letra certa e segue
+    locked = true;
+    missAnswer(btn, b => b._v === current.answer, `Ops! A letra que faltava era <b>${current.answer}</b>`);
+    const tile = lfWord.children[current.pos];
+    tile.classList.remove('gap');
+    tile.classList.add('filled', 'missed');
+    speak(current.w.word);
+    nextTimer = setTimeout(next, MISS_DELAY);
   }
 }
 
@@ -117,6 +124,7 @@ function next(){
 function finish(){
   qStage.hidden = true;
   qFinal.hidden = false;
+  levelDone(level, score / 10, words.length);
   qFinalText.textContent = `Você fez ${score} pontos em ${words.length} palavras!`;
   qProgress.textContent = 'Fim de jogo';
   confetti(qFinal);
