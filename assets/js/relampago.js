@@ -22,8 +22,8 @@ const qFinal = document.getElementById('qFinal');
 const qFinalText = document.getElementById('qFinalText');
 
 const DURATION = 60;
-const SIGN = {somar:'+', subtrair:'−', multiplicar:'×'};
-const NAME = {somar:'Adição', subtrair:'Subtração', multiplicar:'Tabuada'};
+const SIGN = {somar:'+', subtrair:'−', multiplicar:'×', dividir:'÷'};
+const NAME = {somar:'Adição', subtrair:'Subtração', multiplicar:'Tabuada', dividir:'Divisão'};
 
 let mode = 'somar';
 let hits = 0, streak = 0, timeLeft = DURATION, timer = null, playing = false, locked = false;
@@ -50,11 +50,12 @@ function makeProblem(){
   for(let k = 0; k < 30; k++){
     if(mode === 'somar'){ a = randInt(1, 12); b = randInt(1, 20 - a); }
     else if(mode === 'subtrair'){ a = randInt(2, 20); b = randInt(1, a); }
-    else { a = randInt(1, 10); b = randInt(1, 10); }
+    else if(mode === 'multiplicar'){ a = randInt(1, 10); b = randInt(1, 10); }
+    else { b = randInt(2, 10); a = b * randInt(1, 10); } // divisão sempre exata
     if(`${a},${b}` !== lastKey) break;
   }
   lastKey = `${a},${b}`;
-  const answer = mode === 'somar' ? a + b : mode === 'subtrair' ? a - b : a * b;
+  const answer = mode === 'somar' ? a + b : mode === 'subtrair' ? a - b : mode === 'multiplicar' ? a * b : a / b;
   return {a, b, answer};
 }
 

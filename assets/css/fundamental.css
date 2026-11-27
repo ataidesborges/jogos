@@ -1,0 +1,175 @@
+/* ============================================================
+   Jogos do 3º ao 5º ano: Ortografia, Separa Sílabas, Sinônimos,
+   Problemas e Frações
+   ============================================================ */
+
+/* etiqueta da regra (ex.: "S ou Z?") */
+.tx-rule{
+  font-weight:800; font-size:14px; letter-spacing:.04em;
+  color:var(--accent); background:#fff;
+  padding:6px 14px; border-radius:999px;
+  box-shadow:0 6px 14px -10px var(--glow);
+}
+.tx-rule:empty{display:none;}
+
+/* palavra com lacuna: CA ? A */
+.tx-word{
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(38px, 8vw, 68px); letter-spacing:.06em; color:var(--ink);
+  background:#fff; border-radius:24px; padding:14px 26px;
+  box-shadow:0 14px 30px -20px var(--glow);
+}
+.tx-gap{
+  display:inline-grid; place-items:center;
+  min-width:1.1em; margin:0 .08em; padding:0 .12em;
+  border-bottom:6px solid var(--accent);
+  color:var(--accent);
+  animation:lfBlink 1.3s ease-in-out infinite;
+}
+.tx-gap.done{animation:popIn .4s ease; border-bottom-color:transparent; background:var(--grad); color:#fff; border-radius:12px;}
+.tx-opt{min-width:clamp(92px, 16vw, 128px);}
+
+/* palavra grande (sinônimos / classificar) */
+.tx-big{
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(36px, 7.5vw, 60px); letter-spacing:.05em; color:var(--ink);
+  background:#fff; border-radius:24px; padding:12px 28px;
+  box-shadow:0 14px 30px -20px var(--glow);
+}
+.sp-word .tx-big{display:inline-block;}
+
+/* botões de palavra (sinônimos) */
+.tx-options{width:min(100%, 560px); display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;}
+.tx-choice, .tx-class{
+  min-height:64px; padding:10px 14px;
+  border:3px solid transparent; border-radius:18px;
+  background:#fff; color:var(--ink);
+  font-family:var(--font-display); font-weight:600; font-size:clamp(18px, 3.4vw, 26px); letter-spacing:.03em;
+  cursor:pointer;
+  box-shadow:inset 0 -4px 0 rgba(26,18,56,.08), 0 8px 18px -12px rgba(26,18,56,.45);
+  transition:transform .1s ease, opacity .2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.tx-choice:hover, .tx-class:hover{transform:translateY(-2px);}
+.tx-choice.right, .tx-class.right{background:var(--grad); color:#fff; animation:popIn .35s ease;}
+.tx-choice.wrong, .tx-class.wrong{animation:qShake .4s ease; opacity:.4; pointer-events:none;}
+
+/* ---------- Separa Sílabas ---------- */
+.tx-pic{width:clamp(90px, 18vw, 140px); aspect-ratio:1; background:#fff; border-radius:22px; display:grid; place-items:center; box-shadow:0 10px 24px -16px var(--glow);}
+.tx-pic[hidden]{display:none;}
+.tx-pic img{width:84%; height:84%; object-fit:contain;}
+.sp-word{
+  display:flex; align-items:stretch; justify-content:center; flex-wrap:nowrap;
+  --l:min(56px, calc((100vw - 90px) / (var(--n, 6) * 1.55)));
+}
+.sp-letter{
+  width:var(--l); height:calc(var(--l) * 1.25);
+  display:grid; place-items:center;
+  background:#fff; border-radius:12px;
+  font-family:var(--font-display); font-weight:600; font-size:calc(var(--l) * .62); color:var(--ink);
+  box-shadow:inset 0 -4px 0 rgba(26,18,56,.08);
+}
+.sp-gap{
+  width:calc(var(--l) * .55); padding:0; border:none; background:transparent;
+  position:relative; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.sp-gap::before{ /* pontinho para tocar */
+  content:""; position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px;
+  border-radius:50%; background:var(--accent); opacity:.3;
+}
+.sp-gap.on::before{ /* tracinho de separação */
+  width:70%; height:6px; margin:-3px 0 0 -35%; border-radius:3px; opacity:1; background:var(--accent);
+}
+.sp-gap.bad::before{background:#E11D48;}
+.sp-gap:hover::before{opacity:.7;}
+.sp-check{height:52px; padding:0 30px; font-size:18px;}
+.tx-class{display:flex; flex-direction:column; align-items:center; gap:2px; min-width:min(42vw, 180px);}
+.tx-class small{font-family:var(--font-body); font-weight:700; font-size:13px; opacity:.7;}
+#qOptions:has(.tx-class){display:grid; grid-template-columns:repeat(2, 1fr); width:min(100%, 460px);}
+
+/* ---------- Problemas ---------- */
+.pb-card{
+  width:min(100%, 640px);
+  display:flex; align-items:flex-start; gap:12px;
+  background:#fff; border-radius:22px; padding:18px 18px 18px 22px;
+  box-shadow:0 14px 30px -20px var(--glow);
+  border-left:6px solid var(--accent);
+}
+.pb-text{margin:0; flex:1; font-size:clamp(17px, 2.6vw, 22px); font-weight:700; line-height:1.5; color:var(--ink);}
+.pb-text b{color:var(--accent); font-family:var(--font-display); font-weight:600; font-size:1.15em;}
+.pb-explain{
+  min-height:34px;
+  font-family:var(--font-display); font-weight:600; font-size:clamp(20px, 3.4vw, 26px); color:var(--accent);
+  opacity:0; transform:translateY(6px); transition:opacity .3s ease, transform .3s ease;
+}
+.pb-explain.show{opacity:1; transform:none;}
+
+/* ---------- Frações ---------- */
+.fr-main{display:grid; place-items:center;}
+.fr-pizza{width:clamp(170px, 34vw, 240px); height:auto; filter:drop-shadow(0 12px 18px rgba(124,45,18,.25));}
+.fr-crust{fill:#E7B36A; stroke:#B7791F; stroke-width:1.5;}
+.fr-on{fill:#F59E0B; stroke:#FFF7E6; stroke-width:1.6;}
+.fr-off{fill:#FDE7C2; stroke:#FFF7E6; stroke-width:1.6;}
+.fr-pep{fill:#DC2626;}
+.frac{
+  display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle;
+  font-family:var(--font-display); font-weight:600; line-height:1;
+}
+.frac span:first-child{border-bottom:3px solid currentColor; padding:0 .15em .06em;}
+.frac span:last-child{padding-top:.06em;}
+.fr-opt{font-size:clamp(28px, 5vw, 40px); min-width:clamp(74px, 13vw, 100px); height:clamp(92px, 16vw, 120px);}
+.fr-big{font-size:clamp(64px, 14vw, 110px); color:var(--accent); background:#fff; border-radius:26px; padding:10px 34px; box-shadow:0 14px 30px -20px var(--glow);}
+.fr-options.pizzas{display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; width:min(100%, 640px);}
+.fr-pick{
+  padding:10px; border:3px solid transparent; border-radius:22px; background:#fff; cursor:pointer;
+  box-shadow:0 8px 18px -12px rgba(26,18,56,.45);
+  transition:transform .1s ease, opacity .2s ease;
+}
+.fr-pick .fr-pizza{width:100%;}
+.fr-pick:hover{transform:translateY(-3px);}
+.fr-pick.right{border-color:var(--accent); box-shadow:0 0 0 6px var(--accent-50); animation:popIn .4s ease;}
+.fr-pick.wrong{animation:qShake .4s ease; opacity:.35; pointer-events:none;}
+.q-question .frac{font-size:1.1em; margin:0 .15em;}
+
+@media (max-width:640px){
+  .fr-options.pizzas{grid-template-columns:repeat(2, 1fr); width:min(100%, 340px);}
+  .tx-word{padding:10px 18px;}
+}
+
+/* ---------- tela cheia ---------- */
+.game-window.is-fs .tx-stage{display:flex !important; flex-direction:column;}
+.game-window.is-fs .fr-pizza{width:min(240px, 28vh);}
+.game-window.is-fs .fr-options.pizzas{width:min(100%, calc((100vh - 360px) * 4.3), 760px);}
+@media (max-height:500px){
+  .game-window.is-fs .tx-stage{gap:8px; padding:10px;}
+  .game-window.is-fs .tx-word, .game-window.is-fs .tx-big{font-size:min(44px, 11vh); padding:6px 18px;}
+  .game-window.is-fs .tx-pic{width:min(80px, 20vh);}
+  .game-window.is-fs .fr-pizza{width:min(140px, 30vh);}
+  .game-window.is-fs .fr-big{font-size:min(70px, 18vh); padding:4px 24px;}
+  .game-window.is-fs .fr-options.pizzas{grid-template-columns:repeat(4, 1fr); width:min(100%, calc((100vh - 200px) * 4.4));}
+  .game-window.is-fs .pb-card{padding:10px 14px;}
+  .game-window.is-fs .pb-text{font-size:16px; line-height:1.35;}
+  .game-window.is-fs .tx-choice, .game-window.is-fs .tx-class{min-height:46px;}
+}
+@media (max-height:500px){
+  .game-window.is-fs #qOptions:has(.tx-class){grid-template-columns:repeat(4, 1fr); width:min(100%, 760px);}
+  .game-window.is-fs .tx-options{grid-template-columns:repeat(4, 1fr); width:min(100%, 760px);}
+}
+/* Frações (Qual pizza?) em tela cheia: fração e pizzas cabendo na altura */
+.game-window.is-fs .fr-big{font-size:min(80px, 9vh); padding:6px 26px;}
+@media (max-width:640px){
+  .game-window.is-fs .fr-big{font-size:min(56px, 6.5vh);}
+  .game-window.is-fs .fr-options.pizzas{width:min(100%, calc(100vh - 520px)); gap:8px;}
+  .game-window.is-fs .fr-pick{padding:6px;}
+}
+@media (max-height:500px){
+  .game-window.is-fs .fr-big{font-size:min(56px, 13vh); padding:2px 20px;}
+  .game-window.is-fs .fr-options.pizzas{width:min(100%, calc((100vh - 250px) * 3.4));}
+}
+/* pizzas das opções acompanham o tamanho da grade (não usam o tamanho da pizza grande) */
+.fr-options.pizzas{grid-template-columns:repeat(4, minmax(0, 1fr));}
+.game-window.is-fs .fr-pick .fr-pizza{width:100%;}
+@media (max-width:640px){ .fr-options.pizzas{grid-template-columns:repeat(2, minmax(0, 1fr));} }
+@media (max-height:500px){ .game-window.is-fs .fr-options.pizzas{grid-template-columns:repeat(4, minmax(0, 1fr));} }

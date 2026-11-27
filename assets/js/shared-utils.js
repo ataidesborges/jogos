@@ -416,3 +416,11 @@ function silhouette(src, color){
   silhouetteCache.set(key, job);
   return job;
 }
+
+// ---------- Figurinha de prêmio (jogos sem figura, do 3º ao 5º ano) ----------
+// Se a palavra tem figura, ganha a figurinha dela; senão, ganha uma que ainda falta.
+function rewardSticker(word, points){
+  const w = word && ALL_WORDS.find(x => x.word === String(word).toUpperCase());
+  const pick = w || ALL_WORDS.find(x => !collectedScores.has(x.word)) || ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
+  collectSticker(pick.word, points || 10);
+}

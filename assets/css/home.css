@@ -2,7 +2,7 @@
    Página inicial
    ============================================================ */
 html{scroll-behavior:smooth;}
-#jogos, #matematica, #professores{scroll-margin-top:80px;}
+#jogos, #matematica, #fundamental, #professores{scroll-margin-top:80px;}
 
 /* ---------- Barra do topo escura (sobre a abertura) ---------- */
 .topbar-dark{
@@ -355,3 +355,17 @@ html{scroll-behavior:smooth;}
 .mini-count .tile{font-size:26px; min-width:50px; margin-left:8px; cursor:inherit;}
 .bolt{position:absolute; right:18px; top:12px; font-size:40px; z-index:1; filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));}
 @media (max-width:640px){ .topbar-nav a[href="#matematica"]{display:none;} }
+
+/* capas da seção 3º ao 5º ano */
+.word-pair{display:flex; align-items:center; gap:12px; font-family:var(--font-display); font-weight:600; font-size:26px;}
+.word-pair span{background:#fff; color:var(--ink); padding:8px 14px; border-radius:14px; box-shadow:0 10px 20px -10px rgba(0,0,0,.35);}
+.word-pair b{color:#fff; font-size:34px;}
+.mini-problem{max-width:250px; background:#fff; border-radius:16px; padding:12px 14px; font-weight:700; font-size:14px; color:var(--ink); box-shadow:0 12px 24px -10px rgba(0,0,0,.35); border-left:5px solid var(--accent);}
+.mini-problem b{color:var(--accent);}
+.mini-problem span{display:block; margin-top:6px; font-family:var(--font-display); font-weight:600; font-size:20px; color:var(--accent);}
+.mini-pizza{width:110px; height:110px; filter:drop-shadow(0 10px 14px rgba(0,0,0,.25));}
+.mini-frac{display:inline-flex; flex-direction:column; align-items:center; font-family:var(--font-display); font-weight:600; font-size:34px; color:#fff; line-height:1;}
+.mini-frac span:first-child{border-bottom:4px solid #fff; padding:0 6px 2px;}
+.mini-frac span:last-child{padding-top:2px;}
+.cover-tiles .tile{white-space:nowrap;}
+@media (max-width:640px){ .topbar-nav a[href="#fundamental"]{display:none;} }
