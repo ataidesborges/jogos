@@ -18,6 +18,9 @@ const qScore = document.getElementById('qScore');
 const qFinal = document.getElementById('qFinal');
 const qFinalText = document.getElementById('qFinalText');
 
+// Jogo das Sombras usa este mesmo código (sombras.html tem data-mode="sombras"):
+// as figuras aparecem como sombra e ganham cor quando são ligadas ao nome certo.
+const MODE = document.body.dataset.mode === 'sombras' ? 'sombras' : 'ligue';
 const ROUNDS = 5;
 const LINE_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#A855F7'];
 
@@ -50,10 +53,16 @@ function loadRound(){
   lgPics.innerHTML = ''; lgNames.innerHTML = '';
   shuffle([...roundWords]).forEach(w=>{
     const b = document.createElement('button');
-    b.className = 'lg-item';
+    b.className = 'lg-item' + (MODE === 'sombras' ? ' shadow' : '');
     b.dataset.word = w.word;
-    b.setAttribute('aria-label', 'Figura');
+    b.setAttribute('aria-label', MODE === 'sombras' ? 'Sombra' : 'Figura');
     b.innerHTML = `<img src="${w.art}" alt="">`;
+    b.dataset.art = w.art;
+    if(MODE === 'sombras'){ // mostra a silhueta de verdade (sem o fundo branco)
+      const im = b.querySelector('img');
+      im.style.visibility = 'hidden';
+      silhouette(w.art).then(u => { if(b.classList.contains('shadow')) im.src = u; im.style.visibility = ''; });
+    }
     b.addEventListener('click', ()=> pick('pic', w.word, b));
     lgPics.appendChild(b);
   });
@@ -66,7 +75,7 @@ function loadRound(){
     lgNames.appendChild(b);
   });
 
-  qQuestion.textContent = 'Toque numa figura e depois no nome dela.';
+  qQuestion.textContent = MODE === 'sombras' ? 'Toque numa sombra e depois no nome dela.' : 'Toque numa figura e depois no nome dela.';
   qProgress.textContent = `Rodada ${round + 1} de ${ROUNDS}`;
   qScore.textContent = `${score} pontos`;
   drawLines();
@@ -93,7 +102,7 @@ function pick(side, word, el){
   if(other.word === word){
     const color = LINE_COLORS[links.length % LINE_COLORS.length];
     links.push({word, color});
-    [other.el, el].forEach(x => { x.classList.add('done'); x.style.setProperty('--c', color); x.style.borderColor = color; });
+    [other.el, el].forEach(x => { if(x.classList.contains('shadow')){ x.classList.remove('shadow'); const im = x.querySelector('img'); if(im) im.src = x.dataset.art; } x.classList.add('done'); x.style.setProperty('--c', color); x.style.borderColor = color; });
     const earned = Math.max(5, 10 - (mistakes[word] || 0) * 3);
     score += earned;
     qScore.textContent = `${score} pontos`;
@@ -157,5 +166,5 @@ document.getElementById('qNewBtn').addEventListener('click', start);
 document.getElementById('qAgainBtn').addEventListener('click', start);
 
 // ---------- Init ----------
-initCommon('ligue');
+initCommon(MODE);
 start();

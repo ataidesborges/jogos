@@ -314,11 +314,11 @@
 }
 .sb-target img{
   width:82%; height:82%; object-fit:contain;
-  filter:brightness(0) invert(1); opacity:.35; /* silhueta clarinha */
-  transition:filter .4s ease, opacity .4s ease;
+  opacity:.45; /* silhueta clarinha (gerada sem o fundo branco) */
+  transition:opacity .4s ease;
 }
 .sb-target.lit{background:#fff; border:2px solid #FDE68A; box-shadow:0 0 0 3px rgba(253,230,138,.35);}
-.sb-target.lit img{filter:none; opacity:1;}
+.sb-target.lit img{opacity:1;}
 .sb-target.pop{animation:popIn .45s cubic-bezier(.34,1.56,.64,1);}
 
 @media (max-width:760px){

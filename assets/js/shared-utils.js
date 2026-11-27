@@ -346,3 +346,73 @@ function initCommon(gameId){
   setupFullscreen();
   preloadArt();
 }
+
+// ---------- Nome das letras (para os jogos de alfabeto) ----------
+const LETTER_NAMES = {
+  A:'á', B:'bê', C:'cê', D:'dê', E:'é', F:'éfe', G:'gê', H:'agá', I:'í', J:'jóta',
+  K:'cá', L:'éle', M:'ême', N:'êne', O:'ó', P:'pê', Q:'quê', R:'érre', S:'ésse',
+  T:'tê', U:'ú', V:'vê', W:'dáblio', X:'xis', Y:'ípsilon', Z:'zê',
+};
+function speakLetter(letter){
+  const up = String(letter).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  say(LETTER_NAMES[up] || up.toLowerCase(), 0.8);
+}
+
+// ---------- Silhueta (sombra) de uma figura ----------
+// As figuras têm fundo branco, então um simples "pintar de preto" virava um
+// quadrado. Aqui o fundo branco é apagado (a partir das bordas) e o resto da
+// figura vira uma silhueta da cor escolhida. O resultado fica guardado.
+const silhouetteCache = new Map();
+function silhouette(src, color){
+  color = color || '#2A1B5C';
+  const key = src + '|' + color;
+  if(silhouetteCache.has(key)) return silhouetteCache.get(key);
+  const job = new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      try{
+        const size = 220;
+        const scale = Math.min(size / img.naturalWidth, size / img.naturalHeight, 1) || 1;
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext('2d', {willReadFrequently:true});
+        ctx.drawImage(img, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h);
+        const px = data.data;
+        const isBg = i => px[i + 3] < 30 || (px[i] > 228 && px[i + 1] > 228 && px[i + 2] > 228);
+        // apaga o fundo: "pinta" a partir das bordas tudo que for branco/transparente
+        const seen = new Uint8Array(w * h);
+        const stack = [];
+        for(let x = 0; x < w; x++){ stack.push(x, (h - 1) * w + x); }
+        for(let y = 0; y < h; y++){ stack.push(y * w, y * w + w - 1); }
+        while(stack.length){
+          const p = stack.pop();
+          if(seen[p]) continue;
+          seen[p] = 1;
+          const i = p * 4;
+          if(!isBg(i)) continue;
+          px[i + 3] = 0;
+          const x = p % w, y = (p / w) | 0;
+          if(x > 0) stack.push(p - 1);
+          if(x < w - 1) stack.push(p + 1);
+          if(y > 0) stack.push(p - w);
+          if(y < h - 1) stack.push(p + w);
+        }
+        // o resto vira silhueta
+        const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+        for(let i = 0; i < px.length; i += 4){
+          if(px[i + 3] === 0) continue;
+          px[i] = r; px[i + 1] = g; px[i + 2] = b;
+        }
+        ctx.putImageData(data, 0, 0);
+        resolve(cv.toDataURL('image/png'));
+      }catch(e){ resolve(src); } // se algo falhar, mostra a figura normal
+    };
+    img.onerror = ()=> resolve(src);
+    img.src = src;
+  });
+  silhouetteCache.set(key, job);
+  return job;
+}

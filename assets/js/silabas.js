@@ -176,7 +176,10 @@ function renderTargets(justFound){
     const el = document.createElement('div');
     el.className = 'sb-target' + (lit ? ' lit' : '') + (w.word === justFound ? ' pop' : '');
     el.title = lit ? w.word : 'Figura escondida';
-    el.innerHTML = `<img src="${w.art}" alt="${lit ? w.word.toLowerCase() : 'figura escondida'}">`;
+    el.innerHTML = `<img alt="${lit ? w.word.toLowerCase() : 'figura escondida'}">`;
+    const im = el.querySelector('img');
+    if(lit) im.src = w.art;
+    else silhouette(w.art, '#FFFFFF').then(u => { im.src = u; }); // silhueta branca, sem o fundo
     sbTargets.appendChild(el);
   });
 }
