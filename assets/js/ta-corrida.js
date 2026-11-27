@@ -33,6 +33,8 @@ const THEMES = [
    deco:'night', enemy:'besouro', flyer:'morcego', spike:'#9333EA', spring:'cogumelo', weather:'vagalumes', plat:'pedra', dark:true},
   {name:'Vulcão', sky:['#2A0A0A', '#9A3412'], far:'#5B1A12', mid:'#3B1008', grass:'#78716C', grass2:'#57534E', dirt:'#3A2F2A', dirt2:'#1C1917', rock:'#7C2D12',
    deco:'vulcao', enemy:'besouro', flyer:'morcego', spike:'#EA580C', spring:'mola', weather:'cinzas', plat:'pedra', lava:true},
+  {name:'Caverna', sky:['#0F0A1E', '#2A1B3D'], far:'#2E2440', mid:'#231A33', grass:'#7C6F8A', grass2:'#5B4F6B', dirt:'#3B3049', dirt2:'#241C2E', rock:'#A78BFA',
+   deco:'cristal', enemy:'besouro', flyer:'morcego', spike:'#A855F7', spring:'cogumelo', weather:'vagalumes', plat:'pedra', dark:true},
 ];
 // o desafio especial de cada fase
 const PHASE_TIPS = {
@@ -59,7 +61,7 @@ function setupCanvas(){
 // ============================================================
 function buildLevel(d, ph){
   ph = ph || 1;
-  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[], keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[], waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[]};
+  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[], keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[], waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[], buttons:[], levers:[]};
   const R = randInt;
   const ground = (x0, x1, top)=>{
     top = top || GY;
@@ -555,6 +557,11 @@ function update(dt){
     if(r.y > s.top + 4 && r.y - PH < s.bottom){
       const front = r.x + PW <= s.x0 + 1 && nx + PW > s.x0, back = r.x - PW >= s.x1 - 1 && nx - PW < s.x1;
       if(s.open) continue; // porta/portão aberto
+      if((front || back) && s.type === 'crate' && (r.ground || r.plat) && r.hurtT <= 0){
+        // empurra a caixa (a pedra pesada só o gigante empurra)
+        if(!s.heavy || r.size === 'big') pushCrate(s, (front ? 1 : -1) * Math.max(1.2, Math.abs(nx - r.x) * .65));
+        else if(!r.banner && dirIn) r.banner = {text:'Pedra pesada! Só o gigante 🍉 consegue empurrar.', t:2};
+      }
       if((front || back) && s.type === 'wall' && !s.kind && r.size === 'big'){ breakWall(s); continue; } // gigante quebra!
       if(front){ nx = s.x0 - PW; r.vx = 0; r.blocked = true; blockedBy = s; }      // parede na frente
       else if(back){ nx = s.x1 + PW; r.vx = 0; r.blocked = true; blockedBy = s; } // parede atrás
@@ -592,7 +599,7 @@ function update(dt){
   r.ground = null; r.plat = null;
   if(r.vy >= 0){
     for(const s of L.solids){
-      if(!s.broken && r.x + PW - 3 > s.x0 && r.x - PW + 3 < s.x1 && prevY <= s.top + .5 && ny >= s.top){ ny = s.top; r.vy = 0; r.ground = s; break; }
+      if(!s.broken && !s.open && r.x + PW - 3 > s.x0 && r.x - PW + 3 < s.x1 && prevY <= s.top + .5 && ny >= s.top){ ny = s.top; r.vy = 0; r.ground = s; break; }
     }
     if(!r.ground) for(const p of L.plats){
       if(!platSolid(p, r.t)) continue;
@@ -682,9 +689,9 @@ function update(dt){
   // ---- trenó ----
   for(const sd of L.sleds){
     if(!sd.taken && Math.abs(sd.x - r.x) < 36 && r.y > GY - 60){
-      sd.taken = true; r.sled = true;
-      r.banner = {text:'🛷 Trenó! Ele não freia: só PULE os buracos e as pedras!', t:2.6};
-      tone([392, 523, 659], .4, 'triangle', .06); say('Trenó! Só pule!', 1);
+      sd.taken = true; r.sled = true; r.sledKind = sd.kind || 'treno';
+      r.banner = sd.kind === 'cart' ? {text:'🛒 Carrinho de mina! Ele não freia: só PULE os buracos!', t:2.6} : {text:'🛷 Trenó! Ele não freia: só PULE os buracos e as pedras!', t:2.6};
+      tone([392, 523, 659], .4, 'triangle', .06); say(sd.kind === 'cart' ? 'Carrinho! Só pule!' : 'Trenó! Só pule!', 1);
     }
     if(r.sled && sd.taken && sd.end && r.x > sd.end){ r.sled = false; sd.end = null; r.banner = {text:'🛷 Fim da descida!', t:1.4}; }
   }
@@ -790,6 +797,32 @@ function update(dt){
       r.banner = {text:'📜 Você achou uma página do Livro das Tabuadas!', t:2.4};
       starSound();
       say('Uma página do livro!', 1);
+    }
+  }
+  // ---- caixas: caem se não tiver chão embaixo ----
+  for(const s of L.solids){
+    if(s.type !== 'crate') continue;
+    const sup = L.solids.find(q => q !== s && !q.broken && !q.open && q.type !== 'ceil' && q.x1 > s.x0 + 6 && q.x0 < s.x1 - 6 && q.top >= s.bottom - 1 && q.top <= s.bottom + Math.max(2, (s.vy || 0) * dt + 1));
+    if(sup){ const dy = sup.top - s.bottom; s.top += dy; s.bottom += dy; s.vy = 0; }
+    else { s.vy = (s.vy || 0) + GRAV * dt; s.top += s.vy * dt; s.bottom += s.vy * dt; }
+    if(s.top > H + 400){ s.x0 = s.ox; s.x1 = s.ox + s.w; s.top = s.oy; s.bottom = s.oy + s.h; s.vy = 0; } // caiu no buraco: volta
+  }
+  // ---- botões: abrem a porta quando uma caixa fica em cima ----
+  for(const b of L.buttons){
+    if(b.pressed) continue;
+    const on = L.solids.some(s => s.type === 'crate' && s.x1 > b.x + 8 && s.x0 < b.x + b.w - 8 && Math.abs(s.bottom - GY) < 4);
+    if(on){
+      b.pressed = true; if(b.door){ b.door.open = true; b.door.openT = 1; }
+      r.banner = {text:'🔘 Botão apertado! A porta abriu.', t:2}; tone([392, 523, 659, 784], .5, 'triangle', .07); say('A porta abriu!', 1);
+    }
+  }
+  // ---- alavancas: abrem portão e acendem a caverna ----
+  for(const lv of L.levers){
+    if(!lv.on && Math.abs(lv.x - r.x) < 30 && r.y > GY - 60){
+      lv.on = true; if(lv.door){ lv.door.open = true; lv.door.openT = 1; }
+      L.lamps.push({x:lv.x, lit:true, big:true});
+      r.banner = {text:'🕹️ Alavanca puxada! A caverna clareou e o portão abriu.', t:2.4};
+      tone([262, 392, 523, 784], .5, 'square', .05); say('Alavanca!', 1);
     }
   }
   // ---- portão dos filhotes abre sozinho quando tem todos ----
@@ -1193,6 +1226,8 @@ function draw(){
     else if(s.type === 'numbox') drawNumBox(c, s, r.t);
     else if(s.kind === 'door') drawDoor(c, s, r.camY);
     else if(s.kind === 'gate') drawGate(c, s, r);
+    else if(s.type === 'crate') drawCrate(c, s);
+    else if(s.kind === 'porta') drawCaveDoor(c, s, r.camY);
     else if(s.type === 'ceil') drawCeil(c, s, th, r.camY);
     else if(s.type === 'wall') drawWall(c, s, r.camY);
     else drawGround(c, s, th, r.camY);
@@ -1215,7 +1250,9 @@ function draw(){
   L.masks.forEach(m=>{ if(!m.taken && m.x > vx0 && m.x < vx1) drawMask(c, m, r.t); });
   L.winds.forEach(wd=>{ if(wd.x1 > vx0 && wd.x0 < vx1) drawWind(c, wd, r.t, r.camY); });
   L.icicles.forEach(ic=>{ if(ic.st !== 'gone' && ic.x > vx0 && ic.x < vx1) drawIcicle(c, ic); });
-  L.sleds.forEach(sd=>{ if(!sd.taken && sd.x > vx0 && sd.x < vx1) drawSled(c, sd.x, GY, 1); });
+  L.sleds.forEach(sd=>{ if(sd.kind === 'cart') drawRails(c, sd, L, vx0, vx1); if(!sd.taken && sd.x > vx0 && sd.x < vx1){ if(sd.kind === 'cart') drawCart(c, sd.x, GY, 1); else drawSled(c, sd.x, GY, 1); } });
+  L.buttons.forEach(b=>{ if(b.x + b.w > vx0 && b.x < vx1) drawButton(c, b); });
+  L.levers.forEach(lv=>{ if(lv.x > vx0 && lv.x < vx1) drawLever(c, lv); });
   L.planes.forEach(pl=>{ if(!pl.taken && pl.x > vx0 && pl.x < vx1) drawPlane(c, pl.x, GY - 6, r.t, 1); });
   L.storms.forEach(st=>{ if(st.x + st.r > vx0 && st.x - st.r < vx1) drawStorm(c, st, r.t); });
   L.chasers.forEach(ch=>{ if(ch.active && !ch.done) drawBigBall(c, ch); });
@@ -1234,7 +1271,7 @@ function draw(){
     c.beginPath(); c.ellipse(r.x, r.y + 2, 21 * r.scale, 5 * r.scale, 0, 0, Math.PI * 2); c.fill();
   }
   const state = r.state === 'ready' ? 'idle' : r.hurtT > 0 ? 'hurt' : r.state === 'done' && onFloor && r.x >= L.endX - 2 ? 'win' : !onFloor ? (r.vy < 0 ? 'jump' : 'fall') : Math.abs(r.vx) > 30 ? 'run' : 'idle';
-  if(r.sled) drawSled(c, r.x, r.y, 1.1);
+  if(r.sled){ if(r.sledKind === 'cart') drawCart(c, r.x, r.y, 1.1); else drawSled(c, r.x, r.y, 1.1); }
   if(r.plane) drawPlane(c, r.x, r.y - 4, r.t, 1.15);
   if(!(r.inv > 0 && Math.floor(r.inv * 14) % 2)){
     if(r.power){
@@ -1272,6 +1309,13 @@ function draw(){
 }
 
 function drawSkyThings(c, r, th){
+  if(th.name === 'Caverna'){
+    c.fillStyle = '#1A1226';
+    c.beginPath(); c.moveTo(0, 0);
+    for(let sx = 0; sx <= W; sx += 30){ const wx = sx + r.camX * .3; c.lineTo(sx, 30 + Math.abs(Math.sin(wx * .02)) * 40 + (Math.sin(wx * .13) > .6 ? 40 : 0)); }
+    c.lineTo(W, 0); c.closePath(); c.fill();
+    return;
+  }
   if(th.name === 'Vulcão'){
     // brilho vermelho no horizonte e fumaça escura
     const g = c.createRadialGradient(560, 300, 20, 560, 300, 420);
@@ -1593,15 +1637,16 @@ function drawDarkness(c, r, L){
   const d = darkCv.getContext('2d');
   d.globalCompositeOperation = 'source-over';
   d.clearRect(0, 0, W, H);
-  d.fillStyle = 'rgba(6,6,24,.9)'; d.fillRect(0, 0, W, H);
+  d.fillStyle = r.theme.name === 'Caverna' ? 'rgba(8,4,18,.84)' : 'rgba(6,6,24,.9)'; d.fillRect(0, 0, W, H);
   d.globalCompositeOperation = 'destination-out';
   const hole = (x, y, rad, a)=>{
     const g = d.createRadialGradient(x, y, rad * .25, x, y, rad);
     g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)');
     d.fillStyle = g; d.beginPath(); d.arc(x, y, rad, 0, Math.PI * 2); d.fill();
   };
-  hole(r.x - r.camX, r.y - 30 - r.camY, 165, 1);
-  L.lamps.forEach(l => { if(l.lit) hole(l.x + 16 - r.camX, GY - 74 - r.camY, 260, 1); else hole(l.x + 16 - r.camX, GY - 74 - r.camY, 40, .7); });
+  hole(r.x - r.camX, r.y - 30 - r.camY, r.theme.name === 'Caverna' ? 190 : 165, 1);
+  L.lamps.forEach(l => { if(l.lit) hole(l.x + 16 - r.camX, GY - 74 - r.camY, l.big ? 360 : 260, 1); else hole(l.x + 16 - r.camX, GY - 74 - r.camY, 40, .7); });
+  (L.crystals || []).forEach(cx => hole(cx - r.camX, GY - 30 - r.camY, 70, .55));
   L.coins.forEach(co => { if(!co.taken) hole(co.x - r.camX, co.y - r.camY, 22, .8); });
   L.stars.forEach(st => { if(!st.taken) hole(st.x - r.camX, st.y - r.camY, 46, .9); });
   hole(L.flagX - r.camX, GY - 100 - r.camY, 160, .8);
@@ -1994,6 +2039,94 @@ function drawBigBall(c, ch){
   c.restore();
 }
 
+// ---------- caverna: caixas, botões, alavancas, carrinho ----------
+// empurra a caixa se não tiver nada no caminho
+function pushCrate(cr, dx){
+  const L = run.level;
+  const nx0 = cr.x0 + dx, nx1 = cr.x1 + dx;
+  const hit = L.solids.some(q => q !== cr && !q.broken && !q.open && q.type !== 'numbox' && q.top < cr.bottom - 2 && q.bottom > cr.top + 2 && q.x1 > nx0 && q.x0 < nx1);
+  if(hit) return 0;
+  cr.x0 = nx0; cr.x1 = nx1;
+  if(Math.random() < .2) part(dx > 0 ? cr.x0 : cr.x1, cr.bottom - 2, -dx * 20, -20, .3, 'rgba(255,255,255,.6)', 3, 'dust');
+  return dx;
+}
+function drawCrate(c, s){
+  const w = s.x1 - s.x0, h = s.bottom - s.top;
+  c.save();
+  if(s.heavy){
+    rr(c, s.x0, s.top, w, h, 10);
+    c.fillStyle = vgrad(c, s.top, s.bottom, '#A8A29E', '#57534E'); c.fill();
+    c.strokeStyle = '#292524'; c.lineWidth = 2.5; c.stroke();
+    c.strokeStyle = 'rgba(41,37,36,.6)'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(s.x0 + 12, s.top + 16); c.lineTo(s.x0 + w * .5, s.top + h * .45); c.lineTo(s.x0 + w * .4, s.bottom - 10); c.stroke();
+    c.font = '16px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('🍉', s.x0 + w / 2, s.top + 18);
+  } else {
+    rr(c, s.x0, s.top, w, h, 5);
+    c.fillStyle = vgrad(c, s.top, s.bottom, '#D97706', '#92400E'); c.fill();
+    c.strokeStyle = '#451A03'; c.lineWidth = 2.5; c.stroke();
+    c.strokeStyle = 'rgba(69,26,3,.7)'; c.lineWidth = 3;
+    c.beginPath(); c.moveTo(s.x0 + 5, s.top + 5); c.lineTo(s.x1 - 5, s.bottom - 5); c.moveTo(s.x1 - 5, s.top + 5); c.lineTo(s.x0 + 5, s.bottom - 5); c.stroke();
+    c.strokeRect(s.x0 + 4, s.top + 4, w - 8, h - 8);
+  }
+  c.restore();
+}
+function drawButton(c, b){
+  c.save();
+  rr(c, b.x, GY - 6, b.w, 8, 3); c.fillStyle = '#44403C'; c.fill();
+  rr(c, b.x + 6, GY - (b.pressed ? 8 : 16), b.w - 12, b.pressed ? 4 : 12, 4);
+  c.fillStyle = b.pressed ? '#22C55E' : '#EF4444'; c.shadowColor = c.fillStyle; c.shadowBlur = 12; c.fill();
+  c.restore();
+}
+function drawLever(c, lv){
+  c.save(); c.translate(lv.x, GY);
+  rr(c, -16, -12, 32, 12, 4); c.fillStyle = '#57534E'; c.fill(); c.strokeStyle = '#1C1917'; c.lineWidth = 2; c.stroke();
+  c.rotate(lv.on ? .6 : -.6);
+  c.strokeStyle = '#A8A29E'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -8); c.lineTo(0, -40); c.stroke();
+  c.beginPath(); c.arc(0, -42, 7, 0, Math.PI * 2); c.fillStyle = lv.on ? '#22C55E' : '#F59E0B'; c.fill(); c.strokeStyle = '#1C1917'; c.lineWidth = 2; c.stroke();
+  c.restore();
+  if(!lv.on){ c.save(); c.font = '700 12px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#FDE68A'; c.fillText('PUXE', lv.x, GY - 60); c.restore(); }
+}
+function drawCaveDoor(c, s, camY){
+  const w = s.x1 - s.x0, top = camY - 30;
+  if(s.openT) s.openT = Math.max(0, s.openT - .02);
+  const lift = s.open ? 1 - (s.openT || 0) : 0;
+  c.save();
+  c.fillStyle = vgrad(c, top, GY, '#4B3F5C', '#2E2440');
+  c.fillRect(s.x0 - 8, top, w + 16, GY - 180 - top);
+  c.save(); c.beginPath(); c.rect(s.x0 - 8, GY - 180, w + 16, 180); c.clip();
+  const dy = -lift * 180;
+  c.fillStyle = '#64748B';
+  for(let k = 0; k < 4; k++){ c.fillRect(s.x0 + 2 + k * (w - 4) / 4, GY - 180 + dy, (w - 4) / 4 - 4, 180); }
+  c.fillStyle = '#334155'; c.fillRect(s.x0, GY - 120 + dy, w, 8); c.fillRect(s.x0, GY - 50 + dy, w, 8);
+  c.restore();
+  dot(c, s.x0 + w / 2, GY - 196, 7, s.open ? '#22C55E' : '#EF4444');
+  c.restore();
+}
+function drawCart(c, x, y, s){
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.strokeStyle = '#1C1917'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(-30, -30); c.lineTo(30, -30); c.lineTo(24, -6); c.lineTo(-24, -6); c.closePath();
+  c.fillStyle = vgrad(c, -30, -6, '#78716C', '#44403C'); c.fill(); c.stroke();
+  c.fillStyle = '#A8A29E'; c.fillRect(-30, -32, 60, 5);
+  [-15, 15].forEach(wx => { c.beginPath(); c.arc(wx, -4, 6, 0, Math.PI * 2); c.fillStyle = '#292524'; c.fill(); dot(c, wx, -4, 2, '#A8A29E'); });
+  c.restore();
+}
+function drawRails(c, sd, L, vx0, vx1){
+  const end = sd.end || sd.endSaved || sd.x;
+  if(sd.end) sd.endSaved = sd.end;
+  L.solids.forEach(g=>{
+    if(g.type !== 'ground' || g.top !== GY) return;
+    const a = Math.max(g.x0, sd.x - 40, vx0), b = Math.min(g.x1, (sd.endSaved || end) + 40, vx1);
+    if(b <= a) return;
+    c.save();
+    c.fillStyle = '#5B4636';
+    for(let tx = Math.ceil(a / 26) * 26; tx < b; tx += 26) c.fillRect(tx, GY - 4, 8, 5);
+    c.strokeStyle = '#A8A29E'; c.lineWidth = 2.5;
+    c.beginPath(); c.moveTo(a, GY - 5); c.lineTo(b, GY - 5); c.stroke();
+    c.restore();
+  });
+}
+
 function drawPlat(c, p, th){
   const w = p.x1 - p.x0;
   c.save();
@@ -2275,6 +2408,16 @@ function drawDeco(c, kind, x, y, s, t, v){
       c.beginPath(); c.moveTo(cx - w * .5, cy - 17); c.lineTo(cx, cy - 34); c.lineTo(cx + w * .5, cy - 17);
       c.quadraticCurveTo(cx + w * .2, cy - 12, cx, cy - 16); c.quadraticCurveTo(cx - w * .2, cy - 12, cx - w * .5, cy - 17); c.fill();
     });
+  } else if(kind === 'cristal'){ // cristais brilhando
+    const cols = ['#A78BFA', '#67E8F9', '#F0ABFC'];
+    c.shadowColor = cols[Math.floor(v * 3)]; c.shadowBlur = 14;
+    [[-14, 34, -.25], [0, 52, 0], [14, 30, .3]].forEach(([dx, h, a], k)=>{
+      c.save(); c.translate(dx, 0); c.rotate(a);
+      c.beginPath(); c.moveTo(-7, 0); c.lineTo(-5, -h); c.lineTo(0, -h - 10); c.lineTo(5, -h); c.lineTo(7, 0); c.closePath();
+      c.fillStyle = cols[(Math.floor(v * 3) + k) % 3]; c.globalAlpha = .55 + .35 * Math.abs(Math.sin(t * 1.5 + k + x * .01)); c.fill();
+      c.restore();
+    });
+    c.globalAlpha = 1; c.shadowBlur = 0;
   } else if(kind === 'vulcao'){ // vulcãozinho soltando fumaça
     c.fillStyle = '#44403C';
     c.beginPath(); c.moveTo(-46, 2); c.lineTo(-12, -70); c.lineTo(12, -70); c.lineTo(46, 2); c.closePath(); c.fill();

@@ -28,7 +28,7 @@ function doorQuestion(){
 function buildFromDef(def, d){
   const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[],
     keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[],
-    waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[]};
+    waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[], buttons:[], levers:[], crystals:[]};
   let x = -300;
   const lastGround = () => [...L.solids].reverse().find(q => q.type === 'ground');
   const enemyObj = (ex, minX, maxX, speed) => ({x:ex, y:GY, minX, maxX, dir:-1, speed:speed || (50 + d * 8), alive:true, flying:false, baseY:GY - 85, ph:Math.random() * 6, dead:0});
@@ -82,6 +82,21 @@ function buildFromDef(def, d){
     planeEnd(dx){ const pl = L.planes[L.planes.length - 1]; if(pl) pl.end = x + dx; },
     storm(dx, y, r, off){ L.storms.push({x:x + dx, y, r:r || 48, off:off || 0, zap:false}); },
     bird(dx, y, range, speed){ L.enemies.push({x:x + dx, y, minX:x + dx - (range || 100), maxX:x + dx + (range || 100), dir:-1, speed:speed || 70, alive:true, flying:true, baseY:y, amp:12, ph:Math.random() * 6, dead:0, kind:'passaro'}); },
+    // ---- caverna ----
+    lamp(dx){ L.lamps.push({x:x + dx, lit:false}); },
+    crystal(dx){ L.crystals.push(x + dx); },
+    bat(dx, y, range, speed){ L.enemies.push({x:x + dx, y, minX:x + dx - (range || 100), maxX:x + dx + (range || 100), dir:-1, speed:speed || 70, alive:true, flying:true, baseY:y, amp:18, ph:Math.random() * 6, dead:0}); },
+    crate(dx, heavy){ const w = heavy ? 66 : 48, h = heavy ? 66 : 48; L.solids.push({x0:x + dx, x1:x + dx + w, top:GY - h, bottom:GY, type:'crate', heavy:!!heavy, w, h, ox:x + dx, oy:GY - h, vy:0}); },
+    pdoor(dx){ const d = {x0:x + dx, x1:x + dx + 46, top:-9999, bottom:9999, type:'wall', kind:'porta', open:false}; L.solids.push(d); return d; },
+    button(dx, door){ L.buttons.push({x:x + dx, w:64, pressed:false, door}); },
+    lever(dx, door){ L.levers.push({x:x + dx, on:false, door}); },
+    cart(dx){ L.sleds.push({x:x + dx, taken:false, end:null, kind:'cart'}); },
+    food(dx, size){ L.foods.push({x:x + dx, y:GY - 22, size}); },
+    foodSign(dx, size){ L.signs.push({x:x + dx, size}); },
+    crack(dx, w){ L.solids.push({x0:x + dx, x1:x + dx + w, top:-9999, bottom:GY - 34, type:'ceil'}); },          // fresta: só pequeno
+    arch(dx, w){ L.solids.push({x0:x + dx, x1:x + dx + w, top:-9999, bottom:GY - 58, type:'ceil', kind:'arco'}); }, // passagem baixa: gigante não cabe
+    rockWall(dx){ L.solids.push({x0:x + dx, x1:x + dx + 58, top:-9999, bottom:9999, type:'wall'}); },              // paredão: só gigante quebra
+    stepHigh(len){ L.solids.push({x0:x, x1:x + len, top:GY - 112, bottom:9999, type:'ground', hint:'alto'}); x += len; },
     sea(len, depth){ L.waters.push({x0:x, x1:x + len, surface:GY + 12, floor:GY + depth}); L.solids.push({x0:x, x1:x + len, top:GY + depth, bottom:9999, type:'ground'}); x += len; },
     bush(dx, w){ L.bushes.push({x0:x + dx, x1:x + dx + (w || 160)}); },
     sign(dx, text){ L.textSigns.push({x:x + dx, text}); },
@@ -534,6 +549,145 @@ window.LEVEL_DEFS = {
       B.coins(100, GY - 36, 4);
       B.flag(700);
       B.ground(1100);
+    },
+  },
+  // ======================= MUNDO 4: CAVERNA =======================
+  '4-1': {
+    name:'Caverna escura', theme:5, ph:4,
+    goal:'A caverna é escura! Acenda as lanternas, empurre a caixa até o botão e puxe as alavancas.',
+    build(B){
+      // 1. escuro: lanternas
+      B.sign(330, 'Encoste nas lanternas 🏮 para clarear!');
+      B.lamp(460); B.crystal(620);
+      B.coins(520, GY - 36, 4);
+      B.ground(820);
+      // 2. corredor dos morcegos
+      B.lamp(150); B.lamp(650);
+      B.bat(300, GY - 90, 120, 70); B.bat(560, GY - 60, 110, 85);
+      B.coins(150, GY - 36, 7, 80);
+      B.ground(840);
+      // 3. pedras sobre o abismo, no escuro
+      B.moving(65, GY - 30, 115, 26, 1.3, 0);
+      B.moving(245, GY - 55, 115, 30, 1.3, 1.4);
+      B.moving(425, GY - 30, 115, 26, 1.3, 2.8);
+      B.coins(95, GY - 110, 1); B.coins(275, GY - 140, 1); B.coins(455, GY - 110, 1);
+      B.star(302, GY - 265);
+      B.gap(600);
+      B.check(60); B.lamp(110);
+      // 4. quebra-cabeça: caixa até o botão abre a porta
+      B.sign(220, 'Empurre a caixa 📦 até o botão!');
+      B.crate(340);
+      const d1 = B.pdoor(880);
+      B.button(640, d1);
+      B.lamp(760);
+      B.coins(950, GY - 36, 3);
+      B.ground(1150);
+      // 5. alavanca: abre o portão e clareia
+      B.sign(80, 'Puxe a alavanca 🕹️');
+      const d2 = B.pdoor(560);
+      B.lever(320, d2);
+      B.bat(440, GY - 150, 60, 60);
+      B.star(320, GY - 235);
+      B.heart(720);
+      B.ground(880);
+      // 6. fresta apertada: só pequeno
+      B.check(40);
+      B.foodSign(100, 'small'); B.food(190, 'small');
+      B.crack(340, 320);
+      B.coins(360, GY - 15, 9, 34);
+      B.star(500, GY - 18);
+      B.crystal(560);
+      B.foodSign(720, 'normal'); B.food(800, 'normal');
+      B.ground(920);
+      B.stepHigh(220);
+      B.coins(-180, GY - 150, 4);
+      B.ground(320);
+      // 7. conta bônus, espinhos e a página no alto
+      B.bonus(120);
+      B.spikes(560, 2);
+      B.arc(500, 660, GY - 50, 90, 5);
+      B.plat(780, GY - 150, 120); B.plat(980, GY - 235, 120);
+      B.page(1040, GY - 300);
+      B.lamp(880);
+      B.ground(1240);
+      // 8. final com morcego e bichinho
+      B.lamp(120);
+      B.bat(320, GY - 80, 120, 95);
+      B.enemy(620, 120, 60);
+      B.flag(950);
+      B.ground(1350);
+    },
+  },
+  '4-2': {
+    name:'Mina dos cristais', theme:5, ph:4,
+    goal:'Corra de carrinho pela mina 🛒, empurre a pedra pesada (só gigante!) e ache a página.',
+    build(B){
+      B.sign(330, 'Suba no carrinho 🛒! Só pule.');
+      B.lamp(200);
+      B.cart(600);
+      B.ground(820);
+      // passeio de carrinho pelos trilhos
+      B.crystal(100);
+      B.arc(10, 170, GY - 60, 90, 5);
+      B.gap(180);
+      B.bat(380, GY - 150, 60, 50);
+      B.coins(200, GY - 36, 3);
+      B.spikes(560, 1);
+      B.ground(760);
+      B.gap(200);
+      B.crystal(200);
+      B.coins(300, GY - 90, 4, 50);
+      B.star(500, GY - 240);
+      B.ground(700);
+      B.gap(190);
+      B.spikes(300, 2);
+      B.bat(520, GY - 70, 40, 40);
+      B.ground(760);
+      B.gap(170);
+      B.sledEnd(500);
+      B.ground(700);
+      // descanso
+      B.check(60); B.lamp(120);
+      B.bonus(240);
+      B.ground(640);
+      // pedra pesada: só gigante empurra até o botão
+      B.sign(60, 'Pedra pesada! Fique gigante 🍉');
+      B.foodSign(140, 'big'); B.food(230, 'big');
+      B.crate(380, true);
+      const d1 = B.pdoor(980);
+      B.button(720, d1);
+      B.lamp(860);
+      B.ground(1160);
+      // passagem baixa: volte ao normal
+      B.foodSign(60, 'normal'); B.food(150, 'normal');
+      B.arch(320, 120);
+      B.coins(340, GY - 30, 3);
+      B.ground(600);
+      // pedras esmagadoras no escuro
+      B.lamp(60);
+      B.crusher(250, 72, 0); B.crusher(460, 72, 1.25);
+      B.coins(270, GY - 36, 2); B.coins(480, GY - 36, 2);
+      B.lamp(600);
+      B.ground(720);
+      // duas caixas: uma vira degrau para a página
+      B.check(40);
+      B.sign(140, 'Use a caixa como degrau!');
+      B.crate(260);
+      B.plat(560, GY - 175, 120);
+      B.page(620, GY - 240);
+      B.crate(760);
+      const d2 = B.pdoor(1160);
+      B.button(960, d2);
+      B.lamp(1060);
+      B.ground(1360);
+      // final: alavanca e morcegos
+      const d3 = B.pdoor(520);
+      B.lever(240, d3);
+      B.bat(400, GY - 120, 80, 80);
+      B.star(240, GY - 240);
+      B.bat(760, GY - 70, 120, 95);
+      B.flag(1050);
+      B.ground(1450);
     },
   },
 };

@@ -63,6 +63,10 @@ const STORY = {
   'depois-3-2':[{who:'vilao', text:'Vou fugir voando! Ninguém me alcança nas nuvens!'}],
   'antes-3-3':[{who:'tata', text:'Pegue o aviãozinho e voe atrás do Besouro! Segure PULAR para subir.'}],
   'depois-3-3':[{who:'tata', text:'O Besouro se escondeu numa caverna escura... vamos atrás dele!'}],
+  'antes-4-1':[{who:'tata', text:'Está escuro! Acenda as lanternas, empurre caixas e puxe alavancas.'}],
+  'depois-4-1':[{who:'tata', text:'Achamos pegadas de fogo... elas vão para a mina de cristais!'}],
+  'antes-4-2':[{who:'tata', text:'Suba no carrinho da mina e use a melancia para empurrar a pedra pesada!'}],
+  'depois-4-2':[{who:'vilao', text:'Chega! Venham me enfrentar no meu Vulcão... se tiverem coragem!'}],
 };
 
 let storyEl = null;
