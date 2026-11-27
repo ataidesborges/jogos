@@ -80,7 +80,7 @@ let pickAnim = null;
 function showPicker(){
   stopRun();
   clearTimeout(nextTimer);
-  taQuiz.hidden = true; taRun.hidden = true; $('taShop').hidden = true; taPick.hidden = false;
+  taQuiz.hidden = true; taRun.hidden = true; $('taShop').hidden = true; $('taMap').hidden = true; taPick.hidden = false;
   renderPicker();
   say('Quem vai correr na aventura?', 0.95);
   const t0 = performance.now();
@@ -133,7 +133,9 @@ function renderTables(){
     b.setAttribute('aria-pressed', n === table);
     b.addEventListener('click', ()=>{
       table = n;
+      hits = 0; streak = 0; // a trilha da corrida conta só os acertos desta tabuada
       renderTables();
+      updateTrack();
       bag = []; retry = [];
       if(!taRun.hidden) return; // durante a corrida só guarda a escolha
       if(charId) showQuiz();
@@ -190,7 +192,7 @@ function optionsFor(p){
 
 function showQuiz(){
   stopRun();
-  taPick.hidden = true; taRun.hidden = true; $('taShop').hidden = true; taQuiz.hidden = false;
+  taPick.hidden = true; taRun.hidden = true; $('taShop').hidden = true; $('taMap').hidden = true; taQuiz.hidden = false;
   updateTrack();
   loadProblem();
 }
@@ -260,7 +262,7 @@ function choose(btn, v){
       say(`${current.a} ${SPOKEN[mode]} ${current.b}, igual a ${v}!`, 0.9);
     }
     const wait = justDone ? 3400 : 0;
-    if(hits >= GOAL) nextTimer = setTimeout(openRun, 1900 + wait);
+    if(hits >= GOAL) nextTimer = setTimeout(()=>{ hits = 0; updateTrack(); earnToken(); }, 1900 + wait);
     else nextTimer = setTimeout(loadProblem, 1700 + wait);
   } else {
     btn.classList.add('wrong');
@@ -311,6 +313,8 @@ document.querySelectorAll('.level-btn').forEach(btn=>{
     document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     mode = btn.dataset.level;
+    hits = 0; streak = 0; // trocou de operação: a trilha recomeça
+    updateTrack();
     bag = []; retry = [];
     renderTables();
     if(!taRun.hidden) return; // não interrompe a corrida
@@ -324,6 +328,7 @@ $('qListen').addEventListener('click', ()=> readAloud(true)); // pediu para ouvi
 initCommon('tabuada-aventura');
 setupRunControls();
 setupShop();
+setupMap();
 renderTables();
 if(charId){
   portrait($('taCharIcon'), charId, 0);

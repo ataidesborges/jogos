@@ -92,7 +92,7 @@ function showShop(){
   cancelAnimationFrame(shopAnim);
   shopChar = charId || 'capivara';
   trying = null; // sempre entra sem nada sendo provado
-  taQuiz.hidden = true; taPick.hidden = true; taRun.hidden = true; $('taShop').hidden = false;
+  taQuiz.hidden = true; taPick.hidden = true; taRun.hidden = true; $('taMap').hidden = true; $('taShop').hidden = false;
   renderShop();
   say(wallet ? `Você tem ${wallet} moedas. Escolha um presente!` : 'Jogue as corridas para ganhar moedas!', 0.95);
   const t0 = performance.now();
