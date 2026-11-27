@@ -285,3 +285,53 @@ i.coin{
   font-weight:800; font-size:10.5px; letter-spacing:.03em; transform:rotate(6deg);
   box-shadow:0 4px 8px -4px rgba(236,72,153,.7);
 }
+
+/* ---------- estrelas das tabuadas ---------- */
+.ta-table{position:relative; overflow:visible;}
+.ta-table-bar{
+  position:absolute; left:6px; right:6px; bottom:3px; height:3px; border-radius:2px;
+  background:linear-gradient(90deg, #22C55E var(--p, 0%), rgba(26,18,56,.1) var(--p, 0%));
+}
+.ta-table.active .ta-table-bar{background:linear-gradient(90deg, #fff var(--p, 0%), rgba(255,255,255,.3) var(--p, 0%));}
+.ta-table.done{background:linear-gradient(135deg, #FEF9C3, #FDE68A); border-color:#FACC15; color:#92400E;}
+.ta-table.done.active{background:var(--grad); color:#fff;}
+.ta-table.done .ta-table-bar{display:none;}
+.ta-table-star{
+  position:absolute; top:-9px; right:-7px; font-size:15px; line-height:1;
+  color:#FACC15; -webkit-text-stroke:1.2px #B45309; text-shadow:0 2px 3px rgba(180,83,9,.35);
+}
+.ta-table-all small{font-size:11px; font-weight:800; opacity:.85;}
+.ta-table-all.done{background:linear-gradient(135deg, #FDE68A, #F59E0B); color:#fff;}
+.ta-table.pop{animation:popIn .5s ease;}
+.ta-star-fly{
+  position:fixed; z-index:6000; pointer-events:none;
+  font-size:54px; transform:translate(-50%, -50%) scale(1.4);
+  filter:drop-shadow(0 6px 10px rgba(180,83,9,.4));
+  transition:left 1.1s cubic-bezier(.5,-.3,.6,1), top 1.1s cubic-bezier(.3,0,.4,1.3), transform 1.1s ease;
+}
+.ta-star-fly.go{transform:translate(-50%, -50%) scale(.45) rotate(360deg);}
+
+/* ---------- provador da loja ---------- */
+.ta-shop-stage{flex-wrap:wrap;}
+.ta-shop-buy{
+  width:100%; display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding:10px; border-radius:16px; background:#fff; box-shadow:0 8px 18px -14px rgba(26,18,56,.5);
+  animation:popIn .3s ease;
+}
+.ta-shop-buy[hidden]{display:none;}
+.ta-buy-name{font-weight:700; font-size:14px; color:var(--ink-soft); text-align:center;}
+.ta-buy-name b{color:var(--ink);}
+.ta-buy-btns{display:flex; gap:8px;}
+.ta-buy-ok, .ta-buy-no{
+  display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 16px; border-radius:999px;
+  font-family:inherit; font-weight:800; font-size:15px; cursor:pointer; border:none;
+}
+.ta-buy-ok{background:linear-gradient(135deg, #22C55E, #15803D); color:#fff; box-shadow:0 8px 16px -8px rgba(21,128,61,.6);}
+.ta-buy-ok.poor{background:#CBD5E1; color:#475569; box-shadow:none;}
+.ta-buy-price{display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.9); color:#92400E; font-family:var(--font-display); font-weight:600;}
+.ta-buy-no{background:var(--surface-2); color:var(--ink);}
+.ta-buy-ok.shake{animation:qShake .4s ease;}
+.ta-buy-falta{font-weight:700; color:#B45309; font-size:12.5px; text-align:center;}
+.ta-item.trying{border-color:#8B5CF6; background:#F5F3FF;}
+.ta-item.trying .ta-item-act{background:#8B5CF6; color:#fff;}
+.ta-shop-buy{order:3;}

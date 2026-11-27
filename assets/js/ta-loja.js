@@ -81,6 +81,9 @@ function shopEquipOf(id){ return equipped[id] || {}; }
 
 // ---------- tela da loja ----------
 let shopChar = null, shopSlot = 'head', shopAnim = 0;
+let trying = null; // item que a criança está só provando (ainda não comprou)
+// o que aparece no personagem da loja: o que ele usa + o que está provando
+const previewEquip = () => trying ? {...shopEquipOf(shopChar), [trying.slot]:trying.id} : shopEquipOf(shopChar);
 
 function showShop(){
   if(!taRun.hidden) return; // não abre no meio da corrida
@@ -88,6 +91,7 @@ function showShop(){
   clearTimeout(nextTimer);
   cancelAnimationFrame(shopAnim);
   shopChar = charId || 'capivara';
+  trying = null; // sempre entra sem nada sendo provado
   taQuiz.hidden = true; taPick.hidden = true; taRun.hidden = true; $('taShop').hidden = false;
   renderShop();
   say(wallet ? `Você tem ${wallet} moedas. Escolha um presente!` : 'Jogue as corridas para ganhar moedas!', 0.95);
@@ -101,6 +105,7 @@ function showShop(){
 }
 
 function closeShop(){
+  trying = null;
   cancelAnimationFrame(shopAnim);
   $('taShop').hidden = true;
   portrait($('taCharIcon'), charId || 'capivara', 0);
@@ -143,30 +148,55 @@ function renderShop(){
   const grid = $('taShopGrid');
   grid.innerHTML = '';
   const eq = shopEquipOf(shopChar);
+  renderBuyBar();
   SHOP_ITEMS.filter(it => it.slot === shopSlot).forEach(it=>{
     const has = owned.has(it.id), using = eq[it.slot] === it.id;
+    const isTrying = trying && trying.id === it.id;
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'ta-item' + (has ? ' owned' : '') + (using ? ' using' : '') + (!has && wallet < it.price ? ' poor' : '');
+    b.className = 'ta-item' + (has ? ' owned' : '') + (using ? ' using' : '') + (isTrying ? ' trying' : '') + (!has && wallet < it.price ? ' poor' : '');
     b.innerHTML = (SHOP_NEW.has(it.id) && !has ? '<span class="ta-item-new">Novo!</span>' : '') + `<canvas width="72" height="62" aria-hidden="true"></canvas>
       <span class="ta-item-name">${it.name}</span>
-      <span class="ta-item-act">${using ? '✓ Usando' : has ? 'Usar' : `<i class="coin"></i>${it.price}`}</span>`;
+      <span class="ta-item-act">${using ? '✓ Usando' : has ? 'Usar' : isTrying ? '👀 Provando' : `<i class="coin"></i>${it.price}`}</span>`;
     b.addEventListener('click', ()=> clickItem(it, b));
     grid.appendChild(b);
     drawItemIcon(b.querySelector('canvas'), it);
   });
 }
 
-async function clickItem(it, btn){
+function clickItem(it, btn){
   const eq = equipped[shopChar] = equipped[shopChar] || {};
   if(owned.has(it.id)){
     // já tem: veste ou tira
+    trying = null;
     if(eq[it.slot] === it.id){ delete eq[it.slot]; say('Tirou!', 1); }
     else { eq[it.slot] = it.id; say(`${it.name}!`, 1); ping(true); }
     saveJSON(EQUIP_KEY, equipped);
     renderShop();
     return;
   }
+  // ainda não tem: só prova. Nada é guardado; ao sair da loja a peça sai.
+  if(trying && trying.id === it.id) return;
+  trying = it;
+  say(`${it.name}! Ficou bom?`, 1);
+  renderShop();
+}
+
+// barra embaixo do personagem: "Provando: Boné — Comprar por 120"
+function renderBuyBar(){
+  const bar = $('taShopBuy');
+  if(!trying){ bar.hidden = true; bar.innerHTML = ''; return; }
+  const it = trying, falta = it.price - wallet;
+  bar.hidden = false;
+  bar.innerHTML = `<span class="ta-buy-name">👀 Provando: <b>${it.name}</b></span>
+    <div class="ta-buy-btns">
+      <button type="button" class="ta-buy-ok${falta > 0 ? ' poor' : ''}" id="taBuyOk"><span>Comprar</span><span class="ta-buy-price"><i class="coin"></i>${it.price}</span></button>
+    </div>
+    ${falta > 0 ? `<small class="ta-buy-falta">Faltam ${falta} moedas — jogue mais corridas! 🏃</small>` : ''}`;
+  $('taBuyOk').addEventListener('click', ()=> buyItem(it, $('taBuyOk')));
+}
+
+async function buyItem(it, btn){
   if(wallet < it.price){
     btn.classList.remove('shake'); void btn.offsetWidth; btn.classList.add('shake');
     ping(false);
@@ -179,11 +209,13 @@ async function clickItem(it, btn){
     text:`Custa <b>${it.price} moedas</b>. Você tem ${wallet} e vai ficar com ${wallet - it.price}.`,
     ok:'Comprar', cancel:'Agora não'});
   if(!yes) return;
+  const eq = equipped[shopChar] = equipped[shopChar] || {};
   walletAdd(-it.price);
   owned.add(it.id);
   saveJSON(OWNED_KEY, [...owned]);
   eq[it.slot] = it.id;
   saveJSON(EQUIP_KEY, equipped);
+  trying = null;
   renderShop();
   confetti($('taShopPreview'));
   tone([523, 659, 784, 1047], .5, 'triangle', .06);
@@ -237,7 +269,7 @@ function drawShopPreview(t){
   // chão do palco
   c.fillStyle = 'rgba(255,255,255,.55)';
   c.beginPath(); c.ellipse(w / 2, h - 26, 80, 14, 0, 0, Math.PI * 2); c.fill();
-  const eq = shopEquipOf(shopChar);
+  const eq = previewEquip();
   const hop = Math.abs(Math.sin(t * 2.2)) * 10;
   const P = {t, state: hop > 2 ? 'run' : 'idle', eq, happy: (t % 4) > 3.2};
   // rastro de exemplo

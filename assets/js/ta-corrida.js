@@ -5,7 +5,10 @@
 //  (segurar = pulo mais alto; apertar de novo no ar = pulo duplo).
 //  Cada fase tem: buracos, degraus, plataformas, pedras que sobem e
 //  descem, espinhos, bichinhos (pule em cima!), molas, blocos "?" e
-//  3 estrelas escondidas. A cada corrida a fase fica um pouco maior
+//  3 estrelas escondidas. Comidas mudam o tamanho do personagem:
+//  🍇 uva = pequeno (passa nos túneis baixos), 🍎 maçã = normal,
+//  🍉 melancia = gigante (quebra paredões e amassa os bichinhos).
+//  A cada corrida a fase fica um pouco maior
 //  e mais difícil (até a Fase 5) e o cenário muda.
 //  Não dá para perder: quem cai volta um pouquinho; quem encosta num
 //  bichinho ou espinho perde algumas moedas e fica piscando.
@@ -14,7 +17,9 @@
 
 const W = 800, H = 400, GY = 318;      // tamanho lógico e altura do chão
 const GRAV = 2000, JUMP_V = 770, DJUMP_V = 690, SPRING_V = 1130;
-const PW = 15, PH = 44;                 // meia largura e altura do personagem
+const PW0 = 15, PH0 = 44;               // meia largura e altura do personagem (tamanho normal)
+const SIZES = {small:.62, normal:1, big:1.6};
+const FOOD = {small:{name:'uva', emoji:'🍇', msg:'Ficou pequenininho! 🍇'}, normal:{name:'maçã', emoji:'🍎', msg:'Tamanho normal 🍎'}, big:{name:'melancia', emoji:'🍉', msg:'Ficou GIGANTE! 🍉'}};
 const CAM_X = 210;                      // onde o personagem fica na tela
 
 const THEMES = [
@@ -43,7 +48,7 @@ function setupCanvas(){
 // Montagem da fase (pedaços sorteados)
 // ============================================================
 function buildLevel(d){
-  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[]};
+  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[]};
   const R = randInt;
   const ground = (x0, x1, top)=>{
     top = top || GY;
@@ -55,7 +60,7 @@ function buildLevel(d){
   const coin = (x, y) => L.coins.push({x, y});
   const row = (x, y, n, dx) => { for(let k = 0; k < n; k++) coin(x + k * (dx || 36), y); };
   const arc = (x0, x1, y, h, n) => { for(let k = 0; k < n; k++){ const f = k / (n - 1); coin(x0 + (x1 - x0) * f, y - Math.sin(f * Math.PI) * h); } };
-  const enemy = (x, minX, maxX, flying) => L.enemies.push({x, y:GY, minX, maxX, dir:-1, speed:flying ? 0 : 40 + d * 8, alive:true, flying:!!flying, baseY:GY - 85, ph:Math.random() * 6, dead:0});
+  const enemy = (x, minX, maxX, flying) => L.enemies.push({x, y:GY, minX, maxX, dir:-1, speed:flying ? 0 : 45 + d * 10, alive:true, flying:!!flying, baseY:GY - 85, ph:Math.random() * 6, dead:0});
 
   const speed = 225 + d * 11;
   const LEN = 11000 + d * 1100;
@@ -66,7 +71,7 @@ function buildLevel(d){
   // pedaços da fase: cada um começa no fim do chão (altura GY) e devolve onde termina
   const CH = {
     buraco(){
-      const g = R(80, 95 + d * 13);
+      const g = R(85, 100 + d * 14);
       arc(x + 4, x + g - 4, GY - 46, 70, 5);
       x += g;
       const len = R(300, 440);
@@ -169,17 +174,49 @@ function buildLevel(d){
       L.starSpots.push({x:ex, y:GY - 270});
       x += len;
     },
+    tunel(){ // túnel baixo: só passa pequeno (come a uva antes)
+      const len = R(780, 880) + d * 20;
+      ground(x, x + len);
+      L.signs.push({x:x + 50, size:'small'});
+      L.foods.push({x:x + 140, y:GY - 22, size:'small'});
+      const t0 = x + 280, t1 = t0 + R(240, 300) + d * 25;
+      L.solids.push({x0:t0, x1:t1, top:-9999, bottom:GY - 34, type:'ceil'});
+      row(t0 + 26, GY - 15, Math.floor((t1 - t0 - 30) / 34), 34); // moedas escondidas lá dentro
+      L.foods.push({x:t1 + 90, y:GY - 22, size:'normal'});
+      if(d >= 3) enemy(x + len - 60, t1 + 150, x + len - 20);
+      x += len;
+    },
+    paredao(){ // paredão de pedra: só quebra gigante (come a melancia antes)
+      const len = R(760, 860);
+      ground(x, x + len);
+      L.signs.push({x:x + 50, size:'big'});
+      L.foods.push({x:x + 140, y:GY - 22, size:'big'});
+      const w0 = x + 330;
+      L.solids.push({x0:w0, x1:w0 + 58, top:-9999, bottom:9999, type:'wall'});
+      arc(w0 + 100, w0 + 260, GY - 60, 70, 5);
+      if(d >= 2){ // bichinhos que o gigante amassa só de encostar
+        enemy(w0 + 300, w0 + 200, w0 + 360);
+        if(d >= 4) enemy(w0 + 420, w0 + 380, w0 + 470);
+      }
+      L.foods.push({x:x + len - 70, y:GY - 22, size:'normal'});
+      x += len;
+    },
   };
   // quais pedaços aparecem em cada fase (mais difíceis nas fases altas)
-  const pool = ['buraco', 'buraco', 'bichinho', 'degrau', 'escada', 'espinhos', 'mola', 'blocos'];
-  if(d >= 2) pool.push('pedras', 'voador', 'bichinho');
+  const pool = ['buraco', 'buraco', 'bichinho', 'degrau', 'escada', 'espinhos', 'mola', 'blocos', 'tunel', 'paredao'];
+  if(d >= 2) pool.push('pedras', 'voador', 'bichinho', 'tunel', 'paredao');
   if(d >= 3) pool.push('pedras', 'espinhos', 'voador');
   if(d >= 4) pool.push('escada', 'pedras');
 
   let half = false;
+  const used = {};
   while(x < LEN){
     let k;
-    do { k = pool[Math.floor(Math.random() * pool.length)]; } while(k === last);
+    // toda fase tem pelo menos 1 túnel e 1 paredão (e no máximo 3 de cada)
+    if(x > LEN * .25 && !used.tunel) k = 'tunel';
+    else if(x > LEN * .55 && !used.paredao) k = 'paredao';
+    else do { k = pool[Math.floor(Math.random() * pool.length)]; } while(k === last || ((k === 'tunel' || k === 'paredao') && used[k] >= 3));
+    used[k] = (used[k] || 0) + 1;
     last = k;
     CH[k]();
     if(!half && x > LEN / 2){ half = true; L.halfX = x; }
@@ -221,7 +258,7 @@ function openRun(){
     d, theme, level:buildLevel(d),
     x:0, y:GY, vx:0, vy:0, face:1, ground:null, plat:null, jumps:0, coyote:0, buffer:0,
     camX:-CAM_X, camY:0, coins:0, starsGot:0, t:0, anim:0, state:'ready', inv:0, hurtT:0,
-    spin:0, jet:0, happy:0, squash:[1, 1], dustT:0, shake:0,
+    spin:0, jet:0, happy:0, squash:[1, 1], dustT:0, shake:0, size:'normal', scale:1,
     safe:[], parts:[], fly:[], weather:[], banner:null,
   };
   for(let k = 0; k < 40; k++) run.weather.push({x:Math.random() * W, y:Math.random() * H, s:Math.random(), ph:Math.random() * 6});
@@ -229,7 +266,7 @@ function openRun(){
       <div class="ta-ov-emoji">🏃</div>
       <b>Fase ${d}: ${theme.name}</b>
       <small>Pegue as moedas e as <strong>3 estrelas</strong> escondidas até a bandeira 🏁</small>
-      <div class="ta-ov-help"><span>◀ ▶ Setas: andar</span><span>⤒ Pular (de novo no ar: pulo duplo)</span><span>🐞 Pule em cima dos bichinhos</span></div>
+      <div class="ta-ov-help"><span>◀ ▶ Setas: andar</span><span>⤒ Pular (de novo no ar: pulo duplo)</span><span>🐞 Pule em cima dos bichinhos</span><span>🍇 encolhe · 🍎 normal · 🍉 gigante</span></div>
       <button type="button" class="m-new-btn ta-go" id="taGo">Correr! ▶</button>
     </div>`);
   $('taGo').addEventListener('click', e=>{ e.stopPropagation(); startRunning(); });
@@ -322,9 +359,16 @@ function update(dt){
   if(r.spin > 0){ r.spin += dt * 2.6; if(r.spin >= 1) r.spin = 0; }
   r.squash = [r.squash[0] + (1 - r.squash[0]) * Math.min(1, dt * 12), r.squash[1] + (1 - r.squash[1]) * Math.min(1, dt * 12)];
 
+  // ---- tamanho (comidas): cresce e encolhe suavinho ----
+  const tScale = SIZES[r.size];
+  r.scale += (tScale - r.scale) * Math.min(1, dt * 9);
+  if(Math.abs(tScale - r.scale) < .01) r.scale = tScale;
+  const PW = PW0 * r.scale, PH = PH0 * r.scale;
+
   // ---- andar com as setas (com aceleração suave) ----
   const dirIn = r.state === 'done' ? 1 : (input.right ? 1 : 0) - (input.left ? 1 : 0);
-  const target = r.hurtT > .25 ? r.vx : dirIn * (r.state === 'done' ? L.speed * .45 : L.speed);
+  const sizeSpeed = r.size === 'big' ? .9 : r.size === 'small' ? 1.08 : 1;
+  const target = r.hurtT > .25 ? r.vx : dirIn * (r.state === 'done' ? L.speed * .45 : L.speed * sizeSpeed);
   const acc = (r.ground || r.plat) ? 2400 : 1500;
   r.vx += Math.max(-acc * dt, Math.min(acc * dt, target - r.vx));
   if(dirIn && r.hurtT <= .25) r.face = dirIn;
@@ -332,11 +376,19 @@ function update(dt){
   if(nx < -360) { nx = -360; r.vx = 0; }                  // começo da fase
   if(r.state === 'done' && nx > L.endX){ nx = L.endX; r.vx = 0; }
   r.blocked = false;
+  let blockedBy = null;
   for(const s of L.solids){
+    if(s.broken) continue;
     if(r.y > s.top + 4 && r.y - PH < s.bottom){
-      if(r.x + PW <= s.x0 + 1 && nx + PW > s.x0){ nx = s.x0 - PW; r.vx = 0; r.blocked = true; }      // parede na frente
-      else if(r.x - PW >= s.x1 - 1 && nx - PW < s.x1){ nx = s.x1 + PW; r.vx = 0; r.blocked = true; } // parede atrás
+      const front = r.x + PW <= s.x0 + 1 && nx + PW > s.x0, back = r.x - PW >= s.x1 - 1 && nx - PW < s.x1;
+      if((front || back) && s.type === 'wall' && r.size === 'big'){ breakWall(s); continue; } // gigante quebra!
+      if(front){ nx = s.x0 - PW; r.vx = 0; r.blocked = true; blockedBy = s.type; }      // parede na frente
+      else if(back){ nx = s.x1 + PW; r.vx = 0; r.blocked = true; blockedBy = s.type; } // parede atrás
     }
+  }
+  // empacou no túnel ou no paredão: dica da comida certa
+  if((blockedBy === 'ceil' || blockedBy === 'wall') && !r.banner && dirIn){
+    r.banner = blockedBy === 'ceil' ? {text:'Muito grande! Coma a uva 🍇 para ficar pequeno', t:2.2} : {text:'Paredão! Coma a melancia 🍉 para ficar gigante', t:2.2};
   }
   // em cima de pedra que se mexe: acompanha
   if(r.plat && r.plat.moving) r.y += r.plat.y - r.plat.prevY;
@@ -361,10 +413,10 @@ function update(dt){
   } else {
     // bate a cabeça embaixo dos blocos
     for(const s of L.solids){
-      if(s.type !== 'box') continue;
+      if(s.type !== 'box' && s.type !== 'ceil') continue;
       if(r.x + PW - 4 > s.x0 && r.x - PW + 4 < s.x1 && prevY - PH >= s.bottom - .5 && ny - PH < s.bottom){
         ny = s.bottom + PH; r.vy = 60;
-        hitBox(s);
+        if(s.type === 'box') hitBox(s);
       }
     }
   }
@@ -406,6 +458,13 @@ function update(dt){
     const dx = c.x - r.x, dy = c.y - cy;
     if(dx * dx + dy * dy < 31 * 31){ c.taken = true; gotCoin(c.x, c.y, 1); }
   }
+  // comidas (ficam no lugar: dá para voltar e comer de novo)
+  for(const f of L.foods){
+    f.pop = Math.max(0, (f.pop || 0) - dt * 3);
+    if(r.size === f.size) continue;
+    const dx = f.x - r.x, dy = f.y - cy, rad = 22 + PW;
+    if(dx * dx + dy * dy < rad * rad) eatFood(f);
+  }
   for(const s of L.stars){
     if(s.taken) continue;
     const dx = s.x - r.x, dy = s.y - cy;
@@ -425,6 +484,13 @@ function update(dt){
     const overlapX = Math.abs(e.x - r.x) < PW + 15;
     const overlapY = r.y > top + 2 && r.y - PH < e.y - 2;
     if(!overlapX || !overlapY) continue;
+    if(r.size === 'big'){ // gigante amassa só de encostar
+      e.alive = false; e.dead = 0; r.shake = .15;
+      for(let k = 0; k < 10; k++) part(e.x, top + 10, (Math.random() - .5) * 300, -Math.random() * 260, .6, '#fff', 4, 'star');
+      gotCoin(e.x, top - 10, 2, true);
+      stompSound();
+      continue;
+    }
     if(r.vy > 0 && prevY <= top + 12){
       // pulou em cima!
       e.alive = false; e.dead = 0;
@@ -486,9 +552,41 @@ function hitBox(s){
   tone([660, 880], .15, 'square', .04);
 }
 
+function eatFood(f){
+  const r = run;
+  const grow = SIZES[f.size] > SIZES[r.size];
+  r.size = f.size;
+  f.pop = 1;
+  r.happy = .8;
+  r.banner = {text:FOOD[f.size].msg, t:1.6};
+  const col = f.size === 'small' ? '#A855F7' : f.size === 'big' ? '#22C55E' : '#EF4444';
+  for(let k = 0; k < 14; k++){ const a = k / 14 * 6.28; part(r.x, r.y - 24, Math.cos(a) * 180, Math.sin(a) * 180, .5, col, 4, 'spark'); }
+  tone(grow ? [262, 330, 392, 523, 659] : f.size === 'small' ? [880, 660, 523, 392] : [392, 523], grow ? .55 : .4, 'triangle', .07);
+  say(f.size === 'small' ? 'Pequenininho!' : f.size === 'big' ? 'Gigante!' : 'Normal!', 1.05);
+}
+
+function breakWall(s){
+  const r = run;
+  s.broken = true;
+  r.shake = .4;
+  for(let k = 0; k < 26; k++){
+    part(s.x0 + Math.random() * (s.x1 - s.x0), GY - Math.random() * 220, (Math.random() - .3) * 420 * r.face, -150 - Math.random() * 380, 1.1, ['#9CA3AF', '#6B7280', '#78716C'][k % 3], 5 + Math.random() * 6, 'rock');
+  }
+  tone([120, 90, 60], .45, 'sawtooth', .09);
+  r.banner = {text:'CRASH! Paredão quebrado! 💥', t:1.4};
+}
+
 function hurt(){
   const r = run;
   if(r.inv > 0 || r.state !== 'run') return;
+  if(r.size === 'big'){ // gigante não perde moedas: só volta ao tamanho normal
+    r.size = 'normal'; r.inv = 1.6; r.hurtT = .4; r.shake = .3;
+    r.vy = Math.min(r.vy, -380); r.ground = null; r.plat = null; r.jumps = 1;
+    r.vx = -r.face * 230;
+    r.banner = {text:'Ai! Voltou ao tamanho normal', t:1.4};
+    tone([500, 300, 200], .35, 'sawtooth', .05);
+    return;
+  }
   r.inv = 1.6; r.hurtT = .5; r.shake = .3;
   r.vy = Math.min(r.vy, -420); r.ground = null; r.plat = null; r.jumps = 1;
   r.vx = -r.face * 230;
@@ -550,7 +648,7 @@ function updateParticles(dt){
   r.parts = r.parts.filter(p => (p.life -= dt) > 0);
   r.parts.forEach(p=>{
     p.x += p.vx * dt; p.y += p.vy * dt;
-    if(p.kind === 'coin' || p.kind === 'star' || p.kind === 'spark') p.vy += 700 * dt;
+    if(p.kind === 'coin' || p.kind === 'star' || p.kind === 'spark' || p.kind === 'rock') p.vy += (p.kind === 'rock' ? 1300 : 700) * dt;
     if(p.kind === 'confetti'){ p.vx += Math.sin(r.t * 5 + p.y) * 20 * dt; }
     if(p.kind === 'dust'){ p.vx *= .92; p.vy *= .92; p.r += dt * 10; }
   });
@@ -635,11 +733,17 @@ function draw(){
 
   L.solids.forEach(s=>{
     if(s.x1 < vx0 || s.x0 > vx1) return;
-    if(s.type === 'box') drawBox(c, s, r.t); else drawGround(c, s, th, r.camY);
+    if(s.broken) return;
+    if(s.type === 'box') drawBox(c, s, r.t);
+    else if(s.type === 'ceil') drawCeil(c, s, th, r.camY);
+    else if(s.type === 'wall') drawWall(c, s, r.camY);
+    else drawGround(c, s, th, r.camY);
   });
   L.plats.forEach(p=>{ if(p.x1 > vx0 && p.x0 < vx1) drawPlat(c, p, th); });
   L.spikes.forEach(s=>{ if(s.x1 > vx0 && s.x0 < vx1) drawSpikes(c, s, th); });
   L.springs.forEach(s=>{ if(s.x > vx0 && s.x < vx1) drawSpring(c, s, th); });
+  L.signs.forEach(g=>{ if(g.x > vx0 && g.x < vx1) drawSign(c, g); });
+  L.foods.forEach(f=>{ if(f.x > vx0 && f.x < vx1) drawFood(c, f, r.t, r.size === f.size); });
   if(L.halfX > vx0 && L.halfX < vx1) drawHalfFlag(c, L.halfX, r.t, r.halfShown);
   drawFlag(c, L.flagX, r.t);
   L.coins.forEach(co=>{ if(!co.taken && co.x > vx0 && co.x < vx1) drawCoin(c, co.x, co.y, r.t, 11, th.name === 'Noite'); });
@@ -650,11 +754,11 @@ function draw(){
   const onFloor = r.ground || r.plat;
   if(onFloor){
     c.fillStyle = 'rgba(0,0,0,.18)';
-    c.beginPath(); c.ellipse(r.x, r.y + 2, 21, 5, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(r.x, r.y + 2, 21 * r.scale, 5 * r.scale, 0, 0, Math.PI * 2); c.fill();
   }
   const state = r.state === 'ready' ? 'idle' : r.hurtT > 0 ? 'hurt' : r.state === 'done' && onFloor && r.x >= L.endX - 2 ? 'win' : !onFloor ? (r.vy < 0 ? 'jump' : 'fall') : Math.abs(r.vx) > 30 ? 'run' : 'idle';
   if(!(r.inv > 0 && Math.floor(r.inv * 14) % 2)){
-    drawChar(c, charId || 'capivara', r.x, r.y, {t:r.anim, state, spin:r.spin, happy:r.happy > 0, jet:r.jet > 0}, 1.12, [r.squash[0] * r.face, r.squash[1]]);
+    drawChar(c, charId || 'capivara', r.x, r.y, {t:r.anim, state, spin:r.spin, happy:r.happy > 0, jet:r.jet > 0}, 1.12 * r.scale, [r.squash[0] * r.face, r.squash[1]]);
   }
 
   // partículas
@@ -664,6 +768,7 @@ function draw(){
     if(p.kind === 'trail'){ c.globalAlpha = 1; drawTrailBit(c, p.x, p.y, p.fx, p.life / p.max, p.hue); }
     else if(p.kind === 'coin') drawCoin(c, p.x, p.y, r.t * 3, 8);
     else if(p.kind === 'star'){ c.fillStyle = p.color; starPath(c, p.x, p.y, p.r * 1.4, p.r * .6); c.fill(); }
+    else if(p.kind === 'rock'){ c.fillStyle = p.color; c.save(); c.translate(p.x, p.y); c.rotate(p.life * 6); c.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .8); c.restore(); }
     else if(p.kind === 'confetti'){ c.fillStyle = p.color; c.save(); c.translate(p.x, p.y); c.rotate(p.y * .05); c.fillRect(-3, -2, 6, 4); c.restore(); }
     else { c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.r, 0, Math.PI * 2); c.fill(); }
   });
@@ -761,6 +866,115 @@ function drawGround(c, s, th, camY){
       c.beginPath(); c.moveTo(px, top - 4); c.lineTo(px - 3, top - 11); c.moveTo(px + 4, top - 4); c.lineTo(px + 5, top - 12); c.stroke();
       if((px / 70) % 3 === 0) dot(c, px + 12, top - 8, 3, th.name === 'Noite' ? '#C4B5FD' : '#F472B6');
     }
+  }
+  c.restore();
+}
+
+// túnel baixo: uma rocha que desce do alto até pertinho do chão
+function drawCeil(c, s, th, camY){
+  const top = camY - 20, w = s.x1 - s.x0, bot = s.bottom;
+  c.save();
+  // sombra dentro do túnel
+  c.fillStyle = 'rgba(15,10,40,.28)';
+  c.fillRect(s.x0, bot, w, GY - bot);
+  rr(c, s.x0 - 6, top, w + 12, bot - top, 14);
+  c.fillStyle = vgrad(c, bot - 90, bot, th.dirt, th.dirt2); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 2.5; c.stroke();
+  c.save(); rr(c, s.x0 - 6, top, w + 12, bot - top, 14); c.clip();
+  for(let px = s.x0 + 18; px < s.x1; px += 44){
+    for(let py = bot - 22; py > top; py -= 38){
+      const k = Math.abs(Math.sin(px * 3.1 + py)) % 1;
+      c.fillStyle = th.rock; c.globalAlpha = .5;
+      c.beginPath(); c.ellipse(px + k * 12, py, 9 + k * 4, 6, 0, 0, Math.PI * 2); c.fill();
+      c.globalAlpha = 1;
+    }
+  }
+  c.restore();
+  // beirada de baixo com musgo/neve
+  c.fillStyle = th.grass2;
+  for(let px = s.x0; px < s.x1; px += 14){ c.beginPath(); c.ellipse(px + 7, bot - 2, 8, 4, 0, 0, Math.PI); c.fill(); }
+  c.restore();
+}
+
+// paredão de pedras rachadas (só o gigante quebra)
+function drawWall(c, s, camY){
+  const top = camY - 20, w = s.x1 - s.x0;
+  c.save();
+  c.strokeStyle = '#374151'; c.lineWidth = 2;
+  let row = 0;
+  for(let y = GY; y > top; y -= 30, row++){
+    const off = row % 2 ? -w / 4 : 0;
+    for(let bx = s.x0 + off; bx < s.x1; bx += w / 2){
+      const x0 = Math.max(s.x0, bx), x1 = Math.min(s.x1, bx + w / 2);
+      if(x1 - x0 < 4) continue;
+      rr(c, x0 + 1, y - 29, x1 - x0 - 2, 28, 5);
+      c.fillStyle = vgrad(c, y - 30, y, row % 3 ? '#9CA3AF' : '#A8A29E', '#6B7280'); c.fill(); c.stroke();
+    }
+  }
+  // rachaduras
+  c.strokeStyle = 'rgba(31,41,55,.75)'; c.lineWidth = 2.2;
+  c.beginPath(); c.moveTo(s.x0 + w * .3, GY - 10); c.lineTo(s.x0 + w * .55, GY - 50); c.lineTo(s.x0 + w * .35, GY - 80); c.lineTo(s.x0 + w * .65, GY - 130); c.stroke();
+  c.beginPath(); c.moveTo(s.x0 + w * .55, GY - 50); c.lineTo(s.x0 + w * .8, GY - 60); c.stroke();
+  c.restore();
+}
+
+// placa com a dica: qual comida usar
+function drawSign(c, g){
+  const big = g.size === 'big';
+  c.save();
+  c.translate(g.x, GY);
+  c.fillStyle = '#8B5A2B'; c.fillRect(-3, -54, 6, 54);
+  rr(c, -48, -88, 96, 40, 8);
+  c.fillStyle = vgrad(c, -88, -48, '#F5D0A0', '#D9A066'); c.fill();
+  c.strokeStyle = '#7C4A1E'; c.lineWidth = 2.5; c.stroke();
+  c.font = '20px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(big ? '🍉' : '🍇', -28, -68);
+  c.fillStyle = '#7C4A1E'; c.font = '700 11px Nunito, sans-serif';
+  c.fillText(big ? 'GIGANTE' : 'PEQUENO', 14, -61);
+  c.font = '700 16px sans-serif';
+  c.fillText(big ? '⬆' : '⬇', 14, -77);
+  c.restore();
+}
+
+// comidas que mudam o tamanho
+function drawFood(c, f, t, same){
+  const bob = Math.sin(t * 3 + f.x * .01) * 3;
+  const pop = 1 + (f.pop || 0) * .5;
+  c.save();
+  c.translate(f.x, f.y + bob);
+  c.scale(pop, pop);
+  c.globalAlpha = same ? .45 : 1; // já está desse tamanho: fica clarinha
+  // brilho em volta
+  const col = f.size === 'small' ? 'rgba(168,85,247,.35)' : f.size === 'big' ? 'rgba(34,197,94,.35)' : 'rgba(239,68,68,.3)';
+  c.fillStyle = col; c.beginPath(); c.arc(0, 0, 19 + Math.sin(t * 5) * 2, 0, Math.PI * 2); c.fill();
+  c.lineJoin = 'round';
+  if(f.size === 'small'){ // cacho de uva
+    c.strokeStyle = '#4C1D95'; c.lineWidth = 1.4;
+    [[-6, -5], [0, -6], [6, -5], [-3, 1], [3, 1], [0, 7]].forEach(([x, y])=>{
+      c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2);
+      const g = c.createRadialGradient(x - 2, y - 2, 1, x, y, 5); g.addColorStop(0, '#D8B4FE'); g.addColorStop(1, '#7E22CE');
+      c.fillStyle = g; c.fill(); c.stroke();
+    });
+    c.strokeStyle = '#65A30D'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -11); c.lineTo(1, -16); c.stroke();
+    c.fillStyle = '#22C55E'; c.beginPath(); c.ellipse(6, -14, 5, 2.5, -.4, 0, Math.PI * 2); c.fill();
+  } else if(f.size === 'big'){ // fatia de melancia
+    c.rotate(-.15);
+    c.beginPath(); c.moveTo(-14, -3); c.arc(0, -3, 14, 0, Math.PI); c.closePath();
+    c.fillStyle = '#15803D'; c.fill();
+    c.beginPath(); c.moveTo(-12, -3); c.arc(0, -3, 12, 0, Math.PI); c.closePath(); c.fillStyle = '#F0FDF4'; c.fill();
+    c.beginPath(); c.moveTo(-10.5, -3); c.arc(0, -3, 10.5, 0, Math.PI); c.closePath(); c.fillStyle = '#F43F5E'; c.fill();
+    c.strokeStyle = '#14532D'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-14, -3); c.arc(0, -3, 14, 0, Math.PI); c.closePath(); c.stroke();
+    c.fillStyle = '#1F2937';
+    [[-5, 0], [0, 3], [5, 0], [-2, 6], [3, 6]].forEach(([x, y]) => { c.beginPath(); c.ellipse(x, y - 1, 1.2, 1.9, 0, 0, Math.PI * 2); c.fill(); });
+  } else { // maçã
+    c.beginPath(); c.moveTo(0, -6);
+    c.bezierCurveTo(-6, -12, -14, -6, -12, 2); c.bezierCurveTo(-10, 10, -4, 12, 0, 9);
+    c.bezierCurveTo(4, 12, 10, 10, 12, 2); c.bezierCurveTo(14, -6, 6, -12, 0, -6); c.closePath();
+    const g = c.createRadialGradient(-4, -4, 2, 0, 0, 14); g.addColorStop(0, '#FCA5A5'); g.addColorStop(1, '#DC2626');
+    c.fillStyle = g; c.fill(); c.strokeStyle = '#7F1D1D'; c.lineWidth = 1.6; c.stroke();
+    c.strokeStyle = '#78350F'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, -6); c.lineTo(1, -12); c.stroke();
+    c.fillStyle = '#22C55E'; c.beginPath(); c.ellipse(6, -11, 5, 2.5, -.4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.ellipse(-5, -3, 2, 3.5, .4, 0, Math.PI * 2); c.fill();
   }
   c.restore();
 }

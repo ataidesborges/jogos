@@ -38,6 +38,23 @@ let score = 0, hits = 0, runs = 0, locked = false;
 let streak = 0;            // acertos seguidos (errar zera)
 let retry = [];            // contas erradas que voltam daqui a pouco: {p:[t, n], wait}
 let current = null, bag = [], lastKey = '';
+
+// ---------- estrelas das tabuadas ----------
+// Para cada operação, guarda quais contas de cada tabuada a criança já
+// acertou (ex.: multiplicar → tabuada do 7 → 7×1, 7×3...). Acertou as 10
+// contas de uma tabuada = ganha a estrela daquele número.
+const TABLE_KEY = 'fp-tabuada-progresso';
+let tableProg = (()=>{ try{ return JSON.parse(localStorage.getItem(TABLE_KEY)) || {}; }catch(e){ return {}; } })();
+const tableDone = (m, t) => ((tableProg[m] || {})[t] || []).length;
+const isComplete = (m, t) => tableDone(m, t) >= 10;
+function markProgress(m, t, n){
+  tableProg[m] = tableProg[m] || {};
+  const list = tableProg[m][t] = tableProg[m][t] || [];
+  if(list.includes(n)) return false;
+  list.push(n);
+  try{ localStorage.setItem(TABLE_KEY, JSON.stringify(tableProg)); }catch(e){}
+  return list.length === 10; // acabou de completar
+}
 let nextTimer = null;
 
 // ============================================================
@@ -97,8 +114,20 @@ function renderTables(){
   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(n=>{
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'ta-table' + (n === table ? ' active' : '');
-    b.textContent = n === 0 ? 'Todas' : n;
+    const OPN = {somar:'somar', subtrair:'subtrair', multiplicar:'multiplicar', dividir:'dividir'}[mode];
+    if(n === 0){
+      const stars = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(t => isComplete(mode, t)).length;
+      b.className = 'ta-table ta-table-all' + (n === table ? ' active' : '') + (stars === 10 ? ' done' : '');
+      b.innerHTML = `Todas${stars ? ` <small>★ ${stars}/10</small>` : ''}`;
+      b.title = `${stars} de 10 tabuadas de ${OPN} completas`;
+    } else {
+      const done = tableDone(mode, n), complete = done >= 10;
+      b.className = 'ta-table' + (n === table ? ' active' : '') + (complete ? ' done' : '');
+      b.style.setProperty('--p', Math.min(10, done) * 10 + '%');
+      b.innerHTML = `${n}${complete ? '<span class="ta-table-star" aria-hidden="true">★</span>' : ''}<i class="ta-table-bar" aria-hidden="true"></i>`;
+      b.title = complete ? `Tabuada do ${n} de ${OPN}: completa! ⭐` : `Tabuada do ${n} de ${OPN}: ${done} de 10 contas acertadas`;
+      b.setAttribute('aria-label', b.title);
+    }
     b.setAttribute('aria-pressed', n === table);
     b.addEventListener('click', ()=>{
       table = n;
@@ -213,15 +242,25 @@ function choose(btn, v){
     updateTrack();
     ping(true);
     confetti(taExpr);
-    if(bonus){
+    // estrela da tabuada (a tabuada da conta é current.pair[0])
+    const [tt, nn] = current.pair;
+    const justDone = markProgress(mode, tt, nn);
+    renderTables();
+    if(justDone){
+      const OPN = {somar:'somar', subtrair:'subtrair', multiplicar:'multiplicar', dividir:'dividir'}[mode];
+      qQuestion.textContent = `⭐ Você completou a tabuada do ${tt} de ${OPN}!`;
+      say(`Parabéns! Você completou a tabuada do ${tt} de ${OPN}! Ganhou uma estrela!`, 0.95);
+      starBurst(tt);
+    } else if(bonus){
       qQuestion.textContent = `🔥 ${streak} seguidas! +10 pontos de bônus!`;
       say(`${current.a} ${SPOKEN[mode]} ${current.b}, igual a ${v}! ${streak} seguidas, bônus!`, 0.95);
     } else {
       qQuestion.textContent = 'Muito bem! ✓';
       say(`${current.a} ${SPOKEN[mode]} ${current.b}, igual a ${v}!`, 0.9);
     }
-    if(hits >= GOAL) nextTimer = setTimeout(openRun, 1900);
-    else nextTimer = setTimeout(loadProblem, 1700);
+    const wait = justDone ? 3400 : 0;
+    if(hits >= GOAL) nextTimer = setTimeout(openRun, 1900 + wait);
+    else nextTimer = setTimeout(loadProblem, 1700 + wait);
   } else {
     btn.classList.add('wrong');
     ans.classList.add('done', 'missed');
@@ -240,6 +279,29 @@ function choose(btn, v){
   }
 }
 
+// estrela voando até o botão da tabuada completada
+function starBurst(t){
+  const chip = [...document.querySelectorAll('.ta-table')].find(b => b.textContent.trim().startsWith(String(t)) && !b.classList.contains('ta-table-all'));
+  const from = taExpr.getBoundingClientRect();
+  const s = document.createElement('div');
+  s.className = 'ta-star-fly';
+  s.textContent = '⭐';
+  s.style.left = (from.left + from.width / 2) + 'px';
+  s.style.top = (from.top + from.height / 2) + 'px';
+  overlayRoot().appendChild(s);
+  confetti(taExpr);
+  tone && tone([784, 988, 1175, 1568], .6, 'triangle', .07);
+  requestAnimationFrame(()=>{
+    if(chip){
+      const to = chip.getBoundingClientRect();
+      s.style.left = (to.left + to.width / 2) + 'px';
+      s.style.top = (to.top + to.height / 2) + 'px';
+    }
+    s.classList.add('go');
+  });
+  setTimeout(()=>{ s.remove(); if(chip){ chip.classList.add('pop'); confetti(chip); } }, 1300);
+}
+
 // A corrida está em ta-corrida.js e os personagens em ta-personagens.js
 
 // ---------- botões do topo ----------
@@ -249,6 +311,7 @@ document.querySelectorAll('.level-btn').forEach(btn=>{
     btn.classList.add('active');
     mode = btn.dataset.level;
     bag = []; retry = [];
+    renderTables();
     if(!taRun.hidden) return; // não interrompe a corrida
     if(charId) showQuiz();
   });
