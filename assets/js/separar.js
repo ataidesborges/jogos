@@ -172,6 +172,7 @@ function chooseClass(btn, c){
 
 function win(anchor, earned){
   score += earned;
+  addPoints(earned);
   qScore.textContent = `${score} pontos`;
   ping(true);
   confetti(anchor);

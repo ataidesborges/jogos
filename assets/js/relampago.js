@@ -98,6 +98,7 @@ function choose(btn, v){
     btn.classList.add('right');
     rlExpr.querySelector('.ans').textContent = v;
     hits++; streak++;
+    addPoints(10);
     ping(true);
     // a cada 5 acertos, uma figurinha
     if(hits % 5 === 0){

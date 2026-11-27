@@ -76,6 +76,7 @@ function choose(btn, o){
     else btn.insertAdjacentHTML('beforeend', `<span class="dt-word small">${o.word}</span>`);
     const earned = tries === 0 ? 10 : 5;
     score += earned;
+    addPoints(earned);
     qScore.textContent = `${score} pontos`;
     ping(true);
     confetti(btn);

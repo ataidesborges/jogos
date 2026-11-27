@@ -239,6 +239,7 @@ function finishSelection(){
     cacaFoundCount++;
     const earned = 10;
     cacaScore += earned;
+    addPoints(earned);
     updateCacaScore();
     updateCacaProgress();
     selCells.forEach(el=>{ el.classList.remove('selected'); el.classList.add('found', `c${match.colorIdx}`); });

@@ -105,6 +105,7 @@ function pick(side, word, el){
     [other.el, el].forEach(x => { if(x.classList.contains('shadow')){ x.classList.remove('shadow'); const im = x.querySelector('img'); if(im) im.src = x.dataset.art; } x.classList.add('done'); x.style.setProperty('--c', color); x.style.borderColor = color; });
     const earned = Math.max(5, 10 - (mistakes[word] || 0) * 3);
     score += earned;
+    addPoints(earned);
     qScore.textContent = `${score} pontos`;
     ping(true);
     collectSticker(word, earned);

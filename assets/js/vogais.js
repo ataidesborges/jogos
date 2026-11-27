@@ -122,6 +122,7 @@ function tapLetter(tile, ch){
 function win(anchor){
   const earned = Math.max(5, 10 - mistakes * 2);
   score += earned;
+  addPoints(earned);
   qScore.textContent = `${score} pontos`;
   ping(true);
   confetti(anchor);

@@ -278,6 +278,7 @@ function onWordFormed(w){
       discovered.add(w.word);
       saveDiscovered();
       score += 10;
+      addPoints(10);
       collectSticker(w.word, 10);
       ping(true);
       confetti(sbNotebook);
@@ -374,4 +375,6 @@ initCommon('silabas');
 // figurinhas já coletadas neste jogo (versões anteriores) contam como descobertas
 ALL_WORDS.forEach(w => { if(collectedScores.has(w.word)) discovered.add(w.word); });
 saveDiscovered();
+// zerar figurinhas também apaga as palavras descobertas
+onAlbumReset(()=>{ discovered.clear(); saveDiscovered(); renderTargets(); updateProgress(); });
 startRound();

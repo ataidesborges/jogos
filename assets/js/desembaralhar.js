@@ -201,6 +201,7 @@ function onCorrect(w){
   uSolved = true;
   const earned = 10;
   uScore += earned;
+  addPoints(earned);
   updateScore();
   ping(true);
   speak(w.word);

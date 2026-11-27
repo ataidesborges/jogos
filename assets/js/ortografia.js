@@ -103,6 +103,7 @@ function choose(btn, o){
     gap.classList.add('done');
     const earned = tries === 0 ? 10 : 5;
     score += earned;
+    addPoints(earned);
     qScore.textContent = `${score} pontos`;
     ping(true);
     confetti(txWord);

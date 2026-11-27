@@ -548,3 +548,148 @@ button:focus-visible, a:focus-visible{
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
 }
+
+/* ============================================================
+   Pontos: selo no topo, "+10", subiu de nível
+   ============================================================ */
+.pts-badge{
+  margin-left:auto;
+  display:inline-grid; grid-template-columns:auto auto; grid-template-rows:auto auto;
+  column-gap:8px; align-items:center;
+  padding:5px 12px 6px 6px; border-radius:999px;
+  background:var(--surface); border:1px solid var(--border);
+  box-shadow:0 6px 16px -12px rgba(26,18,56,.5);
+  cursor:default; user-select:none;
+}
+.pts-lv{
+  grid-row:1 / 3; width:34px; height:34px; border-radius:50%;
+  display:grid; place-items:center; font-size:18px;
+  background:var(--grad);
+}
+.pts-txt{display:flex; align-items:baseline; gap:6px; line-height:1.1;}
+.pts-txt b{font-family:var(--font-display); font-weight:600; font-size:17px; color:var(--ink);}
+.pts-txt small{font-weight:800; font-size:11.5px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em;}
+.pts-bar{display:block; height:5px; border-radius:99px; background:var(--surface-2); overflow:hidden; margin-top:3px;}
+.pts-bar i{display:block; height:100%; border-radius:inherit; background:var(--grad); transition:width .5s ease;}
+.pts-badge.bump{animation:ptsBump .45s ease;}
+@keyframes ptsBump{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+.pts-float{
+  position:fixed; z-index:6000; pointer-events:none;
+  transform:translateX(-50%);
+  font-family:var(--font-display); font-weight:600; font-size:22px; color:#16A34A;
+  text-shadow:0 2px 0 #fff, 0 0 10px rgba(255,255,255,.9);
+  animation:ptsFloat 1.2s ease-out forwards;
+}
+@keyframes ptsFloat{
+  0%{opacity:0; transform:translate(-50%, 8px) scale(.7)}
+  20%{opacity:1; transform:translate(-50%, 0) scale(1.1)}
+  100%{opacity:0; transform:translate(-50%, 34px) scale(1)}
+}
+
+.pts-levelup{
+  position:fixed; z-index:6000; left:50%; top:90px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px;
+  padding:14px 24px 14px 16px; border-radius:22px;
+  background:var(--grad); color:#fff;
+  box-shadow:0 20px 40px -16px rgba(26,18,56,.6);
+  animation:ptsIn .5s cubic-bezier(.2,1.4,.4,1);
+  max-width:calc(100vw - 24px);
+}
+.pts-levelup > span{font-size:42px; line-height:1;}
+.pts-levelup b{display:block; font-family:var(--font-display); font-weight:600; font-size:22px;}
+.pts-levelup small{font-weight:700; font-size:15px; opacity:.92;}
+.pts-levelup.out{opacity:0; transform:translate(-50%, -20px); transition:opacity .5s ease, transform .5s ease;}
+@keyframes ptsIn{from{opacity:0; transform:translate(-50%, -30px) scale(.8)} to{opacity:1; transform:translateX(-50%)}}
+
+/* ============================================================
+   Álbum: estatísticas e botões de zerar
+   ============================================================ */
+.album-actions{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  margin-top:12px;
+}
+.album-stats{margin:0; font-weight:700; font-size:14px; color:var(--ink-soft);}
+.album-stats b{color:var(--ink); font-family:var(--font-display); font-weight:600;}
+.album-btns{display:flex; gap:8px; flex-wrap:wrap;}
+.album-reset{
+  display:inline-flex; align-items:center; gap:6px;
+  height:38px; padding:0 14px; border-radius:999px;
+  border:1px solid var(--border); background:var(--surface); color:var(--ink-soft);
+  font-family:inherit; font-weight:800; font-size:13.5px; cursor:pointer;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+.album-reset:hover{background:#FFF1F2; color:#E11D48; border-color:#FECDD3;}
+
+/* figurinha encontrada: dá para tocar e ver grande */
+button.sticker{font-family:inherit; cursor:pointer; transition:transform .12s ease, box-shadow .15s ease;}
+button.sticker.unlocked:hover{transform:translateY(-3px) rotate(-1.5deg); box-shadow:0 12px 22px -14px var(--glow, rgba(124,58,237,.6));}
+button.sticker.unlocked:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+
+/* ============================================================
+   Figurinha ampliada
+   ============================================================ */
+.sticker-modal{
+  position:fixed; inset:0; z-index:7000;
+  display:grid; place-items:center; padding:20px;
+  background:rgba(26,18,56,.55);
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn{from{opacity:0} to{opacity:1}}
+.sticker-big{
+  position:relative;
+  width:min(360px, 100%);
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:26px 22px 22px; border-radius:28px;
+  background:var(--surface);
+  border:6px solid #fff;
+  box-shadow:0 0 0 3px var(--accent, #7C3AED), 0 30px 60px -20px rgba(0,0,0,.5);
+  animation:stickerPop .4s cubic-bezier(.2,1.5,.4,1);
+}
+@keyframes stickerPop{from{opacity:0; transform:scale(.5) rotate(-8deg)} to{opacity:1; transform:none}}
+.sticker-big img{width:min(240px, 62vw, 40vh); aspect-ratio:1; object-fit:contain; border-radius:18px; background:#fff;}
+.sticker-big-word{font-family:var(--font-display); font-weight:600; font-size:clamp(30px, 8vw, 42px); letter-spacing:.06em; color:var(--ink);}
+.sticker-big-info{font-weight:800; font-size:14px; color:var(--primary-600); background:var(--primary-50); padding:4px 12px; border-radius:999px;}
+.sticker-close{
+  position:absolute; top:10px; right:10px;
+  width:38px; height:38px; border-radius:50%; border:none;
+  background:var(--surface-2); color:var(--ink); font-size:18px; font-weight:800; cursor:pointer;
+}
+.sticker-close:hover{background:#FFE4E6; color:#E11D48;}
+.sticker-say{margin-top:4px;}
+
+@media (max-width:640px){
+  .pts-badge{padding:4px 10px 5px 4px; column-gap:6px;}
+  .pts-lv{width:30px; height:30px; font-size:16px;}
+  .pts-txt b{font-size:15px;}
+  .pts-txt small{display:none;}
+  .back-link{font-size:0; gap:0; padding:8px;}       /* só a setinha no celular */
+  .back-link svg{width:20px; height:20px;}
+  .album-actions{flex-direction:column; align-items:stretch;}
+  .album-btns > *{flex:1; justify-content:center;}
+}
+
+/* caixa de confirmação própria (zerar pontos / figurinhas) */
+.ask-card{
+  width:min(380px, 100%);
+  display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+  padding:26px 22px 20px; border-radius:26px; background:var(--surface);
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.5);
+  animation:stickerPop .35s cubic-bezier(.2,1.5,.4,1);
+}
+.ask-icon{width:64px; height:64px; border-radius:50%; display:grid; place-items:center; font-size:32px; background:var(--surface-2);}
+.ask-title{margin:4px 0 0; font-family:var(--font-display); font-weight:600; font-size:22px; color:var(--ink);}
+.ask-text{margin:0; font-weight:600; font-size:15px; line-height:1.5; color:var(--ink-soft);}
+.ask-text b{color:var(--ink);}
+.ask-btns{display:flex; gap:10px; width:100%; margin-top:10px;}
+.ask-btn{
+  flex:1; height:48px; border-radius:999px; cursor:pointer;
+  font-family:inherit; font-weight:800; font-size:15.5px;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+  transition:transform .1s ease, filter .15s ease;
+}
+.ask-btn:hover{transform:translateY(-1px);}
+.ask-ok{border:none; background:var(--grad); color:#fff;}
+.ask-ok.danger{background:linear-gradient(135deg, #F43F5E, #E11D48);}
+.ask-btn:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}

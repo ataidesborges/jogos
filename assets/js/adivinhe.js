@@ -129,6 +129,7 @@ function win(){
   reveal();
   const earned = 10 + balloons * 2;
   score += earned;
+  addPoints(earned);
   qScore.textContent = `${score} pontos`;
   ping(true);
   confetti(adWord);

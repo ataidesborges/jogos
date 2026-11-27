@@ -90,6 +90,7 @@ function flipCard(card){
     mPairsFound++;
     const earned = 10;
     mScore += earned;
+    addPoints(earned);
     ping(true);
     speak(a.word);
     confetti(b.el);
@@ -122,6 +123,7 @@ function finishMemory(){
   const pairs = mCards.length/2;
   const bonus = Math.max(0, (pairs*2 - mMoves) * 2);
   mScore += bonus;
+  addPoints(bonus);
   updateMemoryUI();
   mCongratsText.textContent = bonus > 0
     ? `${mMoves} jogadas · bônus de memória: +${bonus} pontos!`

@@ -229,6 +229,7 @@ const collectedScores = new Map(); // palavra -> melhor pontuação
 
 function setupAlbum(gameId){
   albumKey = 'fp-album-' + gameId;
+  currentGameId = gameId;
   try{
     const saved = JSON.parse(localStorage.getItem(albumKey) || '{}');
     Object.entries(saved).forEach(([word, pts])=> collectedScores.set(word, pts));
@@ -261,11 +262,16 @@ function renderAlbum(){
   gallery.innerHTML = '';
   ALL_WORDS.forEach(w=>{
     const pts = collectedScores.get(w.word);
-    const el = document.createElement('div');
+    const el = document.createElement(pts ? 'button' : 'div');
     el.className = 'sticker ' + (pts ? 'unlocked' : 'locked');
     el.innerHTML = pts
       ? `<img class="word-art" src="${w.art}" alt="${w.word.toLowerCase()}" loading="lazy"><span>${w.word}</span><span class="sticker-score">+${pts} pts</span>`
       : `<span class="sticker-lock" aria-hidden="true">?</span><span>???</span>`;
+    if(pts){ // figurinha encontrada: toca para ver grande
+      el.type = 'button';
+      el.setAttribute('aria-label', `Ver a figurinha ${w.word}`);
+      el.addEventListener('click', ()=> openSticker(w));
+    }
     gallery.appendChild(el);
   });
 }
@@ -345,6 +351,8 @@ function initCommon(gameId){
   setupAlbum(gameId);
   setupFullscreen();
   preloadArt();
+  setupPointsBadge();   // selo com o total de pontos e o nível
+  setupAlbumActions();  // zerar pontos / zerar figurinhas
 }
 
 // ---------- Nome das letras (para os jogos de alfabeto) ----------
@@ -424,3 +432,212 @@ function rewardSticker(word, points){
   const pick = w || ALL_WORDS.find(x => !collectedScores.has(x.word)) || ALL_WORDS[Math.floor(Math.random() * ALL_WORDS.length)];
   collectSticker(pick.word, points || 10);
 }
+
+// ============================================================
+// Pontuação geral — soma os pontos de TODOS os jogos e fica salva no
+// aparelho. Mostra o total e o nível da criança num selo no topo.
+// ============================================================
+const POINTS_KEY = 'fp-pontos-total';
+const LEVELS = [
+  {min:0,    name:'Iniciante',  icon:'🌱'},
+  {min:100,  name:'Aprendiz',   icon:'✏️'},
+  {min:300,  name:'Leitor',     icon:'📘'},
+  {min:600,  name:'Explorador', icon:'🧭'},
+  {min:1000, name:'Craque',     icon:'⭐'},
+  {min:2000, name:'Mestre',     icon:'🏆'},
+  {min:4000, name:'Lenda',      icon:'👑'},
+];
+let totalPoints = +(localStorage.getItem(POINTS_KEY) || 0);
+let currentGameId = null;
+const levelOf = p => LEVELS.filter(l => p >= l.min).pop();
+const nextLevelOf = p => LEVELS.find(l => l.min > p);
+const fmt = n => n.toLocaleString('pt-BR');
+
+function gamePointsKey(){ return 'fp-pontos-' + (currentGameId || 'geral'); }
+function gamePoints(){ return +(localStorage.getItem(gamePointsKey()) || 0); }
+
+// soma pontos (chamada pelos jogos a cada acerto)
+function addPoints(n){
+  if(!n) return;
+  const before = levelOf(totalPoints);
+  totalPoints += n;
+  try{
+    localStorage.setItem(POINTS_KEY, totalPoints);
+    localStorage.setItem(gamePointsKey(), gamePoints() + n);
+  }catch(e){}
+  updatePointsBadge(true);
+  floatPoints(n);
+  const after = levelOf(totalPoints);
+  if(after !== before) levelUp(after);
+  renderAlbumStats();
+}
+
+function setupPointsBadge(){
+  const bar = document.querySelector('.topbar-inner');
+  if(!bar || document.getElementById('ptsBadge')) return;
+  const b = document.createElement('div');
+  b.id = 'ptsBadge';
+  b.className = 'pts-badge';
+  b.setAttribute('role', 'status');
+  b.setAttribute('aria-live', 'polite');
+  const back = bar.querySelector('.back-link');
+  bar.insertBefore(b, back || null);
+  updatePointsBadge(false);
+}
+
+function updatePointsBadge(bump){
+  const b = document.getElementById('ptsBadge');
+  if(!b) return;
+  const lv = levelOf(totalPoints), nx = nextLevelOf(totalPoints);
+  const pct = nx ? Math.round(100 * (totalPoints - lv.min) / (nx.min - lv.min)) : 100;
+  b.innerHTML = `<span class="pts-lv" title="Nível: ${lv.name}">${lv.icon}</span>`
+    + `<span class="pts-txt"><b>${fmt(totalPoints)}</b><small>${lv.name}</small></span>`
+    + `<span class="pts-bar"><i style="width:${pct}%"></i></span>`;
+  b.title = nx ? `${fmt(totalPoints)} pontos — faltam ${fmt(nx.min - totalPoints)} para ${nx.icon} ${nx.name}` : `${fmt(totalPoints)} pontos — nível máximo!`;
+  if(bump){ b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+}
+
+// "+10" subindo perto do selo
+function floatPoints(n){
+  const b = document.getElementById('ptsBadge');
+  const f = document.createElement('div');
+  f.className = 'pts-float';
+  f.textContent = `+${n}`;
+  const r = b ? b.getBoundingClientRect() : {left: innerWidth - 120, bottom: 60, width: 80};
+  f.style.left = (r.left + r.width / 2) + 'px';
+  f.style.top = (r.bottom + 4) + 'px';
+  overlayRoot().appendChild(f);
+  setTimeout(()=> f.remove(), 1200);
+}
+
+function levelUp(lv){
+  const t = document.createElement('div');
+  t.className = 'pts-levelup';
+  t.innerHTML = `<span>${lv.icon}</span><div><b>Subiu de nível!</b><small>Agora você é ${lv.name}</small></div>`;
+  overlayRoot().appendChild(t);
+  confetti(t);
+  setTimeout(()=> say(`Parabéns! Agora você é ${lv.name}!`, 0.9), 600);
+  setTimeout(()=> t.classList.add('out'), 3200);
+  setTimeout(()=> t.remove(), 3800);
+}
+
+// ---------- Botões do álbum: estatísticas, zerar pontos, zerar figurinhas ----------
+const albumResetHooks = []; // jogos podem pedir para saber quando o álbum é zerado
+function onAlbumReset(fn){ albumResetHooks.push(fn); }
+
+function setupAlbumActions(){
+  const sec = document.querySelector('.gallery-wrap');
+  if(!sec || document.getElementById('albumActions')) return;
+  const box = document.createElement('div');
+  box.id = 'albumActions';
+  box.className = 'album-actions';
+  box.innerHTML = `<p class="album-stats" id="albumStats"></p>
+    <div class="album-btns">
+      <button type="button" class="album-reset" id="resetPointsBtn">🔄 Zerar pontos</button>
+      <button type="button" class="album-reset" id="resetStickersBtn">🗑️ Zerar figurinhas</button>
+    </div>`;
+  const bar = sec.querySelector('.album-bar');
+  (bar ? bar.after(box) : sec.appendChild(box));
+  document.getElementById('resetPointsBtn').addEventListener('click', resetPoints);
+  document.getElementById('resetStickersBtn').addEventListener('click', resetStickers);
+  renderAlbumStats();
+}
+
+function renderAlbumStats(){
+  const s = document.getElementById('albumStats');
+  if(!s) return;
+  const lv = levelOf(totalPoints);
+  s.innerHTML = `${lv.icon} <b>${fmt(totalPoints)}</b> pontos no total · <b>${fmt(gamePoints())}</b> neste jogo`;
+}
+
+// Caixa de confirmação própria (o confirm() do navegador é bloqueado em
+// alguns navegadores de celular e janelas embutidas, e aí nada acontecia).
+function askBox({icon='❓', title, text='', ok='OK', cancel=null, danger=false}){
+  return new Promise(resolve=>{
+    document.getElementById('askBox')?.remove();
+    const m = document.createElement('div');
+    m.className = 'sticker-modal ask-modal';
+    m.id = 'askBox';
+    m.setAttribute('role', 'alertdialog');
+    m.setAttribute('aria-modal', 'true');
+    m.innerHTML = `<div class="ask-card">
+        <div class="ask-icon" aria-hidden="true">${icon}</div>
+        <h3 class="ask-title">${title}</h3>
+        ${text ? `<p class="ask-text">${text}</p>` : ''}
+        <div class="ask-btns">
+          ${cancel ? `<button type="button" class="ask-btn ask-cancel">${cancel}</button>` : ''}
+          <button type="button" class="ask-btn ask-ok${danger ? ' danger' : ''}">${ok}</button>
+        </div>
+      </div>`;
+    const done = v => { m.remove(); document.removeEventListener('keydown', onKey, true); resolve(v); };
+    const onKey = e => { if(e.key === 'Escape'){ e.stopPropagation(); done(false); } };
+    m.addEventListener('click', e => { if(e.target === m) done(false); });
+    m.querySelector('.ask-ok').addEventListener('click', ()=> done(true));
+    m.querySelector('.ask-cancel')?.addEventListener('click', ()=> done(false));
+    document.addEventListener('keydown', onKey, true);
+    overlayRoot().appendChild(m);
+    (m.querySelector('.ask-cancel') || m.querySelector('.ask-ok')).focus();
+  });
+}
+
+async function resetPoints(){
+  if(!totalPoints){
+    await askBox({icon:'🌱', title:'Você ainda não tem pontos', text:'Jogue um pouco para começar a juntar pontos!', ok:'Entendi'});
+    return;
+  }
+  const yes = await askBox({icon:'🔄', title:'Zerar todos os pontos?',
+    text:`Os <b>${fmt(totalPoints)} pontos</b> de todos os jogos serão apagados e o nível volta para 🌱 Iniciante. Isso não pode ser desfeito.`,
+    ok:'Sim, zerar', cancel:'Cancelar', danger:true});
+  if(!yes) return;
+  try{
+    Object.keys(localStorage).filter(k => k === POINTS_KEY || k.startsWith('fp-pontos-') || k.startsWith('fp-relampago-'))
+      .forEach(k => localStorage.removeItem(k));
+  }catch(e){}
+  totalPoints = 0;
+  updatePointsBadge(true);
+  renderAlbumStats();
+  say('Pontos zerados!');
+}
+
+async function resetStickers(){
+  const n = collectedScores.size;
+  if(!n){
+    await askBox({icon:'📒', title:'O álbum ainda está vazio', text:'Ainda não há figurinhas encontradas neste jogo.', ok:'Entendi'});
+    return;
+  }
+  const yes = await askBox({icon:'🗑️', title:'Zerar as figurinhas?',
+    text:`As <b>${n} ${n === 1 ? 'figurinha encontrada' : 'figurinhas encontradas'}</b> neste jogo serão apagadas. Isso não pode ser desfeito.`,
+    ok:'Sim, apagar', cancel:'Cancelar', danger:true});
+  if(!yes) return;
+  collectedScores.clear();
+  try{ localStorage.removeItem(albumKey); }catch(e){}
+  albumResetHooks.forEach(fn => { try{ fn(); }catch(e){} });
+  renderAlbum();
+  say('Figurinhas zeradas!');
+}
+
+// ---------- Figurinha ampliada ----------
+function openSticker(w){
+  closeSticker();
+  const pts = collectedScores.get(w.word);
+  const m = document.createElement('div');
+  m.className = 'sticker-modal';
+  m.id = 'stickerModal';
+  m.setAttribute('role', 'dialog');
+  m.setAttribute('aria-modal', 'true');
+  m.setAttribute('aria-label', `Figurinha ${w.word}`);
+  m.innerHTML = `<div class="sticker-big">
+      <button type="button" class="sticker-close" aria-label="Fechar">✕</button>
+      <img src="${w.art}" alt="${w.word.toLowerCase()}">
+      <div class="sticker-big-word">${w.word}</div>
+      <div class="sticker-big-info">⭐ melhor pontuação: ${pts || 0} pontos</div>
+      <button type="button" class="m-new-btn sticker-say">🔊 Ouvir</button>
+    </div>`;
+  m.addEventListener('click', e => { if(e.target === m || e.target.closest('.sticker-close')) closeSticker(); });
+  m.querySelector('.sticker-say').addEventListener('click', ()=> speak(w.word));
+  document.body.appendChild(m);
+  speak(w.word);
+  m.querySelector('.sticker-close').focus();
+}
+function closeSticker(){ const m = document.getElementById('stickerModal'); if(m) m.remove(); }
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSticker(); });

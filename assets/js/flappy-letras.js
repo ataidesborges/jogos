@@ -225,6 +225,7 @@ function onHeartHit(h){
     popEffects.push({x:h.x, y:h.y, text:'+❤️', life:1, ok:true});
   } else {
     score += 5;
+    addPoints(5);
     updateScoreUI();
     popEffects.push({x:h.x, y:h.y, text:'+5', life:1, ok:true, soft:true});
   }
@@ -261,6 +262,7 @@ function onWordComplete(){
   phase = 'celebrating';
   const earned = 10 + (mistakeCount === 0 ? 5 : 0);
   score += earned;
+  addPoints(earned);
   updateScoreUI();
 
   collectSticker(currentWordObj.word, earned);

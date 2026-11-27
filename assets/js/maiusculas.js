@@ -90,6 +90,7 @@ function pick(side, letter, el){
     [other.el, el].forEach(x => { x.classList.add('done'); x.style.setProperty('--c', color); x.style.borderColor = color; });
     const earned = Math.max(5, 10 - (mistakes[letter] || 0) * 3);
     score += earned;
+    addPoints(earned);
     qScore.textContent = `${score} pontos`;
     ping(true);
     drawLines();
