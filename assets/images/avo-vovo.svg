@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+  <defs>
+    <!-- contorno branco de figurinha + sombra suave -->
+    <filter id="figurinha" x="-15%" y="-15%" width="130%" height="135%">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="11" result="grosso"/>
+      <feFlood flood-color="#ffffff"/>
+      <feComposite in2="grosso" operator="in" result="contorno"/>
+      <feGaussianBlur in="grosso" stdDeviation="9" result="borrado"/>
+      <feOffset in="borrado" dy="9" result="desloc"/>
+      <feFlood flood-color="#5B2A45" flood-opacity=".22"/>
+      <feComposite in2="desloc" operator="in" result="sombra"/>
+      <feMerge><feMergeNode in="sombra"/><feMergeNode in="contorno"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="casaco" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F9A8D4"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+    <radialGradient id="pele" cx="45%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#FFE2CC"/>
+      <stop offset="1" stop-color="#F6BF9C"/>
+    </radialGradient>
+    <linearGradient id="cabelo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3F4F7"/>
+      <stop offset="1" stop-color="#C9CDD6"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#figurinha)">
+    <!-- corpo: casaquinho rosa -->
+    <path d="M110 452 Q112 360 170 338 Q240 318 310 338 Q368 360 370 452 Z" fill="url(#casaco)" stroke="#B83280" stroke-width="5" stroke-linejoin="round"/>
+    <!-- blusa clarinha em V -->
+    <path d="M200 336 L240 410 L280 336 Q240 326 200 336 Z" fill="#FFF5FA" stroke="#B83280" stroke-width="4" stroke-linejoin="round"/>
+    <!-- botões -->
+    <circle cx="240" cy="428" r="7" fill="#FDE68A" stroke="#B7791F" stroke-width="3"/>
+    <!-- pescoço -->
+    <path d="M214 300 h52 v38 q-26 14 -52 0 z" fill="#F1B48F"/>
+    <!-- colar de pérolas -->
+    <g fill="#FFFFFF" stroke="#C9B9C3" stroke-width="2">
+      <circle cx="204" cy="340" r="6"/><circle cx="214" cy="350" r="6"/><circle cx="226" cy="357" r="6"/>
+      <circle cx="240" cy="360" r="6"/><circle cx="254" cy="357" r="6"/><circle cx="266" cy="350" r="6"/><circle cx="276" cy="340" r="6"/>
+    </g>
+
+    <!-- coque -->
+    <circle cx="240" cy="112" r="44" fill="url(#cabelo)" stroke="#9EA3AF" stroke-width="5"/>
+    <path d="M214 104 q26 -22 52 0" fill="none" stroke="#B3B8C3" stroke-width="5" stroke-linecap="round"/>
+    <!-- orelhas -->
+    <circle cx="146" cy="236" r="18" fill="#F6BF9C" stroke="#C98A66" stroke-width="4"/>
+    <circle cx="334" cy="236" r="18" fill="#F6BF9C" stroke="#C98A66" stroke-width="4"/>
+    <!-- brincos -->
+    <circle cx="146" cy="258" r="6" fill="#FFFFFF" stroke="#C9B9C3" stroke-width="2"/>
+    <circle cx="334" cy="258" r="6" fill="#FFFFFF" stroke="#C9B9C3" stroke-width="2"/>
+    <!-- rosto -->
+    <ellipse cx="240" cy="232" rx="92" ry="96" fill="url(#pele)" stroke="#C98A66" stroke-width="5"/>
+    <!-- cabelo grisalho por cima da testa -->
+    <path d="M150 220 Q146 140 240 134 Q334 140 330 220 Q318 176 276 166 Q258 186 226 178 Q190 172 172 196 Q158 206 150 220 Z" fill="url(#cabelo)" stroke="#9EA3AF" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M196 160 q20 -10 40 -4 M250 154 q24 -4 44 8" fill="none" stroke="#B3B8C3" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- bochechas -->
+    <ellipse cx="184" cy="270" rx="20" ry="12" fill="#FF8FB5" opacity=".6"/>
+    <ellipse cx="296" cy="270" rx="20" ry="12" fill="#FF8FB5" opacity=".6"/>
+    <!-- olhinhos sorridentes -->
+    <path d="M192 238 q14 -14 28 0" fill="none" stroke="#3A2230" stroke-width="7" stroke-linecap="round"/>
+    <path d="M260 238 q14 -14 28 0" fill="none" stroke="#3A2230" stroke-width="7" stroke-linecap="round"/>
+    <!-- óculos redondos -->
+    <g fill="#FFFFFF" fill-opacity=".22" stroke="#8B4A6B" stroke-width="6">
+      <circle cx="206" cy="236" r="30"/>
+      <circle cx="274" cy="236" r="30"/>
+    </g>
+    <path d="M236 232 q4 -6 8 0" fill="none" stroke="#8B4A6B" stroke-width="6" stroke-linecap="round"/>
+    <path d="M176 230 L156 226 M304 230 L324 226" stroke="#8B4A6B" stroke-width="6" stroke-linecap="round"/>
+    <!-- brilho nos óculos -->
+    <path d="M190 220 q6 -8 16 -9 M258 220 q6 -8 16 -9" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+    <!-- nariz e sorriso -->
+    <path d="M240 254 q6 10 0 16" fill="none" stroke="#C98A66" stroke-width="5" stroke-linecap="round"/>
+    <path d="M214 286 Q240 312 266 286" fill="#E0566F" stroke="#3A2230" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224 292 Q240 300 256 292" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+    <!-- florzinha no cabelo -->
+    <g transform="translate(300 152)">
+      <circle cx="0" cy="-11" r="9" fill="#F472B6"/><circle cx="10" cy="-3" r="9" fill="#F472B6"/>
+      <circle cx="6" cy="9" r="9" fill="#F472B6"/><circle cx="-6" cy="9" r="9" fill="#F472B6"/>
+      <circle cx="-10" cy="-3" r="9" fill="#F472B6"/><circle cx="0" cy="0" r="7" fill="#FDE047"/>
+    </g>
+  </g>
+</svg>

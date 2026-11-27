@@ -88,6 +88,7 @@ let state = 'idle';      // 'idle' | 'writing' | 'success' | 'hint' | 'erasing' 
 let roundTimer = null;
 let successToken = 0;
 let lastFams = '';
+let sameTurn = 0;      // alterna entre palavras escritas igual (AVÓ / AVÔ)
 
 // ---------- Monta um quadro ----------
 // Escolhe 6 consoantes que formem várias palavras — principalmente as que
@@ -255,7 +256,11 @@ function tapSyllable(btn){
   setTimeout(()=> btn.classList.remove('flash'), 250);
 
   const written = norm(typed.join(''));
-  const match = ALL_MATCH.find(w => w.nword === written); // compara as letras, sem acento
+  // compara as letras, sem acento. Se duas palavras se escrevem igual (AVÓ e AVÔ),
+  // mostra primeiro a que ainda não foi descoberta; depois vai alternando.
+  const same = ALL_MATCH.filter(w => w.nword === written);
+  const match = same.find(w => !discovered.has(w.word))
+    || (same.length ? same[(sameTurn++) % same.length] : null);
   if(match) onWordFormed(match);
   else setNotebook('writing', typed.join(''), '');
 }
