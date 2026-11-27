@@ -1,0 +1,182 @@
+/* ============================================================
+   Jogos novos: Letra que Falta, Mundo das Vogais, Ligue a Figura ao Nome
+   ============================================================ */
+.q-stage{
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  padding:clamp(14px, 2.6vw, 28px);
+  border-radius:22px;
+  background:
+    radial-gradient(rgba(255,255,255,.55) 1.3px, transparent 1.7px) 0 0/22px 22px,
+    var(--accent-50);
+}
+.q-stage[hidden]{display:none;}
+
+/* figura */
+.q-card{
+  position:relative;
+  width:min(100%, 260px);
+  aspect-ratio:1;
+  display:grid; place-items:center;
+  background:#fff;
+  border-radius:26px;
+  box-shadow:0 16px 34px -18px var(--glow), 0 2px 0 rgba(0,0,0,.04);
+}
+.q-art{width:84%; height:84%; object-fit:contain;}
+.q-card.pop{animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+.q-listen{
+  position:absolute; right:-10px; bottom:-10px;
+  width:48px; height:48px; border-radius:50%;
+  display:grid; place-items:center;
+  border:3px solid #fff;
+  background:var(--grad); color:#fff;
+  cursor:pointer;
+  box-shadow:0 8px 18px -6px var(--glow);
+}
+.q-listen .icon{width:22px; height:22px;}
+.q-listen:active{transform:scale(.94);}
+
+.q-question{margin:0; font-weight:800; font-size:clamp(15px, 2vw, 18px); color:var(--ink-soft); text-align:center;}
+
+/* botões de resposta (letras / vogais) */
+.q-options{display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(8px, 1.6vw, 14px);}
+.q-opt{
+  min-width:clamp(64px, 11vw, 92px); height:clamp(64px, 11vw, 92px);
+  padding:0 14px;
+  display:grid; place-items:center;
+  border:none; border-radius:20px;
+  background:#fff; color:var(--ink);
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(30px, 5vw, 46px);
+  cursor:pointer;
+  box-shadow:inset 0 -5px 0 rgba(26,18,56,.1), 0 8px 18px -10px rgba(26,18,56,.4);
+  transition:transform .1s ease, background .15s ease, color .15s ease, opacity .2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.q-opt:hover{transform:translateY(-3px);}
+.q-opt:active{transform:translateY(2px);}
+.q-opt.right{background:var(--grad); color:#fff; animation:popIn .35s ease;}
+.q-opt.wrong{animation:qShake .4s ease; background:#FFE4E6; color:#BE123C; opacity:.55; pointer-events:none;}
+@keyframes qShake{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-7px);}
+  50%{transform:translateX(7px);}
+  75%{transform:translateX(-4px);}
+}
+
+/* ---------- Letra que Falta ---------- */
+.lf-word, .vg-word{display:flex; flex-wrap:nowrap; justify-content:center; gap:clamp(4px, 1.2vw, 8px);}
+.lf-tile, .vg-tile{
+  /* as casinhas encolhem conforme o número de letras, para a palavra caber numa linha */
+  --t:min(clamp(44px, 7.5vw, 64px), calc(min(100vw - 76px, 620px) / var(--n, 5) - 6px));
+  width:var(--t); height:calc(var(--t) * 1.2);
+  display:grid; place-items:center;
+  border-radius:14px;
+  background:#fff;
+  font-family:var(--font-display); font-weight:600;
+  font-size:calc(var(--t) * .62);
+  color:var(--ink);
+  box-shadow:inset 0 -4px 0 rgba(26,18,56,.08);
+}
+.lf-tile.gap{
+  background:transparent;
+  border:3px dashed var(--accent);
+  color:transparent;
+  animation:lfBlink 1.3s ease-in-out infinite;
+}
+@keyframes lfBlink{50%{border-color:transparent;}}
+.lf-tile.filled{background:var(--grad); color:#fff; border:none; animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+
+/* ---------- Mundo das Vogais ---------- */
+.vg-vowels .q-opt:nth-child(1){--v:#EF4444;}
+.vg-vowels .q-opt:nth-child(2){--v:#F59E0B;}
+.vg-vowels .q-opt:nth-child(3){--v:#10B981;}
+.vg-vowels .q-opt:nth-child(4){--v:#3B82F6;}
+.vg-vowels .q-opt:nth-child(5){--v:#A855F7;}
+.vg-vowels .q-opt{color:var(--v);}
+.vg-tile{cursor:pointer; transition:transform .1s ease; border:none; padding:0; -webkit-tap-highlight-color:transparent;}
+.vg-tile:hover{transform:translateY(-3px);}
+.vg-tile.found{background:var(--grad); color:#fff; animation:popIn .35s ease; cursor:default;}
+.vg-tile.nope{animation:qShake .4s ease;}
+
+/* ---------- Ligue a Figura ao Nome ---------- */
+.lg-stage{gap:12px;}
+.lg-board{
+  position:relative;
+  width:min(100%, 640px);
+  display:grid; grid-template-columns:1fr 1fr;
+  column-gap:clamp(60px, 16vw, 180px);
+}
+.lg-col{display:flex; flex-direction:column; gap:clamp(10px, 1.8vw, 16px); position:relative; z-index:2;}
+.lg-lines{position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; overflow:visible;}
+.lg-lines line{stroke-width:7; stroke-linecap:round;}
+.lg-lines line.temp{stroke:var(--accent); stroke-dasharray:2 14; opacity:.7;}
+.lg-item{
+  position:relative;
+  display:grid; place-items:center;
+  height:clamp(78px, 13vw, 112px);
+  border:3px solid transparent;
+  border-radius:20px;
+  background:#fff;
+  cursor:pointer;
+  box-shadow:inset 0 -5px 0 rgba(26,18,56,.08), 0 8px 18px -12px rgba(26,18,56,.45);
+  transition:transform .1s ease, border-color .15s ease, opacity .2s ease;
+  -webkit-tap-highlight-color:transparent;
+  padding:0;
+}
+.lg-item img{position:absolute; inset:8%; width:84%; height:84%; object-fit:contain;}
+.lg-item .lg-name{font-family:var(--font-display); font-weight:600; font-size:clamp(18px, 3vw, 28px); color:var(--ink); letter-spacing:.03em; padding:0 8px; word-break:break-word; text-align:center;}
+.lg-item::after{ /* bolinha onde a linha encaixa */
+  content:""; position:absolute; top:50%; width:16px; height:16px; margin-top:-8px;
+  border-radius:50%; background:#fff; border:3px solid var(--accent);
+}
+#lgPics .lg-item::after{right:-11px;}
+#lgNames .lg-item::after{left:-11px;}
+.lg-item:hover{transform:translateY(-2px);}
+.lg-item.sel{border-color:var(--accent); transform:scale(1.03); box-shadow:0 0 0 5px var(--accent-50), 0 10px 22px -10px var(--glow);}
+.lg-item.done{cursor:default; transform:none;}
+.lg-item.done::after{background:var(--c, var(--accent)); border-color:#fff;}
+.lg-item.wrong{animation:qShake .4s ease; border-color:#F43F5E;}
+
+/* ---------- Final ---------- */
+.q-final{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  text-align:center;
+  padding:30px 16px 18px;
+}
+.q-final[hidden]{display:none;}
+.q-final-emoji{font-size:64px; line-height:1; animation:popIn .5s cubic-bezier(.34,1.56,.64,1);}
+.q-final-msg{font-family:var(--font-display); font-weight:600; font-size:28px; color:var(--ink);}
+.q-final-sub{font-weight:700; color:var(--ink-soft); margin-bottom:10px;}
+
+/* ---------- Celular ---------- */
+@media (max-width:640px){
+  .q-card{width:min(62vw, 220px); border-radius:22px;}
+  .lg-board{column-gap:56px;}
+}
+
+/* ---------- Tela cheia ---------- */
+.game-window.is-fs .q-stage{width:100%; max-width:1100px; margin:0 auto;}
+.game-window.is-fs .q-card{width:min(260px, 30vh);}
+.game-window.is-fs .lg-item{height:clamp(64px, calc((100vh - 260px) / 4.4), 130px);}
+@media (min-aspect-ratio:5/4){
+  /* tela deitada: figura de um lado, palavra e respostas do outro */
+  .game-window.is-fs .q-stage:not(.lg-stage){
+    display:grid;
+    grid-template-columns:auto minmax(0, 1fr);
+    grid-template-areas:"card word" "card question" "card options";
+    align-items:center; justify-items:center; column-gap:32px;
+  }
+  .game-window.is-fs .q-stage:not(.lg-stage) .q-card{grid-area:card; width:min(340px, calc(100vh - 220px));}
+  .game-window.is-fs .lf-word, .game-window.is-fs .vg-word{grid-area:word;}
+  .game-window.is-fs .q-question{grid-area:question;}
+  .game-window.is-fs .q-options{grid-area:options;}
+}
+@media (max-height:500px){
+  .game-window.is-fs .q-stage{padding:10px; gap:8px;}
+  .game-window.is-fs .q-opt{height:min(64px, 17vh); min-width:min(64px, 17vh); font-size:min(30px, 8vh);}
+  .game-window.is-fs .lf-tile, .game-window.is-fs .vg-tile{--t:min(44px, 11vh, calc(min(100vw - 76px, 620px) / var(--n, 5) - 6px));}
+  .game-window.is-fs .lg-item{height:calc((100vh - 170px) / 4.4);}
+}
+/* centraliza na vertical em tela cheia (o último item visível é o jogo ou a tela final) */
+.game-window.is-fs > .q-stage,
+.game-window.is-fs > .q-final{margin-bottom:auto;}

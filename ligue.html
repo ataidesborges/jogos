@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Ligue a Figura ao Nome — Fábrica de Palavras</title>
+<meta name="theme-color" content="#6C47FF">
+<link rel="icon" href="assets/images/logo.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/quiz.css">
+</head>
+<body style="--accent:#4338CA; --accent-50:#ECEBFE; --grad:linear-gradient(135deg, #4338CA 0%, #818CF8 100%); --glow:rgba(67,56,202,.42);">
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="assets/images/logo.webp" alt="" width="36" height="36">Fábrica de Palavras</a>
+    <a class="back-link" href="index.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>Todos os jogos</a>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="page-hero-inner">
+  <div class="page-head">
+    <span class="page-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.5 6.5c6 0 3 11 9 11"/></svg></span>
+    <div>
+      <h1>Ligue a Figura ao Nome</h1>
+      <p class="subtitle">Toque numa figura e depois no nome dela para ligar os dois.</p>
+    </div>
+  </div>
+  <img class="page-art" src="assets/images/gato.webp" alt="" aria-hidden="true">
+  </div>
+</section>
+
+<main class="wrap wrap-overlap">
+  <div class="game-window" id="gameWindow">
+  <div class="levels" role="group" aria-label="Nível">
+    <button class="level-btn active" data-level="facil">Fácil <small>3 figuras</small></button>
+    <button class="level-btn" data-level="medio">Médio <small>4 figuras</small></button>
+  </div>
+
+  <div class="progress-row">
+    <span class="progress-pill" id="qProgress">Rodada 1 de 10</span>
+    <span class="progress-pill score-pill" id="qScore">0 pontos</span>
+    <button id="qNewBtn" class="m-new-btn">Novo jogo</button>
+    <button id="soundBtn" title="Ligar/desligar o som"></button>
+  </div>
+
+  <div class="q-stage lg-stage" id="qStage">
+    <div class="lg-board" id="lgBoard">
+      <div class="lg-col" id="lgPics"></div>
+      <div class="lg-col" id="lgNames"></div>
+      <svg class="lg-lines" id="lgLines" aria-hidden="true"></svg>
+    </div>
+    <p class="q-question" id="qQuestion">Toque numa figura e depois no nome dela.</p>
+  </div>
+
+  <div class="q-final" id="qFinal" hidden>
+    <div class="q-final-emoji">🏆</div>
+    <div class="q-final-msg">Muito bem!</div>
+    <div class="q-final-sub" id="qFinalText"></div>
+    <button id="qAgainBtn" class="m-new-btn">Jogar de novo</button>
+  </div>
+  </div>
+
+  <section class="card gallery-wrap" aria-labelledby="albumTitle">
+    <div class="album-head">
+      <div>
+        <h2 class="gallery-title" id="albumTitle">Álbum de figurinhas</h2>
+        <p class="album-sub" id="albumCount">0 figurinhas coletadas</p>
+      </div>
+      <button id="albumToggleBtn" aria-expanded="false">Ver álbum</button>
+    </div>
+    <div class="album-bar"><span id="albumBar"></span></div>
+    <div class="gallery" id="gallery"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>© Fábrica de Palavras · Jogos de alfabetização</span>
+    <a href="index.html">Ver todos os jogos</a>
+  </div>
+</footer>
+<script src="assets/js/word-bank.js"></script>
+<script src="assets/js/shared-utils.js"></script>
+<script src="assets/js/ligue.js"></script>
+</body>
+</html>
