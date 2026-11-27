@@ -99,7 +99,7 @@ function showStory(key, onDone){
     storyEl.querySelector('.ta-story-skip').addEventListener('click', finish);
     say(l.text, isVilao ? 0.9 : 0.95);
   };
-  const finish = ()=>{ closeStory(); if('speechSynthesis' in window) speechSynthesis.cancel(); onDone && onDone(); };
+  const finish = ()=>{ closeStory(); stopSpeech(); onDone && onDone(); };
   paint();
 }
 function closeStory(){ if(storyEl){ storyEl.remove(); storyEl = null; } }

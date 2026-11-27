@@ -329,6 +329,7 @@ initCommon('tabuada-aventura');
 setupRunControls();
 setupShop();
 setupMap();
+setupMusicButton();
 renderTables();
 if(charId){
   portrait($('taCharIcon'), charId, 0);

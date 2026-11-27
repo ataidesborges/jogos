@@ -114,7 +114,7 @@ function checkSeparate(){
   if(same){
     locked = true;
     win(spWord, tries === 0 ? 10 : tries === 1 ? 5 : 2);
-    say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
+    say(current.syl.map(syllableToSpeech).join(', '), 0.75);
     qQuestion.textContent = `✔ ${current.syl.join(' - ')} (${current.syl.length} sílabas)`;
     return;
   }
@@ -133,7 +133,7 @@ function checkSeparate(){
       g.classList.remove('bad');
     });
     qQuestion.textContent = `A separação certa é: ${current.syl.join(' - ')}`;
-    say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
+    say(current.syl.map(syllableToSpeech).join(', '), 0.75);
     nextTimer = setTimeout(next, 3200);
   } else {
     qQuestion.textContent = 'Ainda não… Dica: fale a palavra devagar, batendo palmas em cada pedacinho.';
@@ -164,14 +164,14 @@ function chooseClass(btn, c){
     win(btn, tries === 0 ? 10 : 5);
     spWord.innerHTML = `<span class="tx-big">${current.syl.join(' - ')}</span>`;
     qQuestion.textContent = `✔ ${current.word} tem ${current.syl.length} ${current.syl.length === 1 ? 'sílaba' : 'sílabas'}: é ${c.name.toLowerCase()}.`;
-    say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
+    say(current.syl.map(syllableToSpeech).join(', '), 0.75);
   } else {
     // uma tentativa só: errou, mostra a certa
     locked = true;
     tries++;
     missAnswer(btn, b => b._v === classOf(current), `Ops! ${current.word} tem <b>${current.syl.length}</b> ${current.syl.length === 1 ? 'sílaba' : 'sílabas'}`);
     spWord.innerHTML = `<span class="tx-big">${current.syl.join(' - ')}</span>`;
-    say(current.syl.map(s => s.toLocaleLowerCase('pt-BR')).join(', '), 0.75);
+    say(current.syl.map(syllableToSpeech).join(', '), 0.75);
     nextTimer = setTimeout(next, MISS_DELAY + 400);
   }
 }

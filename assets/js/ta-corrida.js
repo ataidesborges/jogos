@@ -404,12 +404,14 @@ function leaveRaceFs(){
 function startRunning(){
   if(!run || run.state !== 'ready') return;
   enterRaceFs();
+  startMusic(run.def && run.def.boss ? 'Chefe' : run.theme.name); // música do tema
   hideOverlay();
   run.state = 'run';
   run.hintT = 3.5;
 }
 
 function stopRun(){
+  stopMusic();
   cancelAnimationFrame(rafId); run = null; input.left = input.right = false; jumpHeld = false;
   const gw = gameWin(); if(gw) gw.classList.remove('ta-racing');
 }
@@ -1076,6 +1078,7 @@ function gotCoin(x, y, n, pop){
 function finishRun(){
   const r = run;
   r.state = 'done';
+  stopMusic();
   r.happy = 99;
   runs++;
   hits = 0;

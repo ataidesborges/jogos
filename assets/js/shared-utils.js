@@ -35,7 +35,7 @@ function setupSoundButton(){
     audioEnabled = !audioEnabled;
     localStorage.setItem('fp-som', audioEnabled ? 'on' : 'off');
     paint();
-    if(!audioEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
+    if(!audioEnabled) stopSpeech();
   });
 }
 
@@ -58,7 +58,7 @@ function setupVoiceButton(){
     voiceEnabled = !voiceEnabled;
     localStorage.setItem('fp-voz', voiceEnabled ? 'on' : 'off');
     paint();
-    if(!voiceEnabled && 'speechSynthesis' in window) speechSynthesis.cancel();
+    if(!voiceEnabled) stopSpeech();
     if(voiceEnabled) say('Voz ligada!', 1);
   });
 }
@@ -104,9 +104,110 @@ if('speechSynthesis' in window){
                                    : (speechSynthesis.onvoiceschanged = pickVoice);
 }
 
+// ---------- Falas gravadas (voz do Piper, gratuita) ----------
+// Todas as falas do site foram gravadas antes em arquivos de som
+// (assets/audio/falas). Assim a voz funciona em qualquer tablet ou celular,
+// mesmo sem voz em português no aparelho. Frases que não existem inteiras são
+// montadas com pedaços gravados (números, palavras). Se faltar algum pedaço,
+// usa a voz do navegador.
+let falas = null; // texto normalizado -> nome do arquivo
+try{
+  fetch('assets/audio/falas.json').then(r => r.ok ? r.json() : null).then(j => { falas = j; }).catch(()=>{});
+}catch(e){}
+const FALAS_DIR = 'assets/audio/falas/';
+const clipCache = new Map();
+let speechToken = 0, speechSources = [];
+
+function unlockAudio(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    if(!unlockAudio.done){ // iPad/iPhone: um somzinho vazio dentro do toque libera o áudio
+      const s = audioCtx.createBufferSource(); s.buffer = audioCtx.createBuffer(1, 1, 22050);
+      s.connect(audioCtx.destination); s.start(0); unlockAudio.done = true;
+    }
+  }catch(e){}
+}
+['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, {capture:true, passive:true}));
+
+const NUM_UNITS = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','catorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+const NUM_TENS = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+const NUM_HUND = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+function numWords(n){
+  if(n < 20) return NUM_UNITS[n];
+  if(n < 100) return NUM_TENS[Math.floor(n / 10)] + (n % 10 ? ' e ' + NUM_UNITS[n % 10] : '');
+  if(n === 100) return 'cem';
+  if(n < 1000) return NUM_HUND[Math.floor(n / 100)] + (n % 100 ? ' e ' + numWords(n % 100) : '');
+  if(n < 1000000){ const k = Math.floor(n / 1000), r = n % 1000; return (k === 1 ? 'mil' : numWords(k) + ' mil') + (r ? (r < 100 || r % 100 === 0 ? ' e ' : ' ') + numWords(r) : ''); }
+  return String(n);
+}
+const AUDIO_EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\u{20E3}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}]/gu;
+function audioKey(t){ // igual ao script que gravou as falas
+  return String(t).toLocaleLowerCase('pt-BR').replace(AUDIO_EMOJI, ' ')
+    .replace(/\d+/g, d => ' ' + numWords(+d) + ' ')
+    .replace(/[^a-zà-úç\s-]/g, ' ').replace(/(^|\s)-+|-+(\s|$)/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+// divide o texto nos maiores pedaços gravados que existirem
+function clipPlan(text){
+  const w = audioKey(text).split(' ').filter(Boolean);
+  const plan = []; let missing = 0, i = 0;
+  while(i < w.length){
+    let j = Math.min(w.length, i + 45);
+    for(; j > i; j--){ const f = falas[w.slice(i, j).join(' ')]; if(f){ plan.push(f); break; } }
+    if(j > i) i = j; else { missing++; i++; }
+  }
+  return {plan, missing};
+}
+function loadClip(id){
+  if(!clipCache.has(id)){
+    clipCache.set(id, fetch(FALAS_DIR + id + '.mp3').then(r => r.arrayBuffer())
+      .then(b => new Promise((ok, no) => audioCtx.decodeAudioData(b, ok, no)))
+      .catch(e => { clipCache.delete(id); throw e; }));
+  }
+  return clipCache.get(id);
+}
+function stopSpeech(){
+  speechToken++;
+  speechSources.forEach(s => { try{ s.stop(); }catch(e){} });
+  speechSources = [];
+  if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){}
+}
+function playClips(plan){
+  const token = ++speechToken;
+  speechSources.forEach(s => { try{ s.stop(); }catch(e){} });
+  speechSources = [];
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }catch(e){ return false; }
+  Promise.all(plan.map(loadClip)).then(bufs => {
+    if(token !== speechToken) return;
+    let t = audioCtx.currentTime + .03;
+    bufs.forEach(b => {
+      const s = audioCtx.createBufferSource(); s.buffer = b;
+      s.connect(audioCtx.destination); s.start(t);
+      speechSources.push(s);
+      t += b.duration + .07;
+    });
+  }).catch(()=>{});
+  return true;
+}
+
 // force = true: fala mesmo com a voz desligada (quando a criança aperta "ouvir")
 function say(text, rate, force){
-  if(!audioEnabled || (!voiceEnabled && !force) || !('speechSynthesis' in window) || !text) return;
+  if(!audioEnabled || (!voiceEnabled && !force) || !text) return;
+  if(falas){
+    const {plan, missing} = clipPlan(text);
+    if(missing) (window.falasFaltando = window.falasFaltando || []).push(text); // para conferir no teste
+    // tudo gravado: usa as falas. Faltou pedaço e o aparelho não tem voz: fala o que tem.
+    if(plan.length && (!missing || !ptVoice)){
+      if('speechSynthesis' in window) try{ speechSynthesis.cancel(); }catch(e){}
+      if(playClips(plan)) return;
+    }
+  }
+  if(!('speechSynthesis' in window)) return;
+  stopSpeech();
   if(!voicesReady) pickVoice();
   if(!ptVoice){
     // as vozes ainda estão carregando: tenta de novo em instantes
