@@ -1,0 +1,135 @@
+/* ============================================================
+   Jogos de matemática: Vamos Contar, Contas com Figuras, Desafio Relâmpago
+   ============================================================ */
+
+/* pergunta + botão de ouvir lado a lado */
+.ct-ask{display:flex; align-items:center; justify-content:center; gap:12px;}
+.q-listen.ct-listen{position:static; width:44px; height:44px; flex:none;}
+.num-opt{font-size:clamp(34px, 6vw, 52px);}
+
+/* ---------- Vamos Contar ---------- */
+.ct-tray{
+  width:min(100%, 620px);
+  min-height:150px;
+  display:flex; flex-wrap:wrap; justify-content:center; align-content:center;
+  gap:clamp(8px, 1.6vw, 14px);
+  padding:clamp(12px, 2vw, 18px);
+  background:#fff;
+  border-radius:24px;
+  box-shadow:0 14px 30px -20px var(--glow);
+}
+.ct-item{
+  position:relative;
+  width:clamp(62px, 13vw, 96px); aspect-ratio:1;
+  display:grid; place-items:center;
+  animation:popIn .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+.ct-tray.many .ct-item{width:clamp(52px, 10vw, 78px);}
+.ct-item img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
+.ct-num{
+  position:absolute; right:-4px; top:-4px;
+  width:30px; height:30px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--grad); color:#fff;
+  font-family:var(--font-display); font-weight:600; font-size:17px;
+  box-shadow:0 4px 10px -4px var(--glow);
+  transform:scale(0); transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.ct-item.counted .ct-num{transform:scale(1);}
+.ct-item.counted img{animation:ctHop .35s ease;}
+@keyframes ctHop{50%{transform:translateY(-8px) scale(1.06);}}
+
+/* ---------- Contas com Figuras ---------- */
+.cs-visual{
+  width:min(100%, 720px);
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+  gap:clamp(8px, 1.6vw, 16px);
+  padding:clamp(10px, 2vw, 18px);
+  background:#fff;
+  border-radius:24px;
+  box-shadow:0 14px 30px -20px var(--glow);
+  min-height:120px;
+}
+.cs-group{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; max-width:100%;}
+.cs-sign{font-family:var(--font-display); font-weight:600; font-size:clamp(34px, 6vw, 54px); color:var(--accent);}
+.cs-fig{position:relative; width:clamp(42px, 8vw, 64px); aspect-ratio:1; display:grid; place-items:center;}
+.cs-visual.many .cs-fig{width:clamp(34px, 6.5vw, 52px);}
+.cs-fig img{width:100%; height:100%; object-fit:contain; mix-blend-mode:multiply;}
+.cs-fig.gone img{opacity:.5; filter:grayscale(.6);}
+.cs-fig.gone::after{ /* X vermelho em cima das que "saíram" */
+  content:""; position:absolute; inset:8%;
+  background:
+    linear-gradient(45deg, transparent 44%, #E11D48 44%, #E11D48 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #E11D48 44%, #E11D48 56%, transparent 56%);
+  border-radius:6px;
+}
+.cs-boxes{display:flex; flex-wrap:wrap; justify-content:center; gap:10px;}
+.cs-box{
+  display:flex; flex-wrap:wrap; justify-content:center; gap:4px;
+  max-width:calc(3 * clamp(42px, 8vw, 64px) + 24px);
+  padding:8px;
+  border:3px dashed var(--accent);
+  border-radius:16px;
+  background:var(--accent-50);
+}
+.cs-visual.many .cs-box{max-width:calc(3 * clamp(34px, 6.5vw, 52px) + 24px);}
+
+/* conta escrita grande: 3 + 2 = ? */
+.cs-expr{
+  display:flex; align-items:center; justify-content:center; gap:clamp(8px, 2vw, 16px);
+  font-family:var(--font-display); font-weight:600;
+  font-size:clamp(40px, 8vw, 64px); color:var(--ink);
+  line-height:1;
+}
+.cs-expr .op{color:var(--accent);}
+.cs-expr .ans{
+  min-width:1.3em; padding:4px 10px;
+  text-align:center;
+  border:3px dashed var(--accent); border-radius:16px;
+  color:var(--accent);
+}
+.cs-expr .ans.done{border-style:solid; background:var(--grad); color:#fff; animation:popIn .4s ease;}
+
+/* ---------- Desafio Relâmpago ---------- */
+.rl-start{display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0; text-align:center;}
+.rl-start[hidden], .rl-play[hidden]{display:none;}
+.rl-big{font-size:72px; line-height:1; animation:popIn .5s ease;}
+.rl-record{margin:0; font-weight:800; color:var(--accent);}
+.rl-go{height:56px; padding:0 34px; font-size:20px;}
+.rl-play{width:min(100%, 620px); display:flex; flex-direction:column; align-items:center; gap:16px;}
+.rl-bar{width:100%; height:14px; border-radius:999px; background:#fff; overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}
+.rl-bar span{display:block; height:100%; width:100%; background:var(--grad); border-radius:inherit; transition:width 1s linear;}
+.rl-bar span.low{background:linear-gradient(90deg, #EF4444, #F97316); animation:rlBlink .5s ease-in-out infinite alternate;}
+@keyframes rlBlink{to{opacity:.55;}}
+.rl-info{width:100%; display:flex; justify-content:space-between; font-weight:800; color:var(--ink-soft); font-size:16px;}
+.rl-info #rlTime{color:var(--accent); font-family:var(--font-display); font-size:22px;}
+.rl-expr{font-size:clamp(52px, 11vw, 84px);}
+.rl-expr.pop{animation:popIn .3s ease;}
+
+/* ---------- celular ---------- */
+@media (max-width:640px){
+  .ct-tray{min-height:120px;}
+}
+
+/* ---------- tela cheia ---------- */
+.game-window.is-fs .ct-stage, .game-window.is-fs .cs-stage, .game-window.is-fs .rl-stage{display:flex !important; flex-direction:column;}
+@media (max-height:500px){
+  .game-window.is-fs .ct-tray, .game-window.is-fs .cs-visual{min-height:0; padding:8px;}
+  .game-window.is-fs .ct-item{width:min(56px, 14vh);}
+  .game-window.is-fs .cs-fig{width:min(40px, 10vh);}
+  .game-window.is-fs .cs-expr{font-size:min(44px, 11vh);}
+  .game-window.is-fs .num-opt{height:min(60px, 15vh); min-width:min(60px, 15vh); font-size:min(32px, 8vh);}
+  .game-window.is-fs .rl-play{gap:8px;}
+}
+
+/* Multiplicar: cada grupo numa fileira compacta, figuras menores */
+.cs-visual.mode-multiplicar .cs-fig{width:clamp(26px, 5vw, 42px);}
+.cs-visual.mode-multiplicar .cs-box{max-width:none; flex-wrap:nowrap; padding:6px 8px; gap:2px;}
+.cs-visual.mode-multiplicar .cs-boxes{gap:8px;}
+.game-window.is-fs .cs-visual.mode-multiplicar .cs-fig{width:min(42px, 4.4vh, 5vw);}
+.game-window.is-fs .cs-visual{width:min(100%, 900px);}
+.game-window.is-fs .ct-tray{width:min(100%, 820px);}
+.game-window.is-fs .ct-item{width:min(96px, 11vh);}
+@media (max-height:500px){
+  .game-window.is-fs .ct-item{width:min(64px, 16vh);}
+}
