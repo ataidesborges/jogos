@@ -1,5 +1,5 @@
 // ============================================================
-// Banco de palavras e ilustrações — Fábrica de Palavras
+// Banco de palavras e ilustrações — Tio Tatá - Jogos
 // Compartilhado por todos os jogos do site.
 // ============================================================
 

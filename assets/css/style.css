@@ -1,5 +1,5 @@
 /* ============================================================
-   Fábrica de Palavras — estilos compartilhados
+   Tio Tatá - Jogos — estilos compartilhados
    ============================================================ */
 
 /* ---------- Cores, espaços e sombras ---------- */
@@ -755,3 +755,8 @@ body.fs-lock .miss-toast{top:16px;}
 .star-win.out{opacity:0 !important; transform:translate(-50%, -60%) scale(.9) !important; transition:all .5s ease; animation:none;}
 @keyframes starWinIn{to{opacity:1; transform:translate(-50%, -50%) scale(1);}}
 @keyframes starSpin{from{transform:rotate(-200deg) scale(.3)} to{transform:none}}
+
+/* logo Tio Tatá: rosto da caricatura num círculo branco */
+.brand img{width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.9), 0 4px 10px -4px rgba(0,0,0,.35); object-fit:cover;}
+.brand-sub{margin-left:6px; padding:2px 8px; border-radius:999px; background:var(--grad, linear-gradient(135deg,#7C3AED,#A855F7)); color:#fff; font-size:.62em; letter-spacing:.04em; vertical-align:middle;}
+@media (max-width:640px){ .brand img{width:32px; height:32px;} }

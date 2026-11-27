@@ -384,3 +384,12 @@ html{scroll-behavior:smooth;}
 .card-stars i{font-style:normal; color:#E2E8F0; -webkit-text-stroke:1px #CBD5E1;}
 .card-stars i.on{color:#FACC15; -webkit-text-stroke:1px #B45309;}
 .card-stars.all{background:#FEF3C7; box-shadow:0 0 0 2px #FACC15, 0 6px 14px -8px rgba(0,0,0,.5);}
+
+/* Tio Tatá em destaque no topo da página inicial */
+.hero-mascot{position:relative; display:grid; place-items:center; max-width:460px; margin:0 auto;}
+.mascot-halo{
+  position:absolute; inset:8% 6% 4%; border-radius:50%;
+  background:radial-gradient(circle at 50% 45%, rgba(255,255,255,.95), rgba(255,255,255,.55) 55%, rgba(255,255,255,0) 72%);
+}
+.hero-mascot img{position:relative; width:100%; height:auto; filter:drop-shadow(0 26px 30px rgba(0,0,0,.35)); animation:float 7s ease-in-out infinite;}
+@media (max-width:640px){ .hero-mascot{max-width:300px;} }

@@ -1,5 +1,5 @@
 // ============================================================
-// Utilidades compartilhadas — Fábrica de Palavras
+// Utilidades compartilhadas — Tio Tatá - Jogos
 // (depende de word-bank.js já ter sido carregado antes)
 // ============================================================
 
