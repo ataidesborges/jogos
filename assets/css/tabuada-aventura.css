@@ -335,3 +335,20 @@ i.coin{
 .ta-item.trying{border-color:#8B5CF6; background:#F5F3FF;}
 .ta-item.trying .ta-item-act{background:#8B5CF6; color:#fff;}
 .ta-shop-buy{order:3;}
+
+/* ---------- corrida em tela cheia: só o jogo, ocupando tudo ---------- */
+.game-window.is-fs.ta-racing{padding:0 !important; background:#0B1020; justify-content:center;}
+.game-window.is-fs.ta-racing > .levels,
+.game-window.is-fs.ta-racing > .ta-tables,
+.game-window.is-fs.ta-racing > .progress-row,
+.game-window.is-fs.ta-racing .ta-run-tip{display:none !important;}
+.game-window.is-fs.ta-racing .ta-run{padding:0; margin:auto !important; width:100%; align-items:center;}
+.game-window.is-fs.ta-racing .ta-canvas-wrap{width:min(100vw, calc(100vh * 2)) !important; max-width:none; border-radius:0; box-shadow:none;}
+.ta-exit-fs{
+  display:none; position:absolute; top:1.6cqw; left:50%; transform:translateX(-50%);
+  width:clamp(30px, 4.6cqw, 40px); height:clamp(30px, 4.6cqw, 40px); place-items:center; padding:0;
+  border-radius:50%; border:2px solid rgba(255,255,255,.7); background:rgba(26,18,56,.35);
+  color:#fff; font-size:clamp(14px, 2cqw, 18px); font-weight:800; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.game-window.is-fs.ta-racing .ta-exit-fs{display:grid;}

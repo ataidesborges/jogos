@@ -175,16 +175,22 @@ function buildLevel(d){
       x += len;
     },
     tunel(){ // túnel baixo: só passa pequeno (come a uva antes)
-      const len = R(780, 880) + d * 20;
-      ground(x, x + len);
       L.signs.push({x:x + 50, size:'small'});
       L.foods.push({x:x + 140, y:GY - 22, size:'small'});
       const t0 = x + 280, t1 = t0 + R(240, 300) + d * 25;
       L.solids.push({x0:t0, x1:t1, top:-9999, bottom:GY - 34, type:'ceil'});
       row(t0 + 26, GY - 15, Math.floor((t1 - t0 - 30) / 34), 34); // moedas escondidas lá dentro
-      L.foods.push({x:t1 + 90, y:GY - 22, size:'normal'});
-      if(d >= 3) enemy(x + len - 60, t1 + 150, x + len - 20);
-      x += len;
+      // depois do túnel: degrau alto — pequeno não sobe, tem que comer a maçã
+      L.signs.push({x:t1 + 45, size:'normal'});
+      L.foods.push({x:t1 + 120, y:GY - 22, size:'normal'});
+      const s0 = t1 + 210, s1 = s0 + R(170, 220);
+      ground(x, s0);
+      const step = ground(s0, s1, GY - 112); step.hint = 'alto';
+      row(s0 + 30, GY - 112 - 36, 3);
+      const end = s1 + R(260, 340);
+      ground(s1, end);
+      if(d >= 3) enemy(end - 60, s1 + 120, end - 20);
+      x = end;
     },
     paredao(){ // paredão de pedra: só quebra gigante (come a melancia antes)
       const len = R(760, 860);
@@ -198,8 +204,14 @@ function buildLevel(d){
         enemy(w0 + 300, w0 + 200, w0 + 360);
         if(d >= 4) enemy(w0 + 420, w0 + 380, w0 + 470);
       }
-      L.foods.push({x:x + len - 70, y:GY - 22, size:'normal'});
-      x += len;
+      // passagem baixa: gigante não cabe — tem que comer a maçã
+      const a0 = x + len + 160;
+      L.signs.push({x:x + len - 20, size:'normal'});
+      L.foods.push({x:x + len + 60, y:GY - 22, size:'normal'});
+      ground(x + len, a0 + 260);
+      L.solids.push({x0:a0, x1:a0 + 110, top:-9999, bottom:GY - 58, type:'ceil', kind:'arco'});
+      row(a0 + 20, GY - 30, 3);
+      x = a0 + 260;
     },
   };
   // quais pedaços aparecem em cada fase (mais difíceis nas fases altas)
@@ -251,6 +263,7 @@ function buildLevel(d){
 function openRun(){
   clearTimeout(nextTimer);
   taQuiz.hidden = true; taPick.hidden = true; $('taShop').hidden = true; taRun.hidden = false;
+  gameWin().classList.add('ta-racing');
   setupCanvas();
   const d = Math.min(5, runs + 1);
   const theme = THEMES[runs % THEMES.length];
@@ -267,7 +280,7 @@ function openRun(){
       <b>Fase ${d}: ${theme.name}</b>
       <small>Pegue as moedas e as <strong>3 estrelas</strong> escondidas até a bandeira 🏁</small>
       <div class="ta-ov-help"><span>◀ ▶ Setas: andar</span><span>⤒ Pular (de novo no ar: pulo duplo)</span><span>🐞 Pule em cima dos bichinhos</span><span>🍇 encolhe · 🍎 normal · 🍉 gigante</span></div>
-      <button type="button" class="m-new-btn ta-go" id="taGo">Correr! ▶</button>
+      <button type="button" class="m-new-btn ta-go" id="taGo">Jogar! ▶</button>
     </div>`);
   $('taGo').addEventListener('click', e=>{ e.stopPropagation(); startRunning(); });
   say(`Fase ${d}! Use as setas para andar e o botão para pular. Pegue as moedas e as estrelas!`, 0.95);
@@ -283,14 +296,33 @@ function openRun(){
   rafId = requestAnimationFrame(loop);
 }
 
+// a corrida abre em tela cheia (ocupa a tela toda do tablet/celular)
+let autoFs = false;
+const gameWin = () => document.getElementById('gameWindow');
+function enterRaceFs(){
+  const gw = gameWin(), b = document.getElementById('fsBtn');
+  if(!gw || !b || gw.classList.contains('is-fs')) return;
+  autoFs = true;
+  b.click();
+}
+function leaveRaceFs(){
+  const gw = gameWin(), b = document.getElementById('fsBtn');
+  if(autoFs && gw && b && gw.classList.contains('is-fs')) b.click();
+  autoFs = false;
+}
+
 function startRunning(){
   if(!run || run.state !== 'ready') return;
+  enterRaceFs();
   hideOverlay();
   run.state = 'run';
   run.hintT = 3.5;
 }
 
-function stopRun(){ cancelAnimationFrame(rafId); run = null; input.left = input.right = false; jumpHeld = false; }
+function stopRun(){
+  cancelAnimationFrame(rafId); run = null; input.left = input.right = false; jumpHeld = false;
+  const gw = gameWin(); if(gw) gw.classList.remove('ta-racing');
+}
 function showOverlay(html){ taOverlay.innerHTML = html; taOverlay.classList.add('show'); }
 function hideOverlay(){ taOverlay.classList.remove('show'); }
 
@@ -306,12 +338,12 @@ function releaseJump(){ jumpHeld = false; } // soltar cedo = pulo um pouco mais 
 function tryJump(){
   const r = run;
   if(r.ground || r.coyote > 0){
-    r.vy = -JUMP_V; r.jumps = 1; r.ground = null; r.plat = null; r.coyote = 0; r.buffer = 0; r.springing = false;
+    r.vy = -JUMP_V * (r.size === 'small' ? .6 : 1); r.jumps = 1; r.ground = null; r.plat = null; r.coyote = 0; r.buffer = 0; r.springing = false;
     r.squash = [.8, 1.25];
     puff(r.x, r.y, 4);
     jumpSound(1);
   } else if(r.jumps < 2 && r.buffer > .13){
-    r.vy = -DJUMP_V; r.jumps = 2; r.buffer = 0; r.spin = .001; r.springing = false;
+    r.vy = -DJUMP_V * (r.size === 'small' ? .6 : 1); r.jumps = 2; r.buffer = 0; r.spin = .001; r.springing = false;
     if(charId === 'robo') r.jet = .35;
     ring(r.x, r.y - 6);
     jumpSound(2);
@@ -382,13 +414,17 @@ function update(dt){
     if(r.y > s.top + 4 && r.y - PH < s.bottom){
       const front = r.x + PW <= s.x0 + 1 && nx + PW > s.x0, back = r.x - PW >= s.x1 - 1 && nx - PW < s.x1;
       if((front || back) && s.type === 'wall' && r.size === 'big'){ breakWall(s); continue; } // gigante quebra!
-      if(front){ nx = s.x0 - PW; r.vx = 0; r.blocked = true; blockedBy = s.type; }      // parede na frente
-      else if(back){ nx = s.x1 + PW; r.vx = 0; r.blocked = true; blockedBy = s.type; } // parede atrás
+      if(front){ nx = s.x0 - PW; r.vx = 0; r.blocked = true; blockedBy = s; }      // parede na frente
+      else if(back){ nx = s.x1 + PW; r.vx = 0; r.blocked = true; blockedBy = s; } // parede atrás
     }
   }
   // empacou no túnel ou no paredão: dica da comida certa
-  if((blockedBy === 'ceil' || blockedBy === 'wall') && !r.banner && dirIn){
-    r.banner = blockedBy === 'ceil' ? {text:'Muito grande! Coma a uva 🍇 para ficar pequeno', t:2.2} : {text:'Paredão! Coma a melancia 🍉 para ficar gigante', t:2.2};
+  if(blockedBy && !r.banner && dirIn){
+    const b = blockedBy;
+    if(b.kind === 'arco') r.banner = {text:'Grande demais! Coma a maçã 🍎 para voltar ao normal', t:2.2};
+    else if(b.type === 'ceil') r.banner = {text:'Muito grande! Coma a uva 🍇 para ficar pequeno', t:2.2};
+    else if(b.type === 'wall') r.banner = {text:'Paredão! Coma a melancia 🍉 para ficar gigante', t:2.2};
+    else if(b.hint === 'alto' && r.size === 'small' && (r.ground || r.plat)) r.banner = {text:'Pequeno não sobe! Coma a maçã 🍎 para voltar ao normal', t:2.2};
   }
   // em cima de pedra que se mexe: acompanha
   if(r.plat && r.plat.moving) r.y += r.plat.y - r.plat.prevY;
@@ -634,7 +670,7 @@ function finishRun(){
       </div>`);
     confetti(taOverlay.firstElementChild);
     say(`Fase completa! Você pegou ${r.coins} moedas e ${r.starsGot} ${r.starsGot === 1 ? 'estrela' : 'estrelas'}! Ganhou a figurinha ${pick.word.toLowerCase()}!`, 0.95);
-    $('taBack').addEventListener('click', e=>{ e.stopPropagation(); hideOverlay(); showQuiz(); });
+    $('taBack').addEventListener('click', e=>{ e.stopPropagation(); hideOverlay(); leaveRaceFs(); showQuiz(); });
   }, 1600);
 }
 
@@ -920,7 +956,7 @@ function drawWall(c, s, camY){
 
 // placa com a dica: qual comida usar
 function drawSign(c, g){
-  const big = g.size === 'big';
+  const big = g.size === 'big', norm = g.size === 'normal';
   c.save();
   c.translate(g.x, GY);
   c.fillStyle = '#8B5A2B'; c.fillRect(-3, -54, 6, 54);
@@ -928,11 +964,11 @@ function drawSign(c, g){
   c.fillStyle = vgrad(c, -88, -48, '#F5D0A0', '#D9A066'); c.fill();
   c.strokeStyle = '#7C4A1E'; c.lineWidth = 2.5; c.stroke();
   c.font = '20px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText(big ? '🍉' : '🍇', -28, -68);
+  c.fillText(big ? '🍉' : norm ? '🍎' : '🍇', -28, -68);
   c.fillStyle = '#7C4A1E'; c.font = '700 11px Nunito, sans-serif';
-  c.fillText(big ? 'GIGANTE' : 'PEQUENO', 14, -61);
+  c.fillText(big ? 'GIGANTE' : norm ? 'NORMAL' : 'PEQUENO', 14, -61);
   c.font = '700 16px sans-serif';
-  c.fillText(big ? '⬆' : '⬇', 14, -77);
+  c.fillText(big ? '⬆' : norm ? '↔' : '⬇', 14, -77);
   c.restore();
 }
 
@@ -1363,6 +1399,7 @@ function setupRunControls(){
     if(dir) input[dir] = false;
     if(isJump(e)) releaseJump();
   });
+  $('taExitFs').addEventListener('click', e=>{ e.stopPropagation(); autoFs = true; leaveRaceFs(); });
   // se a janela perder o foco, solta tudo (não fica andando sozinho)
   window.addEventListener('blur', ()=>{ input.left = input.right = false; jumpHeld = false; pad.querySelectorAll('.on').forEach(b => b.classList.remove('on')); });
 }

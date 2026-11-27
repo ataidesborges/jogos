@@ -29,7 +29,7 @@ const CHARS = [
 ];
 
 let mode = 'somar';
-let table = 0;          // 0 = todas misturadas
+let table = 1;          // tabuada escolhida (1 a 10)
 let charId = null;
 try{ charId = localStorage.getItem(CHAR_KEY); }catch(e){}
 if(!CHARS.some(c => c.id === charId)) charId = null;
@@ -111,7 +111,7 @@ function chooseChar(id){
 function renderTables(){
   const box = $('taTables');
   box.innerHTML = '<span class="ta-tables-label">Tabuada do:</span>';
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(n=>{
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach(n=>{
     const b = document.createElement('button');
     b.type = 'button';
     const OPN = {somar:'somar', subtrair:'subtrair', multiplicar:'multiplicar', dividir:'dividir'}[mode];
@@ -152,9 +152,8 @@ function nextPair(){
   }
   if(!bag.length){
     bag = [];
-    for(let n = 1; n <= 10; n++) bag.push([table || randInt(2, 10), n]);
+    for(let n = 1; n <= 10; n++) bag.push([table, n]);
     bag = shuffle(bag);
-    if(table === 0) bag.forEach(p => { if(Math.random() < .15) p[0] = 1; });
   }
   let p = bag.pop();
   if(`${p[0]},${p[1]}` === lastKey && bag.length){ bag.unshift(p); p = bag.pop(); }
