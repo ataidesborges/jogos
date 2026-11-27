@@ -2537,6 +2537,9 @@ function setupRunControls(){
     b.addEventListener('pointerdown', down);
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, up));
     b.addEventListener('contextmenu', e => e.preventDefault());
+    // iPhone: toques rápidos ou dois dedos nos botões não viram zoom (o pointerdown continua valendo)
+    b.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+    b.addEventListener('touchend', e => e.preventDefault(), {passive:false});
   });
   // tocar no jogo antes de começar = começar
   taOverlay.addEventListener('pointerdown', e=>{

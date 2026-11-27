@@ -130,6 +130,25 @@ function unlockAudio(){
 }
 ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, {capture:true, passive:true}));
 
+// ---------- iPhone/iPad: nada de zoom sem querer dentro dos jogos ----------
+// O Safari ignora o "user-scalable=no": dois dedos nos botões (andar + pular)
+// viram "pinça" e dois toques rápidos viram zoom. Dentro da janela do jogo, bloqueia.
+(function noGameZoom(){
+  const inGame = e => e.target && e.target.closest && e.target.closest('.game-window');
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+    document.addEventListener(ev, e => { if(inGame(e) || document.body.classList.contains('fs-lock')) e.preventDefault(); }, {passive:false}));
+  document.addEventListener('touchmove', e => {
+    if(e.touches.length > 1 && (inGame(e) || document.body.classList.contains('fs-lock'))) e.preventDefault();
+  }, {passive:false});
+  let lastEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    // segundo toque rápido em área sem botão (fundo, canvas): não deixa virar zoom
+    if(now - lastEnd < 350 && inGame(e) && !e.target.closest('button, a, input, select, textarea, [role="button"], .tile, .card')) e.preventDefault();
+    lastEnd = now;
+  }, {passive:false});
+})();
+
 const NUM_UNITS = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','catorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
 const NUM_TENS = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
 const NUM_HUND = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
@@ -503,6 +522,24 @@ function overlayRoot(){
   return document.fullscreenElement || document.webkitFullscreenElement || document.body;
 }
 
+// iPhone: o Safari não deixa site nenhum ficar em tela cheia de verdade.
+// Aberto pelo ícone da Tela de Início, o site abre sem as barras do Safari.
+const isIOS = /iPhone|iPod/.test(navigator.userAgent) || (/iPad/.test(navigator.userAgent));
+const isStandalone = ()=> window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches);
+function iosFsTip(){
+  if(!isIOS || isStandalone()) return;
+  let n = 0; try{ n = +localStorage.getItem('fp-dica-ios') || 0; }catch(e){}
+  if(n >= 3) return; // mostra só algumas vezes
+  try{ localStorage.setItem('fp-dica-ios', n + 1); }catch(e){}
+  const t = document.createElement('div');
+  t.className = 'ios-fs-tip';
+  t.innerHTML = '📱 Dica: para tela cheia de verdade no iPhone, toque em <b>Compartilhar</b> <span aria-hidden="true">⬆️</span> e depois em <b>Adicionar à Tela de Início</b>. Depois é só abrir pelo ícone do Tio Tatá!<button type="button" aria-label="Fechar">✕</button>';
+  (gameWindow || document.body).appendChild(t);
+  const close = ()=> t.remove();
+  t.querySelector('button').addEventListener('click', e => { e.stopPropagation(); close(); });
+  setTimeout(close, 9000);
+}
+
 function setupFullscreen(){
   if(!gameWindow) return;
   fsLayer = document.createElement('div');
@@ -529,7 +566,7 @@ function setupFullscreen(){
     btn.setAttribute('aria-pressed', on);
     window.dispatchEvent(new Event('resize'));
   };
-  const setPseudo = (v)=>{ pseudo = v; paint(); };
+  const setPseudo = (v)=>{ pseudo = v; paint(); if(v) iosFsTip(); };
 
   btn.addEventListener('click', (e)=>{
     e.stopPropagation();
