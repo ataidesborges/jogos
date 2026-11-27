@@ -59,7 +59,7 @@ function setupCanvas(){
 // ============================================================
 function buildLevel(d, ph){
   ph = ph || 1;
-  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[], keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[], waters:[], masks:[], crushers:[], spinners:[]};
+  const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[], keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[], waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[]};
   const R = randInt;
   const ground = (x0, x1, top)=>{
     top = top || GY;
@@ -425,6 +425,7 @@ function pressJump(){
 function releaseJump(){ jumpHeld = false; } // soltar cedo = pulo um pouco mais baixo (gravidade maior)
 function tryJump(){
   const r = run;
+  if(r.plane) return; // no avião, segurar PULAR faz subir
   const wzone = waterAt(r.x);
   // perto da superfície (nadando ou boiando): pula para fora da água
   if(wzone && !r.ground && !r.plat && r.y > wzone.surface - 18 && r.y < wzone.surface + 30){
@@ -536,11 +537,14 @@ function update(dt){
   r.swim = !!wz && r.y > wz.surface + 6;
   if(r.swim && !wasSwim){ for(let k = 0; k < 12; k++) part(r.x, wz.surface, (Math.random() - .5) * 220, -Math.random() * 260, .6, 'rgba(255,255,255,.9)', 4, 'spark'); tone([300, 200], .25, 'sine', .06); }
   const sizeSpeed = (r.size === 'big' ? .9 : r.size === 'small' ? 1.08 : 1) * (r.power && r.power.kind === 'rapido' ? 1.6 : 1) * (r.swim ? .72 : 1);
-  const target = r.hurtT > .25 ? r.vx : dirIn * (r.state === 'done' ? L.speed * .45 : L.speed * sizeSpeed);
-  const icy = r.theme.name === 'Neve' && (r.ground || r.plat) && r.hurtT <= 0;
+  let target = r.hurtT > .25 ? r.vx : dirIn * (r.state === 'done' ? L.speed * .45 : L.speed * sizeSpeed);
+  if(r.sled && r.state === 'run') target = 380;                                            // trenó: desce sem frear
+  if(r.plane && r.state === 'run') target = 250 + (input.right ? 90 : 0) - (input.left ? 90 : 0); // avião: sempre voando
+  const icy = r.theme.name === 'Neve' && (r.ground || r.plat) && r.hurtT <= 0 && !r.sled;
   const acc = icy ? (dirIn ? 900 : 420) : (r.ground || r.plat) ? 2400 : 1500;
   r.vx += Math.max(-acc * dt, Math.min(acc * dt, target - r.vx));
   if(dirIn && r.hurtT <= .25) r.face = dirIn;
+  if(r.sled || r.plane) r.face = 1;
   let nx = r.x + r.vx * dt;
   if(nx < -360) { nx = -360; r.vx = 0; }                  // começo da fase
   if(r.state === 'done' && nx > L.endX){ nx = L.endX; r.vx = 0; }
@@ -569,12 +573,16 @@ function update(dt){
   // em cima de pedra que se mexe: acompanha
   if(r.plat && r.plat.moving) r.y += r.plat.y - r.plat.prevY;
   if(r.plat && r.plat.axisX) nx += r.plat.x0 - r.plat.prevX0; // plataforma que anda leva junto
+  for(const wd of L.winds) if(r.x > wd.x0 && r.x < wd.x1 && !r.plane) nx += wd.force * dt; // vento empurra
   r.x = nx;
 
   // ---- vertical ----
   const wasGround = r.ground || r.plat;
   const prevY = r.y;
-  if(r.swim){
+  if(r.plane){
+    const tv = jumpHeld ? -250 : 175;
+    r.vy += (tv - r.vy) * Math.min(1, dt * 4);
+  } else if(r.swim){
     r.vy += 430 * dt;                      // afunda devagarinho
     if(r.vy > 150) r.vy = 150;
     if(!r.mask && r.y > wz.surface + 26){ r.vy = Math.min(r.vy, -110); } // sem máscara: boia
@@ -661,6 +669,62 @@ function update(dt){
     }
   }
 
+  // ---- pingentes de gelo ----
+  for(const ic of L.icicles){
+    if(ic.st === 'hang' && Math.abs(r.x - ic.x) < 70 && r.y > ic.y0){ ic.st = 'shake'; ic.tm = .45; tone([900, 700], .15, 'triangle', .03); }
+    else if(ic.st === 'shake'){ ic.tm -= dt; if(ic.tm <= 0){ ic.st = 'fall'; ic.vy = 0; } }
+    else if(ic.st === 'fall'){
+      ic.vy += 1600 * dt; ic.y += ic.vy * dt;
+      if(Math.abs(r.x - ic.x) < PW + 8 && ic.y + 46 > r.y - PH && ic.y < r.y) hurt();
+      if(ic.y + 46 >= GY){ ic.st = 'gone'; for(let k = 0; k < 10; k++) part(ic.x, GY - 6, (Math.random() - .5) * 260, -Math.random() * 220, .5, '#E0F2FE', 4, 'spark'); }
+    }
+  }
+  // ---- trenó ----
+  for(const sd of L.sleds){
+    if(!sd.taken && Math.abs(sd.x - r.x) < 36 && r.y > GY - 60){
+      sd.taken = true; r.sled = true;
+      r.banner = {text:'🛷 Trenó! Ele não freia: só PULE os buracos e as pedras!', t:2.6};
+      tone([392, 523, 659], .4, 'triangle', .06); say('Trenó! Só pule!', 1);
+    }
+    if(r.sled && sd.taken && sd.end && r.x > sd.end){ r.sled = false; sd.end = null; r.banner = {text:'🛷 Fim da descida!', t:1.4}; }
+  }
+  // ---- bola de neve gigante perseguindo ----
+  for(const ch of L.chasers){
+    if(ch.done) continue;
+    if(!ch.active && r.x > ch.startX){ ch.active = true; ch.bx = r.x - 520; r.banner = {text:'😱 CORRA! A bola de neve gigante vem aí!', t:2.4}; say('Corra!', 1.1); }
+    if(!ch.active) continue;
+    ch.bx += ch.speed * dt; ch.rot = (ch.rot || 0) + ch.speed * dt / ch.r;
+    if(ch.bx + ch.r * .85 > r.x - PW && r.state === 'run'){
+      if(r.inv <= 0){ hurt(); r.x += 130; }
+      ch.bx = Math.min(ch.bx, r.x - ch.r - 80);
+    }
+    if(r.x > ch.endX){
+      ch.done = true;
+      for(let k = 0; k < 30; k++) part(ch.bx, GY - ch.r, (Math.random() - .3) * 500, -Math.random() * 400, 1, '#F8FAFC', 6, 'spark');
+      r.banner = {text:'💥 A bola se espatifou! Ufa!', t:1.8}; r.shake = .4;
+      tone([200, 120, 80], .5, 'sawtooth', .08);
+    }
+  }
+  // ---- avião ----
+  for(const pl of L.planes){
+    if(!pl.taken && Math.abs(pl.x - r.x) < 40 && r.y > GY - 70){
+      pl.taken = true; r.plane = true; r.vy = -200; r.ground = null; r.plat = null;
+      r.banner = {text:'✈️ Aviãozinho! SEGURE o PULAR para subir e solte para descer.', t:3};
+      tone([523, 659, 784, 1047], .5, 'triangle', .07); say('Aviãozinho! Segure para subir!', 1);
+    }
+    if(r.plane && pl.taken && pl.end && r.x > pl.end){ r.plane = false; pl.end = null; r.banner = {text:'🛬 Pouso!', t:1.4}; }
+  }
+  if(r.plane){
+    if(r.y < 70){ r.y = 70; r.vy = Math.max(0, r.vy); }
+    if(r.blocked && r.inv <= 0){ hurt(); r.y -= 30; }   // bateu num pico
+    if(Math.random() < .3) part(r.x - 40, r.y - 18, -140, (Math.random() - .5) * 30, .5, 'rgba(255,255,255,.8)', 4, 'dust');
+  }
+  // ---- nuvens de tempestade (raio) ----
+  for(const st of L.storms){
+    const k = (r.t + st.off) % 3;
+    st.zap = k > 2.2;
+    if(st.zap && Math.abs(r.x - st.x) < st.r + PW && r.y - PH < st.y + st.r * .6 && r.y > st.y - st.r * .6) hurt();
+  }
   // ---- máscara de mergulho ----
   for(const m of L.masks){
     if(m.taken) continue;
@@ -807,6 +871,7 @@ function update(dt){
   }
 
   // ---- caiu no buraco ----
+  if(r.plane && r.y > GY + 30){ loseHeart(); if(r.plane){ r.y = 150; r.vy = -120; r.inv = 1.5; } }
   const deepZ = waterAt(r.x);
   if(r.y > (deepZ ? deepZ.floor + 300 : H + 160)){
     let back = r.safe[0] || {x:0, y:GY};
@@ -814,6 +879,7 @@ function update(dt){
     const lostKey = L.keys.find(k => !k.taken && k.x < r.x && k.x > r.x - 900);
     if(lostKey){ back = {x:lostKey.x - 120, y:GY}; }
     r.x = back.x; r.y = back.y; r.vy = 0; r.jumps = 0; r.spin = 0;
+    L.chasers.forEach(ch => { if(ch.active && !ch.done) ch.bx = Math.min(ch.bx, r.x - 520); });
     r.safe = [back];
     r.inv = 1.5;
     r.banner = lostKey ? {text:'Pegue a estrela-chave ✨ primeiro!', t:2.2} : {text:'Ops! Caiu no buraco 💔', t:1.3};
@@ -893,6 +959,10 @@ function loseHeart(){
   if(r.hearts <= 0){
     r.hearts = 3;
     r.x = r.check.x; r.y = r.check.y; r.vx = 0; r.vy = 0; r.jumps = 0; r.spin = 0; r.size = 'normal'; r.scale = 1;
+    r.level.chasers.forEach(ch => { if(ch.active && !ch.done) ch.bx = r.x - 560; });
+    // voltou para antes do trenó/avião: precisa pegar de novo
+    r.level.planes.forEach(pl => { if(pl.x > r.x){ pl.taken = false; r.plane = false; } });
+    r.level.sleds.forEach(sd => { if(sd.x > r.x){ sd.taken = false; r.sled = false; } });
     r.safe = [{x:r.check.x, y:r.check.y}];
     r.inv = 1.8; r.hurtT = 0;
     r.banner = {text:'💔 Acabaram os corações! Voltando à bandeirinha 🚩', t:2.2};
@@ -1143,6 +1213,12 @@ function draw(){
   L.crushers.forEach(cr=>{ if(cr.x + cr.w > vx0 && cr.x < vx1) drawCrusher(c, cr, r.t, r.camY); });
   L.spinners.forEach(sp=>{ if(Math.abs(sp.cx - (vx0 + vx1) / 2) < W) drawSpinner(c, sp, r.t); });
   L.masks.forEach(m=>{ if(!m.taken && m.x > vx0 && m.x < vx1) drawMask(c, m, r.t); });
+  L.winds.forEach(wd=>{ if(wd.x1 > vx0 && wd.x0 < vx1) drawWind(c, wd, r.t, r.camY); });
+  L.icicles.forEach(ic=>{ if(ic.st !== 'gone' && ic.x > vx0 && ic.x < vx1) drawIcicle(c, ic); });
+  L.sleds.forEach(sd=>{ if(!sd.taken && sd.x > vx0 && sd.x < vx1) drawSled(c, sd.x, GY, 1); });
+  L.planes.forEach(pl=>{ if(!pl.taken && pl.x > vx0 && pl.x < vx1) drawPlane(c, pl.x, GY - 6, r.t, 1); });
+  L.storms.forEach(st=>{ if(st.x + st.r > vx0 && st.x - st.r < vx1) drawStorm(c, st, r.t); });
+  L.chasers.forEach(ch=>{ if(ch.active && !ch.done) drawBigBall(c, ch); });
   L.signs.forEach(g=>{ if(g.x > vx0 && g.x < vx1) drawSign(c, g); });
   L.foods.forEach(f=>{ if(f.x > vx0 && f.x < vx1) drawFood(c, f, r.t, r.size === f.size); });
   if(L.halfX > vx0 && L.halfX < vx1) drawHalfFlag(c, L.halfX, r.t, r.halfShown);
@@ -1158,6 +1234,8 @@ function draw(){
     c.beginPath(); c.ellipse(r.x, r.y + 2, 21 * r.scale, 5 * r.scale, 0, 0, Math.PI * 2); c.fill();
   }
   const state = r.state === 'ready' ? 'idle' : r.hurtT > 0 ? 'hurt' : r.state === 'done' && onFloor && r.x >= L.endX - 2 ? 'win' : !onFloor ? (r.vy < 0 ? 'jump' : 'fall') : Math.abs(r.vx) > 30 ? 'run' : 'idle';
+  if(r.sled) drawSled(c, r.x, r.y, 1.1);
+  if(r.plane) drawPlane(c, r.x, r.y - 4, r.t, 1.15);
   if(!(r.inv > 0 && Math.floor(r.inv * 14) % 2)){
     if(r.power){
       const pw = POWERS[r.power.kind], pulse = .5 + .5 * Math.sin(r.t * 10);
@@ -1814,6 +1892,15 @@ function drawSeaCreature(c, e, t){
     c.strokeStyle = '#fff'; c.lineWidth = 3; c.beginPath(); c.moveTo(2, -10); c.lineTo(2, 10); c.stroke();
     dot(c, -10, -3, 3.6, '#fff'); dot(c, -11, -3, 2, '#111');
     c.strokeStyle = '#7C2D12'; c.lineWidth = 2; c.beginPath(); c.moveTo(-17, 4); c.lineTo(-12, 5); c.stroke();
+  } else if(e.kind === 'passaro'){
+    c.translate(0, -16); c.scale(e.dir > 0 ? -1 : 1, 1);
+    const flap = Math.sin(t * 16 + e.ph);
+    c.fillStyle = '#475569'; c.strokeStyle = '#1E293B'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-2, -2); c.quadraticCurveTo(8, -20 * flap, 22, -8 * flap); c.quadraticCurveTo(10, 0, -2, 2); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(0, 0, 16, 9, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.fillStyle = '#F59E0B'; c.beginPath(); c.moveTo(-15, -2); c.lineTo(-24, 1); c.lineTo(-15, 4); c.closePath(); c.fill();
+    dot(c, -9, -3, 2.6, '#fff'); dot(c, -10, -3, 1.4, '#111');
+    c.strokeStyle = '#1E293B'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-13, -8); c.lineTo(-5, -5); c.stroke();
   } else { // água-viva
     c.translate(0, -24);
     const pul = 1 + Math.sin(t * 4 + e.ph) * .08;
@@ -1824,6 +1911,87 @@ function drawSeaCreature(c, e, t){
     for(let k = -2; k <= 2; k++){ c.beginPath(); c.moveTo(k * 6, 5); c.quadraticCurveTo(k * 6 + Math.sin(t * 5 + k) * 5, 16, k * 6, 28); c.stroke(); }
     dot(c, -5, -5, 2, '#831843'); dot(c, 5, -5, 2, '#831843');
   }
+}
+
+// ---------- neve e céu ----------
+function drawIcicle(c, ic){
+  c.save();
+  const sh = ic.st === 'shake' ? (Math.random() - .5) * 4 : 0;
+  // gelo preso em cima
+  if(ic.st !== 'fall'){ rr(c, ic.x - 26, ic.y0 - 14, 52, 16, 8); c.fillStyle = '#F8FAFC'; c.fill(); c.strokeStyle = '#93C5FD'; c.lineWidth = 2; c.stroke(); }
+  c.translate(ic.x + sh, ic.y);
+  c.beginPath(); c.moveTo(-12, 0); c.lineTo(0, 46); c.lineTo(12, 0); c.closePath();
+  c.fillStyle = vgrad(c, 0, 46, '#F0F9FF', '#7DD3FC'); c.fill();
+  c.strokeStyle = '#3B82F6'; c.lineWidth = 1.6; c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.8)'; c.fillRect(-5, 4, 3, 18);
+  c.restore();
+}
+function drawWind(c, wd, t, camY){
+  c.save();
+  c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = 2.5; c.lineCap = 'round';
+  const len = wd.x1 - wd.x0;
+  for(let k = 0; k < 9; k++){
+    const y = 90 + k * 26 + camY * 0;
+    const x = wd.x1 - ((t * Math.abs(wd.force) * 1.6 + k * 97) % len);
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x + 46, y); c.stroke();
+    c.beginPath(); c.arc(x + 4, y - 6, 6, Math.PI * .5, Math.PI * 1.6); c.stroke();
+  }
+  c.restore();
+}
+function drawSled(c, x, y, s){
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.strokeStyle = '#7C2D12'; c.lineWidth = 3; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-30, 0); c.lineTo(26, 0); c.quadraticCurveTo(38, 0, 36, -12); c.stroke();
+  [-18, 14].forEach(px => { c.beginPath(); c.moveTo(px, 0); c.lineTo(px, -8); c.stroke(); });
+  rr(c, -30, -14, 58, 8, 4); c.fillStyle = '#DC2626'; c.fill(); c.strokeStyle = '#7F1D1D'; c.lineWidth = 2; c.stroke();
+  c.restore();
+}
+function drawPlane(c, x, y, t, s){
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.strokeStyle = '#1E293B'; c.lineWidth = 2; c.lineJoin = 'round';
+  // asa de trás
+  rr(c, -12, -8, 26, 8, 4); c.fillStyle = '#B91C1C'; c.fill(); c.stroke();
+  // corpo
+  c.beginPath(); c.moveTo(-46, -20); c.lineTo(-38, -4); c.lineTo(30, -2); c.quadraticCurveTo(44, -10, 30, -22); c.lineTo(-30, -22); c.closePath();
+  c.fillStyle = vgrad(c, -22, 0, '#F87171', '#DC2626'); c.fill(); c.stroke();
+  // cauda
+  c.beginPath(); c.moveTo(-44, -20); c.lineTo(-50, -38); c.lineTo(-36, -22); c.closePath(); c.fillStyle = '#FACC15'; c.fill(); c.stroke();
+  // asa da frente
+  rr(c, -16, -14, 36, 9, 4); c.fillStyle = '#FACC15'; c.fill(); c.stroke();
+  // hélice girando
+  c.fillStyle = '#334155'; c.beginPath(); c.arc(40, -12, 4, 0, Math.PI * 2); c.fill();
+  const sp = Math.abs(Math.sin(t * 40)) * 16;
+  c.fillStyle = 'rgba(51,65,85,.7)'; rr(c, 42, -12 - sp, 4, sp * 2, 2); c.fill();
+  c.restore();
+}
+function drawStorm(c, st, t){
+  c.save();
+  c.fillStyle = st.zap ? '#475569' : '#64748B';
+  c.beginPath();
+  c.arc(st.x - st.r * .5, st.y, st.r * .55, 0, Math.PI * 2); c.arc(st.x, st.y - st.r * .3, st.r * .7, 0, Math.PI * 2); c.arc(st.x + st.r * .5, st.y, st.r * .55, 0, Math.PI * 2);
+  c.fill();
+  const k = (t + st.off) % 3;
+  if(k > 1.7 && k < 2.2){ c.fillStyle = '#FDE047'; c.globalAlpha = .6 + .4 * Math.sin(t * 40); c.font = '22px sans-serif'; c.textAlign = 'center'; c.fillText('⚡', st.x, st.y + st.r * .2); c.globalAlpha = 1; }
+  if(st.zap){
+    c.strokeStyle = '#FDE047'; c.lineWidth = 4; c.shadowColor = '#FDE047'; c.shadowBlur = 16;
+    c.beginPath(); c.moveTo(st.x - 10, st.y + 10);
+    for(let i = 1; i <= 5; i++) c.lineTo(st.x + (i % 2 ? 14 : -14), st.y + 10 + i * 22);
+    c.stroke();
+    c.globalAlpha = .25; c.fillStyle = '#FEF9C3'; c.beginPath(); c.arc(st.x, st.y, st.r * 1.1, 0, Math.PI * 2); c.fill();
+  }
+  c.restore();
+}
+function drawBigBall(c, ch){
+  c.save();
+  c.translate(ch.bx, GY - ch.r);
+  c.fillStyle = 'rgba(0,0,0,.15)'; c.beginPath(); c.ellipse(0, ch.r, ch.r * .9, 10, 0, 0, Math.PI * 2); c.fill();
+  c.rotate(ch.rot || 0);
+  c.beginPath(); c.arc(0, 0, ch.r, 0, Math.PI * 2);
+  c.fillStyle = vgrad(c, -ch.r, ch.r, '#FFFFFF', '#BFDBFE'); c.fill();
+  c.strokeStyle = '#93C5FD'; c.lineWidth = 3; c.stroke();
+  c.fillStyle = 'rgba(147,197,253,.55)';
+  [[.3, -.2, .22], [-.4, .3, .18], [.1, .55, .14], [-.2, -.55, .16]].forEach(([a, b, rr2]) => { c.beginPath(); c.arc(a * ch.r, b * ch.r, rr2 * ch.r, 0, Math.PI * 2); c.fill(); });
+  c.restore();
 }
 
 function drawPlat(c, p, th){
@@ -1973,7 +2141,7 @@ function drawEnemy(c, e, th, t){
     c.beginPath(); c.moveTo(ex - 9 * s, ey - 6 * s); c.lineTo(ex - 2 * s, ey - 4 * s); c.moveTo(ex + 9 * s, ey - 6 * s); c.lineTo(ex + 2 * s, ey - 4 * s); c.stroke();
     c.lineWidth = 2;
   };
-  if(e.kind === 'peixe' || e.kind === 'agua'){ drawSeaCreature(c, e, t); c.restore(); return; }
+  if(e.kind === 'peixe' || e.kind === 'agua' || e.kind === 'passaro'){ drawSeaCreature(c, e, t); c.restore(); return; }
   if(e.flying){
     const flap = Math.sin(t * 22 + e.ph) * .6;
     if(th.flyer === 'morcego'){

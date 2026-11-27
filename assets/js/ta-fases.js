@@ -28,7 +28,7 @@ function doorQuestion(){
 function buildFromDef(def, d){
   const L = {solids:[], plats:[], coins:[], stars:[], enemies:[], spikes:[], springs:[], decos:[], starSpots:[], foods:[], signs:[],
     keys:[], rollSpawns:[], rollers:[], lamps:[], jets:[], checks:[], hearts:[], cubs:[], pages:[], bushes:[], textSigns:[], doors:[],
-    waters:[], masks:[], crushers:[], spinners:[]};
+    waters:[], masks:[], crushers:[], spinners:[], icicles:[], winds:[], sleds:[], chasers:[], planes:[], storms:[]};
   let x = -300;
   const lastGround = () => [...L.solids].reverse().find(q => q.type === 'ground');
   const enemyObj = (ex, minX, maxX, speed) => ({x:ex, y:GY, minX, maxX, dir:-1, speed:speed || (50 + d * 8), alive:true, flying:false, baseY:GY - 85, ph:Math.random() * 6, dead:0});
@@ -71,6 +71,17 @@ function buildFromDef(def, d){
     jelly(dx, y, amp){ L.enemies.push({x:x + dx, y, minX:x + dx, maxX:x + dx, dir:-1, speed:0, alive:true, flying:true, baseY:y, amp:amp || 60, ph:Math.random() * 6, dead:0, kind:'agua'}); },
     rock(dx, w, top){ L.solids.push({x0:x + dx, x1:x + dx + w, top, bottom:9999, type:'ground'}); },   // pedra que sobe do fundo
     roof(dx, w, bottom){ L.solids.push({x0:x + dx, x1:x + dx + w, top:-9999, bottom, type:'ceil'}); }, // pedra que desce de cima (passar por baixo)
+    // ---- neve e céu ----
+    icicle(dx, y0){ L.icicles.push({x:x + dx, y0, y:y0, st:'hang', tm:0, vy:0}); },
+    wind(dx, len, force){ L.winds.push({x0:x + dx, x1:x + dx + len, force:force || -160}); },
+    roll(dx, len, every){ L.rollSpawns.push({x0:x + dx, x1:x + dx + len, every:every || 2.2, t:1}); },
+    sled(dx){ L.sleds.push({x:x + dx, taken:false, end:null}); },
+    sledEnd(dx){ const sd = L.sleds[L.sleds.length - 1]; if(sd) sd.end = x + dx; },
+    chase(dx, len, speed){ L.chasers.push({startX:x + dx, endX:x + dx + len, speed:speed || 205, r:95, active:false, done:false, bx:0}); },
+    plane(dx){ L.planes.push({x:x + dx, taken:false, end:null}); },
+    planeEnd(dx){ const pl = L.planes[L.planes.length - 1]; if(pl) pl.end = x + dx; },
+    storm(dx, y, r, off){ L.storms.push({x:x + dx, y, r:r || 48, off:off || 0, zap:false}); },
+    bird(dx, y, range, speed){ L.enemies.push({x:x + dx, y, minX:x + dx - (range || 100), maxX:x + dx + (range || 100), dir:-1, speed:speed || 70, alive:true, flying:true, baseY:y, amp:12, ph:Math.random() * 6, dead:0, kind:'passaro'}); },
     sea(len, depth){ L.waters.push({x0:x, x1:x + len, surface:GY + 12, floor:GY + depth}); L.solids.push({x0:x, x1:x + len, top:GY + depth, bottom:9999, type:'ground'}); x += len; },
     bush(dx, w){ L.bushes.push({x0:x + dx, x1:x + dx + (w || 160)}); },
     sign(dx, text){ L.textSigns.push({x:x + dx, text}); },
@@ -362,6 +373,167 @@ window.LEVEL_DEFS = {
       B.spring(560);
       B.flag(900);
       B.ground(1300);
+    },
+  },
+  // ======================= MUNDO 3: MONTANHA DE NEVE =======================
+  '3-1': {
+    name:'Picos gelados', theme:2, ph:3,
+    goal:'O chão de gelo escorrega! Cuidado com os pingentes que caem e com o vento forte.',
+    build(B){
+      // 1. aprender o gelo
+      B.sign(330, 'Chão de gelo: demora para frear!');
+      B.coins(430, GY - 36, 4);
+      B.enemy(660, 120, 45);
+      B.ground(800);
+      // 2. corredor dos pingentes
+      B.sign(90, 'Pingentes caem quando você passa!');
+      B.icicle(280, GY - 230); B.icicle(420, GY - 230); B.icicle(560, GY - 230); B.icicle(700, GY - 230);
+      B.coins(270, GY - 36, 5, 110);
+      B.heart(840);
+      B.ground(920);
+      // 3. vento forte em cima do abismo com pedras de gelo
+      B.wind(-40, 760, -75);
+      B.moving(55, GY - 30, 120, 28, 1.3, 0);
+      B.moving(235, GY - 55, 120, 30, 1.3, 1.4);
+      B.moving(415, GY - 30, 120, 28, 1.3, 2.8);
+      B.coins(90, GY - 110, 1); B.coins(270, GY - 140, 1); B.coins(450, GY - 110, 1);
+      B.star(295, GY - 265);
+      B.gap(590);
+      B.check(60);
+      // 4. avalanche de bolas de neve + conta bônus
+      B.bonus(140);
+      B.roll(380, 700, 2.1);
+      B.coins(500, GY - 80, 4, 50);
+      B.ground(1080);
+      // 5. escadaria de gelo com pingentes
+      B.ground(160);
+      B.ground(200, GY - 60);
+      B.icicle(100, GY - 290);
+      B.ground(200, GY - 120);
+      B.icicle(100, GY - 330);
+      B.ground(220, GY - 180);
+      B.star(-110, GY - 340);
+      B.ground(320);
+      // 6. chave e plataformas secretas com vento
+      B.check(-200);
+      B.key(170, GY - 70, 0);
+      B.ground(270);
+      B.wind(0, 780, -80);
+      B.hidden(60, GY - 50, 115, 0); B.hidden(220, GY - 110, 115, 0); B.hidden(380, GY - 170, 115, 0);
+      B.page(437, GY - 320);
+      B.hidden(540, GY - 110, 115, 0); B.hidden(690, GY - 50, 115, 0);
+      B.gap(850);
+      // 7. final: plataforma que anda, bichinho e espinhos de gelo
+      B.ground(240);
+      B.hmove(60, GY - 40, 140, 90, 1.2, 0);
+      B.gap(420);
+      B.enemy(260, 120, 60);
+      B.spikes(440, 2);
+      B.arc(380, 540, GY - 50, 90, 5);
+      B.flag(820);
+      B.ground(1200);
+    },
+  },
+  '3-2': {
+    name:'Descida de trenó', theme:2, ph:3,
+    goal:'Desça a montanha de trenó 🛷 (só pule!) e depois corra da bola de neve gigante!',
+    build(B){
+      B.sign(330, 'Suba no trenó 🛷 e só pule!');
+      B.coins(420, GY - 36, 3);
+      B.sled(600);
+      B.ground(820);
+      // descida em alta velocidade
+      B.arc(10, 160, GY - 60, 90, 5);
+      B.gap(170);
+      B.spikes(320, 1); B.coins(200, GY - 36, 3);
+      B.ground(620);
+      B.gap(190);
+      B.sign(120, 'Use a rampa! ⤴');
+      B.spring(400);
+      B.coins(520, GY - 260, 4, 60);
+      B.star(615, GY - 330);
+      B.ground(500);
+      B.gap(330);                                  // só passa com a rampa
+      B.icicle(300, GY - 240);
+      B.spikes(520, 2);
+      B.coins(150, GY - 36, 3);
+      B.ground(760);
+      B.gap(180);
+      B.enemy(300, 80, 40); B.enemy(560, 80, 40);
+      B.coins(420, GY - 90, 3);
+      B.sledEnd(700);
+      B.ground(800);
+      // descanso: bandeirinha e conta bônus
+      B.check(60);
+      B.bonus(200);
+      B.heart(520);
+      B.sign(640, 'Prepare-se para CORRER! 😱');
+      B.ground(760);
+      // perseguição da bola de neve gigante
+      B.chase(0, 2700, 205);
+      B.spikes(500, 1); B.enemy(760, 100, 40);
+      B.coins(200, GY - 36, 4, 60);
+      B.ground(900);
+      B.gap(120);
+      B.icicle(250, GY - 230); B.icicle(520, GY - 230);
+      B.coins(300, GY - 36, 4, 60);
+      B.ground(800);
+      B.gap(130);
+      B.spikes(400, 2);
+      B.arc(340, 500, GY - 50, 90, 5);
+      B.ground(1000);
+      // a bola se espatifa; tesouro escondido em cima do gelo
+      B.check(80);
+      B.plat(260, GY - 150, 130); B.plat(460, GY - 230, 130);
+      B.page(525, GY - 300);
+      B.flag(900);
+      B.ground(1300);
+    },
+  },
+  '3-3': {
+    name:'Voo nas nuvens', theme:2, ph:3,
+    goal:'Suba no aviãozinho ✈️: SEGURE o PULAR para subir e solte para descer. Desvie dos picos, pássaros e raios!',
+    build(B){
+      B.sign(330, 'Suba no aviãozinho ✈️');
+      B.coins(420, GY - 36, 3);
+      B.plane(580);
+      B.ground(720);
+      // o voo (tudo no céu, sem chão embaixo)
+      B.planeEnd(5300);
+      for(let k = 0; k < 6; k++) B.coin(100 + k * 60, GY - 60 - k * 22);
+      B.rock(520, 70, GY - 150);                  // pico de gelo: passe por cima
+      B.coins(540, GY - 230, 2, 40);
+      B.roof(820, 80, GY - 200);                  // pico de cima: passe por baixo
+      B.coins(840, GY - 110, 2, 40);
+      B.rock(1150, 70, GY - 90); B.roof(1150, 70, GY - 250);   // portal estreito
+      B.coin(1185, GY - 170);
+      B.bird(1450, 200, 120, 70);
+      B.bird(1750, 120, 100, 80);
+      B.coins(1400, 160, 6, 60);
+      B.storm(2050, 150, 50, 0);
+      B.storm(2350, 250, 50, 1.5);
+      B.heart(2200, 300);
+      B.check(2500, 150);
+      // ziguezague entre picos
+      B.rock(2750, 70, GY - 120); B.roof(2750, 70, GY - 270);
+      B.coin(2785, GY - 195);
+      B.rock(3050, 70, GY - 50); B.roof(3050, 70, GY - 200);
+      B.coin(3085, GY - 125);
+      B.rock(3350, 70, GY - 170); B.roof(3350, 70, GY - 310);
+      B.star(3385, GY - 240);
+      B.page(3700, 85);                            // a página lá no alto
+      B.bird(3700, 140, 90, 90);
+      B.storm(4000, 180, 55, .7);
+      B.bird(4250, 240, 110, 90);
+      B.storm(4500, 120, 50, 2.1);
+      B.check(4600, 150);
+      B.star(4800, 280);
+      for(let k = 0; k < 6; k++) B.coin(4900 + k * 60, 150 + k * 25);
+      B.gap(5400);
+      // pouso
+      B.coins(100, GY - 36, 4);
+      B.flag(700);
+      B.ground(1100);
     },
   },
 };

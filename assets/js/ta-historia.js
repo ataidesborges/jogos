@@ -21,7 +21,7 @@ function renderTokens(){ document.querySelectorAll('[data-tokens]').forEach(el =
 const WORLDS = [
   {id:1, name:'Floresta', icon:'🌳', color:'#16A34A', levels:['1-1', '1-2']},
   {id:2, name:'Praia', icon:'🏖️', color:'#0EA5E9', levels:['2-1', '2-2']},
-  {id:3, name:'Montanha de Neve', icon:'🏔️', color:'#64748B', levels:['3-1', '3-2']},
+  {id:3, name:'Montanha de Neve', icon:'🏔️', color:'#64748B', levels:['3-1', '3-2', '3-3']},
   {id:4, name:'Caverna', icon:'🕯️', color:'#7C3AED', levels:['4-1', '4-2']},
   {id:5, name:'Vulcão', icon:'🌋', color:'#DC2626', levels:['5-1', '5-2', 'chefe']},
 ];
@@ -57,6 +57,12 @@ const STORY = {
   'depois-2-1':[{who:'tata', text:'Muito bem! Agora o recife perigoso nos espera.'}],
   'antes-2-2':[{who:'tata', text:'O recife é cheio de peixes e águas-vivas. Nade com cuidado!'}],
   'depois-2-2':[{who:'vilao', text:'Ainda tenho muitas páginas... e a Montanha de Neve vai congelar vocês!'}],
+  'antes-3-1':[{who:'tata', text:'Na montanha o chão de gelo escorrega. Cuidado com os pingentes e o vento!'}],
+  'depois-3-1':[{who:'tata', text:'Muito bem! Agora, todos para o trenó!'}],
+  'antes-3-2':[{who:'tata', text:'Desça de trenó só pulando. Depois... corra da bola de neve gigante!'}],
+  'depois-3-2':[{who:'vilao', text:'Vou fugir voando! Ninguém me alcança nas nuvens!'}],
+  'antes-3-3':[{who:'tata', text:'Pegue o aviãozinho e voe atrás do Besouro! Segure PULAR para subir.'}],
+  'depois-3-3':[{who:'tata', text:'O Besouro se escondeu numa caverna escura... vamos atrás dele!'}],
 };
 
 let storyEl = null;
