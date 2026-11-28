@@ -12,6 +12,7 @@ const OWNED_KEY = 'fp-tabuada-itens';
 const EQUIP_KEY = 'fp-tabuada-visual';
 
 const SHOP_SLOTS = [
+  {id:'color', name:'Cores', icon:'🎨'},
   {id:'head', name:'Chapéus', icon:'🎩'},
   {id:'eyes', name:'Óculos', icon:'🕶️'},
   {id:'back', name:'Costas', icon:'🦸'},
@@ -35,6 +36,20 @@ const SHOP_ITEMS = [
   {id:'unicornio', slot:'head', name:'Chifre de unicórnio', price:750},
   {id:'coroa', slot:'head', name:'Coroa', price:900},
   {id:'astronauta', slot:'head', name:'Capacete de astronauta', price:1200},
+  {id:'laco', slot:'head', name:'Laço', price:100},
+  {id:'folhas', slot:'head', name:'Coroa de flores', price:240},
+  {id:'tiara', slot:'head', name:'Tiara de princesa', price:550},
+  {id:'viking', slot:'head', name:'Capacete viking', price:680},
+  {id:'bruxa', slot:'head', name:'Chapéu de bruxa', price:720},
+  // cores (mudam a cor do personagem que está na loja)
+  {id:'corRosa', slot:'color', name:'Rosa chiclete', price:300},
+  {id:'corAzul', slot:'color', name:'Azul do céu', price:300},
+  {id:'corVerde', slot:'color', name:'Verde floresta', price:350},
+  {id:'corRoxo', slot:'color', name:'Roxo mágico', price:400},
+  {id:'corFogo', slot:'color', name:'Vermelho fogo', price:450},
+  {id:'corNeve', slot:'color', name:'Branco neve', price:550},
+  {id:'corNoite', slot:'color', name:'Azul da noite', price:650},
+  {id:'corDourado', slot:'color', name:'Dourado', price:1000},
   // óculos
   {id:'redondos', slot:'eyes', name:'Óculos redondos', price:90},
   {id:'natacao', slot:'eyes', name:'Óculos de natação', price:150},
@@ -43,6 +58,8 @@ const SHOP_ITEMS = [
   {id:'coracao', slot:'eyes', name:'Óculos de coração', price:320},
   {id:'mascara', slot:'eyes', name:'Máscara de herói', price:400},
   {id:'monoculo', slot:'eyes', name:'Monóculo chique', price:480},
+  {id:'nerd', slot:'eyes', name:'Óculos de nerd', price:170},
+  {id:'estrela', slot:'eyes', name:'Óculos de estrela', price:380},
   // costas
   {id:'cachecol', slot:'back', name:'Cachecol', price:110},
   {id:'mochila', slot:'back', name:'Mochila', price:220},
@@ -50,6 +67,8 @@ const SHOP_ITEMS = [
   {id:'asasBorboleta', slot:'back', name:'Asas de borboleta', price:650},
   {id:'asasAnjo', slot:'back', name:'Asas de anjo', price:850},
   {id:'jetpack', slot:'back', name:'Mochila-foguete', price:1100},
+  {id:'violao', slot:'back', name:'Violão', price:520},
+  {id:'asasDragao', slot:'back', name:'Asas de dragão', price:950},
   // rastros (aparecem na corrida)
   {id:'bolhas', slot:'effect', name:'Bolhas de sabão', price:280},
   {id:'coracoes', slot:'effect', name:'Rastro de corações', price:350},
@@ -58,9 +77,12 @@ const SHOP_ITEMS = [
   {id:'brilho', slot:'effect', name:'Purpurina', price:600},
   {id:'fogo', slot:'effect', name:'Rastro de fogo', price:800},
   {id:'arcoiris', slot:'effect', name:'Rastro arco-íris', price:1000},
+  {id:'flores', slot:'effect', name:'Rastro de flores', price:380},
+  {id:'neve', slot:'effect', name:'Flocos de neve', price:450},
 ];
 // itens que chegaram nesta versão (ganham a etiqueta "Novo!")
-const SHOP_NEW = new Set(['gorro', 'chef', 'orelhas', 'fones', 'cauboi', 'aureola', 'unicornio', 'astronauta', 'natacao', 'oculos3d', 'mascara', 'monoculo', 'asasBorboleta', 'asasAnjo', 'jetpack', 'bolhas', 'notas', 'brilho', 'fogo']);
+const SHOP_NEW = new Set(['laco', 'folhas', 'tiara', 'viking', 'bruxa', 'nerd', 'estrela', 'violao', 'asasDragao', 'flores', 'neve',
+  'corRosa', 'corAzul', 'corVerde', 'corRoxo', 'corFogo', 'corNeve', 'corNoite', 'corDourado']);
 
 const readJSON = (k, d) => { try{ return JSON.parse(localStorage.getItem(k)) || d; }catch(e){ return d; } };
 const saveJSON = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
@@ -149,7 +171,7 @@ function renderShop(){
   grid.innerHTML = '';
   const eq = shopEquipOf(shopChar);
   renderBuyBar();
-  SHOP_ITEMS.filter(it => it.slot === shopSlot).forEach(it=>{
+  SHOP_ITEMS.filter(it => it.slot === shopSlot).sort((a, b) => a.price - b.price).forEach(it=>{
     const has = owned.has(it.id), using = eq[it.slot] === it.id;
     const isTrying = trying && trying.id === it.id;
     const b = document.createElement('button');
@@ -242,16 +264,21 @@ function drawItemIcon(canvas, it){
   c.lineJoin = 'round'; c.lineCap = 'round';
   const P = {t:0, state:'idle'};
   c.save();
-  if(it.id === 'astronauta'){ c.translate(33, 18); c.scale(1.05, 1.05); ACC_HEAD[it.id](c, P); }
+  if(it.slot === 'color'){ // o próprio personagem da loja, já pintado
+    const id = shopChar || 'capivara';
+    drawChar(c, id, w / 2 - ({capivara:10, tatu:1, robo:0}[id] || 0) * .78, h - 4, {t:0, state:'idle', eq:{color:it.id}}, .78);
+  }
+  else if(it.id === 'astronauta'){ c.translate(33, 18); c.scale(1.05, 1.05); ACC_HEAD[it.id](c, P); }
   else if(it.slot === 'head'){ c.translate(36, 52); c.scale(it.id === 'orelhas' || it.id === 'unicornio' ? 1.3 : 1.6, it.id === 'orelhas' || it.id === 'unicornio' ? 1.3 : 1.6); ACC_HEAD[it.id](c, P); }
   else if(it.slot === 'eyes'){ c.translate(36, 32); c.scale(2.4, 2.4); ACC_EYES[it.id](c, true); }
   else if(it.slot === 'back'){
     if(it.id === 'capa'){ c.translate(56, 18); c.scale(1.25, 1.25); }
-    else if(it.id === 'asasAnjo' || it.id === 'asasBorboleta'){ c.translate(50, 42); c.scale(1.7, 1.7); }
+    else if(it.id === 'asasAnjo' || it.id === 'asasBorboleta' || it.id === 'asasDragao'){ c.translate(36, 46); c.scale(1.3, 1.3); P.cid = 'robo'; }
+    else if(it.id === 'violao'){ c.translate(30, 34); c.scale(1.5, 1.5); P.cid = 'robo'; c.rotate(1.1); }
     else if(it.id === 'jetpack'){ c.translate(36, 28); c.scale(1.9, 1.9); P.state = 'jump'; }
-    else if(it.id === 'mochila'){ c.translate(36, 28); c.scale(2, 2); }
+    else if(it.id === 'mochila'){ c.translate(38, 42); c.scale(1.9, 1.9); P.cid = 'capivara'; }
     else { c.translate(40, 26); c.scale(2.2, 2.2); }
-    ACC_BACK[it.id].draw(c, P);
+    ACC_BACK[it.id].draw(c, P, P.cid === 'robo' ? 'behind' : 'front');
   } else { c.translate(36, 30); c.scale(1.5, 1.5); ACC_EFFECT[it.id](c); }
   c.restore();
 }
@@ -313,6 +340,14 @@ function drawTrailBit(c, x, y, kind, life, hue){
     const r = 4 + (1 - life) * 6;
     c.fillStyle = life > .6 ? '#FDE047' : life > .35 ? '#FB923C' : '#EF4444';
     c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.fill();
+  } else if(kind === 'flores'){
+    const col = ['#F472B6', '#FDE047', '#60A5FA', '#C084FC'][Math.floor((hue || 0) / 90) % 4];
+    for(let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2; c.fillStyle = col; c.beginPath(); c.arc(Math.cos(a) * 3.4, Math.sin(a) * 3.4, 2.8, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 2, 0, Math.PI * 2); c.fill();
+  } else if(kind === 'neve'){
+    c.rotate((hue || 0) / 50);
+    c.strokeStyle = '#7DD3FC'; c.lineWidth = 1.6; c.lineCap = 'round';
+    for(let k = 0; k < 3; k++){ const a = k / 3 * Math.PI; c.beginPath(); c.moveTo(-Math.cos(a) * 6, -Math.sin(a) * 6); c.lineTo(Math.cos(a) * 6, Math.sin(a) * 6); c.stroke(); }
   } else {
     c.fillStyle = `hsl(${hue || 0}, 90%, 62%)`;
     c.beginPath(); c.arc(0, 0, 6, 0, Math.PI * 2); c.fill();

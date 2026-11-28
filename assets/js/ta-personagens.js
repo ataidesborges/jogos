@@ -49,6 +49,40 @@ function eye(c, x, y, r, P, outline){
   dot(c, x + r * .45, y + look - r * .3, r * .2, '#fff');
 }
 
+// ---------------- CORES (loja) ----------------
+// Uma cor muda o pelo/casco/metal do personagem mantendo as luzes e sombras:
+// cada cor do desenho original vira a mesma claridade no tom novo.
+// (olhos, bochechas, tangerina, visor e coração continuam iguais)
+const COLOR_VARIANTS = {
+  corRosa:   {h:330, s:72, lm:1.05, la:4},
+  corAzul:   {h:205, s:70, lm:1, la:2},
+  corVerde:  {h:120, s:45, lm:1, la:0},
+  corRoxo:   {h:270, s:55, lm:1, la:2},
+  corDourado:{h:44,  s:88, lm:1, la:6},
+  corNeve:   {h:210, s:14, lm:.45, la:52},
+  corNoite:  {h:235, s:28, lm:.6, la:-2},
+  corFogo:   {h:12,  s:85, lm:1, la:2},
+};
+let TINT = null;
+const tintCache = {};
+function hexToHsl(hex){
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if(mx === mn) return [0, 0, l * 100];
+  const d = mx - mn, s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+  const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s * 100, l * 100];
+}
+function T(hex){
+  if(!TINT) return hex;
+  const k = TINT.id + hex;
+  if(tintCache[k]) return tintCache[k];
+  const [, , l] = hexToHsl(hex);
+  const nl = Math.max(4, Math.min(96, l * TINT.lm + TINT.la));
+  return (tintCache[k] = `hsl(${TINT.h}, ${TINT.s}%, ${nl.toFixed(1)}%)`);
+}
+Object.entries(COLOR_VARIANTS).forEach(([id, v]) => v.id = id);
+
 // ---------------- CAPIVARA ----------------
 const CAPI = {out:'#4A2A12', fur1:'#CF9861', fur2:'#9C6434', dark:'#83532A', belly:'#E3B886', snout:'#8A5428'};
 
@@ -56,9 +90,9 @@ function capiLeg(c, x, y, ang, near){
   c.save();
   c.translate(x, y); c.rotate(ang);
   rr(c, -4, -2, 8, 15, 4);
-  fs(c, near ? CAPI.fur2 : '#7A4B23');
+  fs(c, near ? T(CAPI.fur2) : T('#7A4B23'));
   c.beginPath(); c.ellipse(1.5, 13, 5.2, 3, 0, 0, Math.PI * 2);
-  fs(c, near ? '#5E3817' : '#4E2E12');
+  fs(c, near ? T('#5E3817') : T('#4E2E12'));
   c.restore();
 }
 
@@ -67,7 +101,7 @@ function drawCapivara(c, P){
   const ph = P.t * 15;
   const s1 = Math.sin(ph);
   const bob = run ? -Math.abs(Math.sin(ph)) * 3 : P.state === 'idle' || P.state === 'win' ? Math.sin(P.t * 3) * 1 : 0;
-  c.strokeStyle = CAPI.out; c.lineWidth = 2.2; c.lineJoin = 'round'; c.lineCap = 'round';
+  c.strokeStyle = T(CAPI.out); c.lineWidth = 2.2; c.lineJoin = 'round'; c.lineCap = 'round';
 
   // pernas de trás (lado de lá)
   const a = run ? s1 * .75 : air ? (P.state === 'jump' ? -.7 : .5) : 0;
@@ -84,14 +118,14 @@ function drawCapivara(c, P){
   c.bezierCurveTo(22, -10, 10, -9, -4, -9);
   c.bezierCurveTo(-18, -9, -25, -12, -26, -22);
   c.closePath();
-  fs(c, vgrad(c, -44, -9, CAPI.fur1, CAPI.fur2));
+  fs(c, vgrad(c, -44, -9, T(CAPI.fur1), T(CAPI.fur2)));
   // barriga clarinha
   c.save(); c.clip();
-  c.fillStyle = CAPI.belly; c.globalAlpha = .55;
+  c.fillStyle = T(CAPI.belly); c.globalAlpha = .55;
   c.beginPath(); c.ellipse(-2, -9, 22, 7, 0, 0, Math.PI * 2); c.fill();
   c.globalAlpha = .9;
   // pelinhos
-  c.strokeStyle = CAPI.dark; c.lineWidth = 1.4;
+  c.strokeStyle = T(CAPI.dark); c.lineWidth = 1.4;
   [[-16, -34], [-8, -37], [0, -38], [-12, -28], [-2, -30]].forEach(([fx, fy])=>{
     c.beginPath(); c.moveTo(fx, fy); c.quadraticCurveTo(fx + 3, fy - 2, fx + 6, fy); c.stroke();
   });
@@ -109,14 +143,14 @@ function drawCapivara(c, P){
   c.translate(19, -36 + bob + hb);
   c.rotate(P.state === 'jump' ? -.12 : P.state === 'fall' ? .1 : 0);
   // orelha
-  c.beginPath(); c.ellipse(-4, -13, 4.5, 5.5, -.4, 0, Math.PI * 2); fs(c, CAPI.fur2);
-  dot(c, -3.6, -12.5, 2.2, '#D9967A');
+  c.beginPath(); c.ellipse(-4, -13, 4.5, 5.5, -.4, 0, Math.PI * 2); fs(c, T(CAPI.fur2));
+  dot(c, -3.6, -12.5, 2.2, T('#D9967A'));
   // cabeça
   rr(c, -9, -14, 30, 25, 11);
-  fs(c, vgrad(c, -14, 11, CAPI.fur1, '#A86D3A'));
+  fs(c, vgrad(c, -14, 11, T(CAPI.fur1), T('#A86D3A')));
   // focinho grandão
   rr(c, 12, -8, 16, 18, 8);
-  fs(c, vgrad(c, -8, 10, '#9B6331', CAPI.snout));
+  fs(c, vgrad(c, -8, 10, T('#9B6331'), T(CAPI.snout)));
   c.fillStyle = '#2B1709';
   c.beginPath(); c.ellipse(23.5, -3, 1.8, 1.3, .3, 0, Math.PI * 2); c.fill();
   // boquinha
@@ -125,7 +159,7 @@ function drawCapivara(c, P){
   else { c.moveTo(18, 5); c.quadraticCurveTo(21, 8 + (P.happy || P.state === 'win' ? 2 : 0), 24, 5); }
   c.stroke();
   // olho e bochecha
-  eye(c, 7, -3, 4.6, P, CAPI.out);
+  eye(c, 7, -3, 4.6, P, T(CAPI.out));
   c.fillStyle = 'rgba(244,114,182,.45)';
   c.beginPath(); c.ellipse(8, 6, 3.6, 2.4, 0, 0, Math.PI * 2); c.fill();
   // tangerina na cabeça (balança atrasadinha) — sai quando ela usa chapéu
@@ -153,10 +187,10 @@ function tatuShellBall(c, P){
   c.translate(0, -19);
   c.rotate(P.t * 13);
   c.beginPath(); c.arc(0, 0, 18, 0, Math.PI * 2);
-  const g = c.createRadialGradient(-6, -7, 2, 0, 0, 19); g.addColorStop(0, '#DDBB92'); g.addColorStop(1, TATU.shell2);
+  const g = c.createRadialGradient(-6, -7, 2, 0, 0, 19); g.addColorStop(0, T('#DDBB92')); g.addColorStop(1, T(TATU.shell2));
   fs(c, g);
   c.save(); c.clip();
-  c.strokeStyle = TATU.band; c.lineWidth = 2;
+  c.strokeStyle = T(TATU.band); c.lineWidth = 2;
   for(let k = -3; k <= 3; k++){
     c.beginPath(); c.ellipse(k * 6, 0, 3.5, 19, 0, 0, Math.PI * 2); c.stroke();
   }
@@ -164,12 +198,12 @@ function tatuShellBall(c, P){
   c.beginPath(); c.ellipse(-6, -8, 7, 4, -.6, 0, Math.PI * 2); c.fill();
   c.restore();
   // pontinha das orelhas e do rabo aparecendo
-  c.beginPath(); c.ellipse(15, -10, 3, 6, .9, 0, Math.PI * 2); fs(c, TATU.skin2);
+  c.beginPath(); c.ellipse(15, -10, 3, 6, .9, 0, Math.PI * 2); fs(c, T(TATU.skin2));
   c.restore();
 }
 
 function drawTatu(c, P){
-  c.strokeStyle = TATU.out; c.lineWidth = 2.1; c.lineJoin = 'round'; c.lineCap = 'round';
+  c.strokeStyle = T(TATU.out); c.lineWidth = 2.1; c.lineJoin = 'round'; c.lineCap = 'round';
   if(P.state === 'jump' || P.state === 'fall'){ tatuShellBall(c, P); return; }
   const run = P.state === 'run';
   const ph = P.t * 20, s1 = Math.sin(ph);
@@ -177,10 +211,10 @@ function drawTatu(c, P){
   const legs = (near)=>{
     [[-13, near ? s1 : -s1], [11, near ? -s1 : s1]].forEach(([lx, s])=>{
       c.save(); c.translate(lx + (near ? 3 : -2), -9 + bob); c.rotate(run ? s * .7 : 0);
-      rr(c, -3.5, -1, 7, 10, 3.5); fs(c, near ? TATU.skin2 : '#A8845C');
+      rr(c, -3.5, -1, 7, 10, 3.5); fs(c, near ? T(TATU.skin2) : T('#A8845C'));
       c.strokeStyle = '#2B1D10'; c.lineWidth = 1.2;
       c.beginPath(); c.moveTo(1, 9); c.lineTo(4, 10.5); c.moveTo(-1, 9.4); c.lineTo(1.5, 11); c.stroke();
-      c.strokeStyle = TATU.out; c.lineWidth = 2.1;
+      c.strokeStyle = T(TATU.out); c.lineWidth = 2.1;
       c.restore();
     });
   };
@@ -189,20 +223,20 @@ function drawTatu(c, P){
   accBack(c, P, 'behind', 16, -24, .85, -2, -37);
   // rabo com aneizinhos
   c.save(); c.translate(-22, -15); c.rotate(run ? Math.sin(ph * .5) * .15 + .25 : .25);
-  c.beginPath(); c.moveTo(0, -4); c.lineTo(-16, 0); c.lineTo(0, 4); c.closePath(); fs(c, TATU.shell2);
-  c.strokeStyle = TATU.band; c.lineWidth = 1.4;
+  c.beginPath(); c.moveTo(0, -4); c.lineTo(-16, 0); c.lineTo(0, 4); c.closePath(); fs(c, T(TATU.shell2));
+  c.strokeStyle = T(TATU.band); c.lineWidth = 1.4;
   [-5, -10].forEach(tx => { c.beginPath(); c.moveTo(tx, -3 + Math.abs(tx) * .2); c.lineTo(tx, 3 - Math.abs(tx) * .2); c.stroke(); });
   c.restore();
-  c.strokeStyle = TATU.out; c.lineWidth = 2.1;
+  c.strokeStyle = T(TATU.out); c.lineWidth = 2.1;
   // casco
   c.beginPath();
   c.moveTo(-25, -10);
   c.bezierCurveTo(-26, -40, 20, -42, 24, -10);
   c.closePath();
-  fs(c, vgrad(c, -40, -10, TATU.shell1, TATU.shell2));
+  fs(c, vgrad(c, -40, -10, T(TATU.shell1), T(TATU.shell2)));
   c.save(); c.clip();
   // faixas do meio (o que dá o nome de tatu-bola)
-  c.strokeStyle = TATU.band; c.lineWidth = 2;
+  c.strokeStyle = T(TATU.band); c.lineWidth = 2;
   [-9, -3, 3, 9].forEach(bx=>{ c.beginPath(); c.moveTo(bx - 1, -40); c.quadraticCurveTo(bx + 1.5, -24, bx, -8); c.stroke(); });
   // escaminhas
   c.fillStyle = 'rgba(80,55,30,.35)';
@@ -214,20 +248,20 @@ function drawTatu(c, P){
   c.beginPath(); c.ellipse(-8, -32, 10, 4, -.25, 0, Math.PI * 2); c.fill();
   c.restore();
   // barra do casco
-  c.beginPath(); c.moveTo(-25, -10); c.lineTo(24, -10); c.lineTo(23, -7); c.lineTo(-24, -7); c.closePath(); fs(c, TATU.band);
+  c.beginPath(); c.moveTo(-25, -10); c.lineTo(24, -10); c.lineTo(23, -7); c.lineTo(-24, -7); c.closePath(); fs(c, T(TATU.band));
   accBack(c, P, 'front', 17, -18, .85, -2, -37);
   // cabeça
   c.save(); c.translate(19, -20); c.rotate(run ? Math.sin(ph + 1) * .05 : 0);
-  c.beginPath(); c.ellipse(1, -6, 3.6, 8, -.35, 0, Math.PI * 2); fs(c, TATU.skin2); // orelha
-  dot(c, 1.4, -6.2, 1.6, '#E9A08A');
+  c.beginPath(); c.ellipse(1, -6, 3.6, 8, -.35, 0, Math.PI * 2); fs(c, T(TATU.skin2)); // orelha
+  dot(c, 1.4, -6.2, 1.6, T('#E9A08A'));
   c.beginPath();
   c.moveTo(-3, -6);
   c.bezierCurveTo(6, -9, 17, -4, 20, 2);
   c.bezierCurveTo(18, 6, 6, 8, -3, 7);
   c.closePath();
-  fs(c, vgrad(c, -9, 8, TATU.skin, TATU.skin2));
+  fs(c, vgrad(c, -9, 8, T(TATU.skin), T(TATU.skin2)));
   dot(c, 19.5, 2, 2, '#2B1D10');
-  eye(c, 7, -1.5, 3.4, P, TATU.out);
+  eye(c, 7, -1.5, 3.4, P, T(TATU.out));
   c.fillStyle = 'rgba(244,114,182,.4)';
   c.beginPath(); c.ellipse(9, 4, 2.6, 1.8, 0, 0, Math.PI * 2); c.fill();
   accEyes(c, P, 7, -1.5, .75, false);
@@ -244,7 +278,7 @@ function drawRobo(c, P){
   const run = P.state === 'run', air = P.state === 'jump' || P.state === 'fall';
   const ph = P.t * 16, s1 = Math.sin(ph);
   const bob = run ? -Math.abs(s1) * 2.2 : Math.sin(P.t * 3) * 1;
-  c.strokeStyle = ROBO.out; c.lineWidth = 2.1; c.lineJoin = 'round'; c.lineCap = 'round';
+  c.strokeStyle = T(ROBO.out); c.lineWidth = 2.1; c.lineJoin = 'round'; c.lineCap = 'round';
 
   // fogo do jato (pulo duplo)
   if(P.jet){
@@ -260,8 +294,8 @@ function drawRobo(c, P){
   const la = run ? s1 * .6 : air ? .35 : 0;
   [[-6, la, false], [6, -la, true]].forEach(([lx, ang, near])=>{
     c.save(); c.translate(lx, -14 + bob); c.rotate(ang);
-    rr(c, -3.5, 0, 7, 11, 3); fs(c, near ? '#64748B' : '#475569');
-    rr(c, -5, 9, 11, 6, 3); fs(c, near ? '#334155' : '#1E293B');
+    rr(c, -3.5, 0, 7, 11, 3); fs(c, near ? T('#64748B') : T('#475569'));
+    rr(c, -5, 9, 11, 6, 3); fs(c, near ? T('#334155') : '#1E293B');
     c.restore();
   });
   c.save(); c.translate(0, bob);
@@ -270,14 +304,14 @@ function drawRobo(c, P){
   const aa = run ? -s1 * .8 : air ? -2.2 : P.state === 'win' ? -2.6 : .1;
   const arm = (x, ang, near)=>{
     c.save(); c.translate(x, -30); c.rotate(ang);
-    rr(c, -3, 0, 6, 13, 3); fs(c, near ? '#94A3B8' : '#64748B');
-    c.beginPath(); c.arc(0, 14, 4, 0, Math.PI * 2); fs(c, near ? '#CBD5E1' : '#94A3B8');
+    rr(c, -3, 0, 6, 13, 3); fs(c, near ? T('#94A3B8') : T('#64748B'));
+    c.beginPath(); c.arc(0, 14, 4, 0, Math.PI * 2); fs(c, near ? T('#CBD5E1') : T('#94A3B8'));
     c.restore();
   };
   arm(-10, -aa, false);
   // corpo
   rr(c, -14, -36, 28, 24, 8);
-  fs(c, vgrad(c, -36, -12, '#E2E8F0', ROBO.metal2));
+  fs(c, vgrad(c, -36, -12, T('#E2E8F0'), T(ROBO.metal2)));
   rr(c, -8, -31, 16, 12, 4); fs(c, '#1E293B');
   // coração-luz no peito
   c.save(); c.shadowColor = '#F87171'; c.shadowBlur = 6;
@@ -293,7 +327,7 @@ function drawRobo(c, P){
   c.save(); c.shadowColor = '#EF4444'; c.shadowBlur = (P.t % 1.2) < .6 ? 10 : 2;
   c.beginPath(); c.arc(0, -34, 4, 0, Math.PI * 2); fs(c, '#EF4444'); c.restore();
   rr(c, -17, -25, 34, 26, 10);
-  fs(c, vgrad(c, -25, 1, ROBO.metal1, '#A3B1C4'));
+  fs(c, vgrad(c, -25, 1, T(ROBO.metal1), T('#A3B1C4')));
   // parafusos das orelhas
   c.beginPath(); c.arc(-17, -12, 4, 0, Math.PI * 2); fs(c, ROBO.accent);
   // visor
@@ -335,7 +369,10 @@ function drawChar(c, id, x, y, P, scale, squash){
   }
   P.eq = P.eq || equipOf(id);
   P.cid = id;
+  const prevTint = TINT;
+  TINT = COLOR_VARIANTS[P.eq.color] || null; // cor comprada na loja
   (CHAR_DRAW[id] || drawCapivara)(c, P);
+  TINT = prevTint;
   c.restore();
 }
 
@@ -465,13 +502,6 @@ const ACC_BACK = {
     c.strokeStyle = '#fff'; c.lineWidth = 1.6;
     [-4, 2].forEach(x => { c.beginPath(); c.moveTo(x, -3.5); c.lineTo(x + 1, 3.5); c.stroke(); });
   }},
-  mochila:{layer:'front', atBack:true, draw(c){
-    c.strokeStyle = '#14532D'; c.lineWidth = 2;
-    rr(c, -9, -6, 15, 17, 5); fs(c, vgrad(c, -6, 11, '#4ADE80', '#16A34A'));
-    rr(c, -7, 3, 11, 6, 2.5); fs(c, '#22C55E');
-    dot(c, -1.5, 6, 1.2, '#FACC15');
-    c.beginPath(); c.moveTo(5, -4); c.quadraticCurveTo(12, 0, 6, 9); c.stroke();
-  }},
   // capa: no robô (fininho) fica atrás; nos bichos fica por cima das costas
   capa:{layer:P => P.cid === 'robo' ? 'behind' : 'front', draw(c, P){
     const fl = P.state === 'run' ? Math.sin(P.t * 14) * 4 : P.state === 'jump' || P.state === 'fall' ? -6 : Math.sin(P.t * 2) * 1.5;
@@ -516,11 +546,15 @@ function accEyes(c, P, x, y, s, front){
 }
 function accBack(c, P, layer, nx, ny, s, bx, by){
   const a = P.eq && ACC_BACK[P.eq.back];
-  if(!a || (typeof a.layer === 'function' ? a.layer(P) : a.layer) !== layer) return;
+  if(!a) return;
+  const l = typeof a.layer === 'function' ? a.layer(P) : a.layer;
+  if(l !== layer && l !== 'both') return; // 'both' = desenha uma parte atrás e outra na frente
   c.save();
   if(a.atBack) c.translate(bx, by); else c.translate(nx, ny);
+  const off = a.at && a.at[P.cid]; // ajuste fino do encaixe em cada personagem
+  if(off) c.translate(off[0], off[1]);
   c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
-  a.draw(c, P);
+  a.draw(c, P, layer);
   c.restore();
 }
 
@@ -562,7 +596,14 @@ Object.assign(ACC_HEAD, {
     c.strokeStyle = '#CBD5E1'; c.lineWidth = 1.2;
     [-4, 0, 4].forEach(x => { c.beginPath(); c.moveTo(x, -9); c.lineTo(x, -1); c.stroke(); });
   },
-  fones(c){
+  fones(c, P){
+    if(P && P.cid && P.cid !== 'robo'){ // de lado: um fone na orelha e o arco por cima da cabeça
+      c.strokeStyle = '#1F2937'; c.lineWidth = 3.5;
+      c.beginPath(); c.moveTo(-8, 0); c.bezierCurveTo(-8, -14, 10, -16, 13, 1); c.stroke();
+      c.lineWidth = 2; rr(c, -14, -3, 11, 14, 5); c.fillStyle = '#EF4444'; c.fill(); c.stroke();
+      dot(c, -8.5, 4, 2.4, '#FCA5A5');
+      return;
+    }
     c.strokeStyle = '#1F2937'; c.lineWidth = 3.5;
     c.beginPath(); c.arc(0, 4, 13, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
     c.lineWidth = 2;
@@ -646,29 +687,6 @@ Object.assign(ACC_EYES, {
 });
 
 Object.assign(ACC_BACK, {
-  asasAnjo:{layer:'behind', atBack:true, draw(c, P){
-    const flap = (P.state === 'jump' || P.state === 'fall') ? Math.sin(P.t * 18) * .35 : Math.sin(P.t * 3) * .08;
-    if(P.cid === 'robo') c.translate(14, -2);
-    c.strokeStyle = '#CBD5E1'; c.lineWidth = 1.5;
-    [[-1, .9], [1, 1]].forEach(([side, sc])=>{
-      c.save(); c.scale(sc, sc); c.rotate(-.5 - flap * side);
-      for(let k = 0; k < 4; k++){
-        c.beginPath(); c.ellipse(-6 - k * 5, -10 + k * 2.5, 8, 4.2, -.5 + k * .12, 0, Math.PI * 2);
-        c.fillStyle = k % 2 ? '#F1F5F9' : '#FFFFFF'; c.fill(); c.stroke();
-      }
-      c.restore();
-    });
-  }},
-  asasBorboleta:{layer:'behind', atBack:true, draw(c, P){
-    const flap = Math.abs(Math.sin(P.t * ((P.state === 'jump' || P.state === 'fall') ? 16 : 4))) * .35;
-    if(P.cid === 'robo') c.translate(14, -2);
-    c.strokeStyle = '#6B21A8'; c.lineWidth = 1.6;
-    c.save(); c.scale(1 - flap, 1);
-    c.beginPath(); c.ellipse(-10, -12, 11, 8, -.6, 0, Math.PI * 2); fs(c, vgrad(c, -20, -4, '#F0ABFC', '#A855F7'));
-    c.beginPath(); c.ellipse(-9, 1, 7, 6, .5, 0, Math.PI * 2); fs(c, vgrad(c, -5, 7, '#FDE68A', '#F59E0B'));
-    dot(c, -12, -13, 2.6, '#fff'); dot(c, -9, 1, 1.8, '#fff');
-    c.restore();
-  }},
   jetpack:{layer:'front', atBack:true, draw(c, P){
     c.strokeStyle = '#334155'; c.lineWidth = 1.8;
     [-4, 4].forEach(x=>{
@@ -696,4 +714,194 @@ Object.assign(ACC_EFFECT, {
   fogo(c){ [['#EF4444', 12, 0], ['#F97316', 9, 2], ['#FACC15', 5, 4]].forEach(([col, r, dy])=>{
     c.fillStyle = col; c.beginPath(); c.moveTo(0, -r * 1.6 + dy); c.quadraticCurveTo(r, -r * .2 + dy, r * .7, r * .6 + dy);
     c.quadraticCurveTo(0, r * 1.2 + dy, -r * .7, r * .6 + dy); c.quadraticCurveTo(-r, -r * .2 + dy, 0, -r * 1.6 + dy); c.fill(); }); },
+});
+
+// ---------- mochila e asas (refeitas para encaixar nas costas de cada um) ----------
+// Nos bichos (de lado) a mochila fica deitada nas costas, com a alça descendo
+// pela barriga; as asas saem dos ombros, uma atrás e outra na frente do corpo.
+// No robô (de frente) a mochila e as asas ficam atrás dele.
+const WING_AT = {capivara:[3, 1], tatu:[1, 2], robo:[14, -3]};
+function wingFlap(P){
+  const air = P.state === 'jump' || P.state === 'fall';
+  return Math.abs(Math.sin((P.t || 0) * (air ? 16 : 3.5))) * (air ? .45 : .12);
+}
+function butterflyWing(c, dark){
+  c.strokeStyle = dark ? '#581C87' : '#6B21A8'; c.lineWidth = 1.6;
+  // asa de cima (grande)
+  c.beginPath(); c.moveTo(0, 0);
+  c.bezierCurveTo(-16, -6, -26, -26, -12, -31);
+  c.bezierCurveTo(0, -34, 5, -14, 0, 0);
+  fs(c, vgrad(c, -32, 0, dark ? '#C084FC' : '#F0ABFC', dark ? '#7E22CE' : '#A855F7'));
+  // asa de baixo (menor)
+  c.beginPath(); c.moveTo(0, 0);
+  c.bezierCurveTo(-14, 0, -20, 12, -11, 15);
+  c.bezierCurveTo(-3, 17, 2, 8, 0, 0);
+  fs(c, vgrad(c, 0, 16, dark ? '#FCD34D' : '#FDE68A', dark ? '#D97706' : '#F59E0B'));
+  // pintinhas
+  dot(c, -10, -22, 3.2, 'rgba(255,255,255,.85)'); dot(c, -5, -12, 1.8, 'rgba(255,255,255,.85)');
+  dot(c, -9, 8, 2, 'rgba(255,255,255,.8)');
+  c.strokeStyle = dark ? 'rgba(88,28,135,.5)' : 'rgba(107,33,168,.45)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-8, -14, -12, -28); c.moveTo(0, 0); c.quadraticCurveTo(-8, 4, -11, 13); c.stroke();
+}
+function angelWing(c, dark){
+  c.strokeStyle = dark ? '#94A3B8' : '#A8B4C6'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(2, 0);
+  c.bezierCurveTo(-2, -16, -18, -30, -34, -30);           // borda de cima
+  c.quadraticCurveTo(-30, -24, -33, -20);                  // pontas das penas
+  c.quadraticCurveTo(-26, -17, -28, -12);
+  c.quadraticCurveTo(-20, -11, -21, -6);
+  c.quadraticCurveTo(-13, -6, -12, -1);
+  c.quadraticCurveTo(-5, -2, 2, 0);
+  c.closePath();
+  fs(c, vgrad(c, -30, 0, dark ? '#E2E8F0' : '#FFFFFF', dark ? '#CBD5E1' : '#E2E8F0'));
+  c.strokeStyle = dark ? 'rgba(100,116,139,.45)' : 'rgba(148,163,184,.6)'; c.lineWidth = 1.1;
+  [[-14, -20, -6, -6], [-22, -24, -10, -10], [-28, -27, -18, -16]].forEach(([x1, y1, x2, y2])=>{ c.beginPath(); c.moveTo(x1, y1); c.quadraticCurveTo((x1 + x2) / 2 + 2, (y1 + y2) / 2 + 1, x2, y2); c.stroke(); });
+}
+function drawWings(c, P, layer, wing, tilt = 0){ // tilt: inclinação extra (asas de anjo apontam para trás)
+  const f = wingFlap(P);
+  if(P.cid === 'robo'){ // de frente: as duas asas abertas atrás dele
+    if(layer !== 'behind') return;
+    [1, -1].forEach(side=>{ c.save(); c.scale(side * (1 - f), 1); c.rotate(tilt ? .05 : -.8); wing(c, false); c.restore(); });
+    return;
+  }
+  c.save();
+  if(layer === 'behind'){ c.translate(6, -2); c.scale(.85 * (1 - f * .6), .9); c.rotate(-.45 + tilt); wing(c, true); }
+  else { c.globalAlpha = .93; c.scale(1 - f, 1); c.rotate(-.75 + tilt); wing(c, false); }
+  c.restore();
+}
+Object.assign(ACC_BACK, {
+  mochila:{layer:'both', atBack:true, at:{capivara:[5, 4], tatu:[1, 5], robo:[0, 0]}, draw(c, P, layer){
+    c.strokeStyle = '#14532D'; c.lineWidth = 2;
+    if(P.cid === 'robo'){
+      if(layer === 'behind'){ rr(c, -9, -12, 15, 22, 5); fs(c, vgrad(c, -12, 10, '#4ADE80', '#16A34A')); rr(c, -9, -12, 15, 8, 4); fs(c, '#22C55E'); }
+      else { c.lineWidth = 3; c.strokeStyle = '#15803D'; c.beginPath(); c.moveTo(3, -9); c.quadraticCurveTo(5, 2, 3, 12); c.stroke(); }
+      return;
+    }
+    if(layer !== 'front') return;
+    const strap = P.cid === 'tatu' ? 17 : 21;
+    // alça descendo pelo lado do corpo até a barriga
+    c.strokeStyle = '#15803D'; c.lineWidth = 3.2;
+    c.beginPath(); c.moveTo(6, -2); c.quadraticCurveTo(9, strap * .5, 6, strap); c.stroke();
+    c.strokeStyle = '#14532D'; c.lineWidth = 2;
+    // a mochila deitada nas costas
+    rr(c, -11, -13, 22, 15, 6); fs(c, vgrad(c, -13, 2, '#4ADE80', '#16A34A'));
+    c.beginPath(); c.moveTo(-11, -6); c.quadraticCurveTo(0, -11, 11, -6); c.lineTo(11, -8); c.quadraticCurveTo(11, -13, 5, -13);
+    c.lineTo(-5, -13); c.quadraticCurveTo(-11, -13, -11, -8); c.closePath(); fs(c, '#22C55E');
+    rr(c, -6, -5, 11, 6, 2.5); fs(c, '#15803D');
+    dot(c, 0, -7, 1.6, '#FACC15');
+  }},
+  asasBorboleta:{layer:'both', atBack:true, at:WING_AT, draw(c, P, layer){ drawWings(c, P, layer, butterflyWing); }},
+  asasAnjo:{layer:'both', atBack:true, at:WING_AT, draw(c, P, layer){ drawWings(c, P, layer, angelWing, .95); }},
+});
+
+// ============================================================
+// Terceira leva da loja
+// ============================================================
+Object.assign(ACC_HEAD, {
+  laco(c){
+    c.save(); c.translate(-4, -4); c.rotate(-.25);
+    c.strokeStyle = '#9D174D'; c.lineWidth = 1.8;
+    [-1, 1].forEach(side=>{
+      c.beginPath(); c.moveTo(0, 0); c.bezierCurveTo(side * 6, -9, side * 15, -6, side * 13, 1); c.bezierCurveTo(side * 15, 8, side * 6, 9, 0, 0); c.closePath();
+      fs(c, vgrad(c, -8, 8, '#F9A8D4', '#EC4899'));
+    });
+    c.beginPath(); c.arc(0, 0, 3.4, 0, Math.PI * 2); fs(c, '#DB2777');
+    c.restore();
+  },
+  tiara(c){
+    c.save(); c.shadowColor = '#F0ABFC'; c.shadowBlur = 6;
+    c.strokeStyle = '#A1A1AA'; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(-11, 0); c.quadraticCurveTo(0, -5, 11, 0); c.stroke();
+    c.strokeStyle = '#71717A'; c.lineWidth = 1.4;
+    c.beginPath(); c.moveTo(-9, -1); c.lineTo(-6, -7); c.lineTo(-3, -3); c.lineTo(0, -12); c.lineTo(3, -3); c.lineTo(6, -7); c.lineTo(9, -1);
+    c.fillStyle = vgrad(c, -12, 0, '#F4F4F5', '#D4D4D8'); c.fill(); c.stroke();
+    c.restore();
+    dot(c, 0, -7, 2.2, '#EC4899'); dot(c, -6, -4, 1.4, '#38BDF8'); dot(c, 6, -4, 1.4, '#38BDF8');
+  },
+  viking(c){
+    c.strokeStyle = OUT; c.lineWidth = 2;
+    [-1, 1].forEach(side=>{ // chifres
+      c.beginPath(); c.moveTo(side * 9, -6); c.quadraticCurveTo(side * 20, -8, side * 19, -22); c.quadraticCurveTo(side * 15, -12, side * 7, -11); c.closePath();
+      fs(c, vgrad(c, -22, -6, '#FEF3C7', '#D6B37A'));
+    });
+    c.beginPath(); c.moveTo(-12, 0); c.bezierCurveTo(-13, -19, 13, -19, 12, 0); c.closePath();
+    fs(c, vgrad(c, -16, 0, '#CBD5E1', '#64748B'));
+    rr(c, -13, -3, 26, 5, 2); fs(c, '#B45309');
+    [-7, 0, 7].forEach(x => dot(c, x, -.5, 1.2, '#FDE68A'));
+  },
+  bruxa(c){
+    c.save(); c.rotate(-.15);
+    c.strokeStyle = OUT; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(0, -1, 19, 4, 0, 0, Math.PI * 2); fs(c, '#3B0764');
+    c.beginPath(); c.moveTo(-10, -2); c.quadraticCurveTo(-6, -16, 2, -24); c.quadraticCurveTo(10, -30, 14, -24); c.quadraticCurveTo(6, -20, 10, -2); c.closePath();
+    fs(c, vgrad(c, -28, 0, '#7E22CE', '#4C1D95'));
+    c.fillStyle = '#22C55E'; c.fillRect(-10, -6, 20, 3.5);
+    rr(c, -2.5, -7, 5, 5, 1); c.strokeStyle = '#FACC15'; c.lineWidth = 1.3; c.stroke();
+    c.restore();
+  },
+  folhas(c){ // coroa de flores
+    c.strokeStyle = '#166534'; c.lineWidth = 2.2;
+    c.beginPath(); c.moveTo(-12, 0); c.quadraticCurveTo(0, -6, 12, 0); c.stroke();
+    [[-10, -1, '#F472B6'], [-4, -4, '#FDE047'], [3, -4, '#60A5FA'], [10, -1, '#F472B6']].forEach(([x, y, col])=>{
+      c.fillStyle = '#4ADE80'; c.beginPath(); c.ellipse(x + 3, y + 1, 3, 1.6, .5, 0, Math.PI * 2); c.fill();
+      for(let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2; dot(c, x + Math.cos(a) * 2.4, y - 2 + Math.sin(a) * 2.4, 2, col); }
+      dot(c, x, y - 2, 1.3, '#FFFFFF');
+    });
+  },
+});
+
+Object.assign(ACC_EYES, {
+  estrela(c, front){
+    const st = x => { starPathP(c, x, 0, 7, 3.6); c.fillStyle = 'rgba(250,204,21,.85)'; c.fill(); c.strokeStyle = '#B45309'; c.lineWidth = 1.6; c.stroke();
+      dot(c, x - 1.5, -1.5, 1.2, 'rgba(255,255,255,.8)'); };
+    if(front){ st(-6.5); st(6.5); }
+    else { st(0); c.strokeStyle = '#B45309'; c.lineWidth = 2; c.beginPath(); c.moveTo(-6, -1); c.lineTo(-13, -3); c.stroke(); }
+  },
+  nerd(c, front){
+    c.strokeStyle = '#111827'; c.lineWidth = 2.8;
+    const lens = x => { rr(c, x - 5.5, -4.5, 11, 9, 2.5); c.fillStyle = 'rgba(219,234,254,.3)'; c.fill(); c.stroke(); };
+    if(front){ lens(-6.5); lens(6.5); c.beginPath(); c.moveTo(-1, -1); c.lineTo(1, -1); c.stroke(); c.fillStyle = '#fff'; c.fillRect(-1.6, -2.2, 3.2, 2.4); }
+    else { lens(0); c.beginPath(); c.moveTo(-5.5, -1); c.lineTo(-13, -3); c.stroke(); }
+  },
+});
+
+function dragonWing(c, dark){
+  c.strokeStyle = dark ? '#14532D' : '#166534'; c.lineWidth = 1.6;
+  c.beginPath(); c.moveTo(0, 0);
+  c.lineTo(-6, -22); c.lineTo(-30, -28); // braço da asa
+  c.quadraticCurveTo(-26, -20, -28, -14); c.quadraticCurveTo(-21, -14, -20, -8);
+  c.quadraticCurveTo(-13, -8, -11, -2); c.quadraticCurveTo(-5, -3, 0, 0); c.closePath();
+  fs(c, vgrad(c, -28, 0, dark ? '#4ADE80' : '#86EFAC', dark ? '#15803D' : '#22C55E'));
+  c.strokeStyle = dark ? 'rgba(20,83,45,.6)' : 'rgba(22,101,52,.55)'; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(-6, -22); c.lineTo(-20, -8); c.moveTo(-6, -22); c.lineTo(-11, -2); c.moveTo(-6, -22); c.lineTo(-28, -14); c.stroke();
+  dot(c, -30, -28, 1.8, dark ? '#14532D' : '#166534');
+}
+
+Object.assign(ACC_BACK, {
+  asasDragao:{layer:'both', atBack:true, at:WING_AT, draw(c, P, layer){ drawWings(c, P, layer, dragonWing, .8); }},
+  violao:{layer:'both', atBack:true, at:{capivara:[4, 2], tatu:[1, 3], robo:[0, 0]}, draw(c, P, layer){
+    const body = ()=>{
+      c.strokeStyle = '#78350F'; c.lineWidth = 1.8;
+      rr(c, 6, -4, 20, 4, 1.5); fs(c, '#92400E');   // braço
+      rr(c, 24, -5.5, 6, 7, 1.5); fs(c, '#78350F'); // cabeça das cravelhas
+      c.beginPath(); c.arc(-8, -2, 8, 0, Math.PI * 2); c.arc(3, -2, 6.5, 0, Math.PI * 2); // caixa em formato de 8
+      c.fillStyle = vgrad(c, -10, 6, '#FBBF24', '#D97706'); c.fill();
+      c.beginPath(); c.arc(-8, -2, 8, 0, Math.PI * 2); c.stroke(); c.beginPath(); c.arc(3, -2, 6.5, -1.9, 1.9); c.stroke();
+      dot(c, -2, -2, 2.6, '#451A03');
+      c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = .7; c.beginPath(); c.moveTo(-8, -3); c.lineTo(28, -3); c.moveTo(-8, -1); c.lineTo(28, -1); c.stroke();
+    };
+    if(P.cid === 'robo'){ if(layer !== 'behind') return; c.save(); c.translate(2, 0); c.rotate(-1.1); body(); c.restore(); return; }
+    if(layer !== 'front') return;
+    c.save(); c.rotate(-.35); body(); c.restore();
+    c.strokeStyle = '#7C2D12'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(8, -2); c.quadraticCurveTo(11, 9, 8, 18); c.stroke();
+  }},
+});
+
+Object.assign(ACC_EFFECT, {
+  flores(c){ [[-9, 4, '#F472B6'], [6, -6, '#FDE047'], [10, 9, '#60A5FA']].forEach(([x, y, col])=>{
+    for(let k = 0; k < 5; k++){ const a = k / 5 * Math.PI * 2; dot(c, x + Math.cos(a) * 3.6, y + Math.sin(a) * 3.6, 3, col); }
+    dot(c, x, y, 2.2, '#fff'); }); },
+  neve(c){ c.strokeStyle = '#38BDF8'; c.lineWidth = 1.8; c.lineCap = 'round';
+    [[-8, 4, 7], [7, -6, 8], [10, 10, 4.5]].forEach(([x, y, r])=>{ for(let k = 0; k < 3; k++){ const a = k / 3 * Math.PI;
+      c.beginPath(); c.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); c.stroke(); } }); },
 });
