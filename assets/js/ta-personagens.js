@@ -46,7 +46,8 @@ function eye(c, x, y, r, P, outline){
   c.beginPath(); c.ellipse(x, y, r * .85, r, 0, 0, Math.PI * 2); c.fill(); c.stroke();
   const look = P.state === 'jump' ? -r * .25 : P.state === 'fall' ? r * .2 : 0;
   dot(c, x + r * .25, y + look, r * .55, '#1B1209');
-  dot(c, x + r * .45, y + look - r * .3, r * .2, '#fff');
+  dot(c, x + r * .45, y + look - r * .3, r * .22, '#fff');
+  dot(c, x + r * .05, y + look + r * .25, r * .1, '#fff');
 }
 
 // ---------------- CORES (loja) ----------------
@@ -89,11 +90,18 @@ const CAPI = {out:'#4A2A12', fur1:'#CF9861', fur2:'#9C6434', dark:'#83532A', bel
 function capiLeg(c, x, y, ang, near){
   c.save();
   c.translate(x, y); c.rotate(ang);
-  rr(c, -4, -2, 8, 15, 4);
+  // perninha gordinha com pezinho redondo
+  c.beginPath(); c.ellipse(0, 5, 5.2, 8, 0, 0, Math.PI * 2);
   fs(c, near ? T(CAPI.fur2) : T('#7A4B23'));
-  c.beginPath(); c.ellipse(1.5, 13, 5.2, 3, 0, 0, Math.PI * 2);
+  c.beginPath(); c.ellipse(1, 12.2, 5.6, 3.3, 0, 0, Math.PI * 2);
   fs(c, near ? T('#5E3817') : T('#4E2E12'));
   c.restore();
+}
+
+// desenha várias formas com um contorno só (como se fossem uma peça)
+function blob(c, path, fill, lw){
+  c.save(); c.lineWidth = (lw || c.lineWidth) * 2; path(); c.stroke(); c.restore();
+  path(); c.fillStyle = fill; c.fill();
 }
 
 function drawCapivara(c, P){
@@ -105,68 +113,82 @@ function drawCapivara(c, P){
 
   // pernas de trás (lado de lá)
   const a = run ? s1 * .75 : air ? (P.state === 'jump' ? -.7 : .5) : 0;
-  capiLeg(c, -16, -13 + bob, run ? -a : a, false);
-  capiLeg(c, 14, -13 + bob, run ? a : -a * .6, false);
+  capiLeg(c, -15, -14 + bob, run ? -a : a, false);
+  capiLeg(c, 13, -14 + bob, run ? a : -a * .6, false);
 
   accBack(c, P, 'behind', 13, -37 + bob, 1, -12, -40 + bob); // capa (atrás do corpo)
-  // corpo (barrigudo)
+  // corpo fofinho (formato de feijão)
   c.save(); c.translate(0, bob);
   c.beginPath();
-  c.moveTo(-26, -22);
-  c.bezierCurveTo(-28, -40, -8, -44, 8, -41);
-  c.bezierCurveTo(22, -39, 26, -30, 24, -20);
-  c.bezierCurveTo(22, -10, 10, -9, -4, -9);
-  c.bezierCurveTo(-18, -9, -25, -12, -26, -22);
+  c.moveTo(-27, -23);
+  c.bezierCurveTo(-29, -44, 4, -48, 17, -41);
+  c.bezierCurveTo(28, -35, 28, -15, 15, -10);
+  c.bezierCurveTo(4, -6, -13, -6, -21, -10);
+  c.bezierCurveTo(-26, -13, -27, -18, -27, -23);
   c.closePath();
-  fs(c, vgrad(c, -44, -9, T(CAPI.fur1), T(CAPI.fur2)));
-  // barriga clarinha
+  fs(c, vgrad(c, -46, -8, T(CAPI.fur1), T(CAPI.fur2)));
   c.save(); c.clip();
-  c.fillStyle = T(CAPI.belly); c.globalAlpha = .55;
-  c.beginPath(); c.ellipse(-2, -9, 22, 7, 0, 0, Math.PI * 2); c.fill();
-  c.globalAlpha = .9;
+  // barriga clarinha
+  c.fillStyle = T(CAPI.belly); c.globalAlpha = .6;
+  c.beginPath(); c.ellipse(-2, -8, 22, 9, 0, 0, Math.PI * 2); c.fill();
+  // brilho do pelo nas costas
+  c.globalAlpha = .35; c.fillStyle = '#FFFFFF';
+  c.beginPath(); c.ellipse(-8, -39, 13, 4, -.12, 0, Math.PI * 2); c.fill();
   // pelinhos
-  c.strokeStyle = T(CAPI.dark); c.lineWidth = 1.4;
-  [[-16, -34], [-8, -37], [0, -38], [-12, -28], [-2, -30]].forEach(([fx, fy])=>{
-    c.beginPath(); c.moveTo(fx, fy); c.quadraticCurveTo(fx + 3, fy - 2, fx + 6, fy); c.stroke();
+  c.globalAlpha = .7;
+  c.strokeStyle = T(CAPI.dark); c.lineWidth = 1.3;
+  [[-17, -30], [-9, -33], [-13, -24]].forEach(([fx, fy])=>{
+    c.beginPath(); c.moveTo(fx, fy); c.quadraticCurveTo(fx + 2.5, fy - 2, fx + 5, fy); c.stroke();
   });
   c.restore();
   c.restore();
 
   accBack(c, P, 'front', 13, -37 + bob, 1, -12, -40 + bob);  // cachecol / mochila
   // pernas da frente (lado de cá)
-  capiLeg(c, -11, -12 + bob, run ? a : a * .8, true);
-  capiLeg(c, 18, -12 + bob, run ? -a : -a * .5, true);
+  capiLeg(c, -10, -13 + bob, run ? a : a * .8, true);
+  capiLeg(c, 17, -13 + bob, run ? -a : -a * .5, true);
 
-  // cabeça (bem "quadradona", como a capivara de verdade)
+  // cabeça grandona e redondinha
   const hb = run ? Math.sin(ph + .8) * 1.2 : 0;
   c.save();
   c.translate(19, -36 + bob + hb);
   c.rotate(P.state === 'jump' ? -.12 : P.state === 'fall' ? .1 : 0);
-  // orelha
-  c.beginPath(); c.ellipse(-4, -13, 4.5, 5.5, -.4, 0, Math.PI * 2); fs(c, T(CAPI.fur2));
-  dot(c, -3.6, -12.5, 2.2, T('#D9967A'));
-  // cabeça
-  rr(c, -9, -14, 30, 25, 11);
-  fs(c, vgrad(c, -14, 11, T(CAPI.fur1), T('#A86D3A')));
-  // focinho grandão
-  rr(c, 12, -8, 16, 18, 8);
-  fs(c, vgrad(c, -8, 10, T('#9B6331'), T(CAPI.snout)));
+  // orelhinhas redondas
+  [[-8, -14, -.5, true], [1, -16, .1, false]].forEach(([ex, ey, ea, far])=>{
+    c.beginPath(); c.ellipse(ex, ey, 4.6, 5, ea, 0, Math.PI * 2); fs(c, far ? T(CAPI.dark) : T(CAPI.fur2));
+    dot(c, ex + .4, ey + .6, 2.3, T('#E8A39A'));
+  });
+  // cabeça + focinho com um contorno só
+  blob(c, ()=>{
+    c.beginPath(); c.arc(4, -2, 14.5, 0, Math.PI * 2);
+    c.moveTo(29.5, 2.5); c.ellipse(19, 2.5, 10.5, 9.5, 0, 0, Math.PI * 2);
+  }, vgrad(c, -17, 12, T(CAPI.fur1), T('#A86D3A')));
+  // focinho um pouco mais escuro
+  c.save(); c.globalAlpha = .55;
+  c.beginPath(); c.ellipse(20.5, 3.5, 8.6, 7.6, 0, 0, Math.PI * 2);
+  c.fillStyle = vgrad(c, -4, 11, T('#B7814A'), T(CAPI.snout)); c.fill();
+  c.restore();
+  // brilho na testa
+  c.fillStyle = 'rgba(255,255,255,.3)';
+  c.beginPath(); c.ellipse(-1, -11, 7, 3.2, -.3, 0, Math.PI * 2); c.fill();
+  // narizinho
   c.fillStyle = '#2B1709';
-  c.beginPath(); c.ellipse(23.5, -3, 1.8, 1.3, .3, 0, Math.PI * 2); c.fill();
-  // boquinha
+  c.beginPath(); c.ellipse(26.5, -.5, 2.8, 2.1, .2, 0, Math.PI * 2); c.fill();
+  dot(c, 25.6, -1.3, .8, 'rgba(255,255,255,.7)');
+  // boquinha sorrindo
   c.beginPath();
-  if(P.state === 'hurt'){ c.moveTo(18, 6); c.quadraticCurveTo(21, 3, 24, 6); }
-  else { c.moveTo(18, 5); c.quadraticCurveTo(21, 8 + (P.happy || P.state === 'win' ? 2 : 0), 24, 5); }
+  if(P.state === 'hurt'){ c.moveTo(20, 7.5); c.quadraticCurveTo(22.5, 5, 25, 7.5); }
+  else { const h = P.happy || P.state === 'win' ? 2.4 : 1.2; c.moveTo(19.5, 6); c.quadraticCurveTo(22.5, 6 + h * 2, 25.5, 6); }
   c.stroke();
-  // olho e bochecha
-  eye(c, 7, -3, 4.6, P, T(CAPI.out));
-  c.fillStyle = 'rgba(244,114,182,.45)';
-  c.beginPath(); c.ellipse(8, 6, 3.6, 2.4, 0, 0, Math.PI * 2); c.fill();
+  // olhão e bochecha
+  eye(c, 8, -3, 5.6, P, T(CAPI.out));
+  c.fillStyle = 'rgba(244,114,182,.5)';
+  c.beginPath(); c.ellipse(11.5, 6.5, 4.2, 2.6, 0, 0, Math.PI * 2); c.fill();
   // tangerina na cabeça (balança atrasadinha) — sai quando ela usa chapéu
   const lag = run ? Math.sin(ph - 1) * 1.6 : air ? (P.state === 'jump' ? 2 : -2) : 0;
   if(!P.eq.head){
   c.save();
-  c.translate(3, -18 + lag);
+  c.translate(3, -19 + lag);
   c.beginPath(); c.arc(0, 0, 7, 0, Math.PI * 2);
   const og = c.createRadialGradient(-2, -3, 1, 0, 0, 8); og.addColorStop(0, '#FDBA74'); og.addColorStop(1, '#EA580C');
   fs(c, og);
@@ -174,8 +196,8 @@ function drawCapivara(c, P){
   c.beginPath(); c.ellipse(4, -7, 4, 2, -.5, 0, Math.PI * 2); fs(c, '#22C55E');
   c.restore();
   }
-  accEyes(c, P, 7, -3, 1, false);
-  accHead(c, P, 5, -13 + lag * .4, 1.05);
+  accEyes(c, P, 8, -3, 1.08, false);
+  accHead(c, P, 4, -15 + lag * .4, 1.08);
   c.restore();
 }
 
@@ -231,9 +253,9 @@ function drawTatu(c, P){
   // casco
   c.beginPath();
   c.moveTo(-25, -10);
-  c.bezierCurveTo(-26, -40, 20, -42, 24, -10);
+  c.bezierCurveTo(-28, -44, 22, -46, 24, -10);
   c.closePath();
-  fs(c, vgrad(c, -40, -10, T(TATU.shell1), T(TATU.shell2)));
+  fs(c, vgrad(c, -43, -10, T(TATU.shell1), T(TATU.shell2)));
   c.save(); c.clip();
   // faixas do meio (o que dá o nome de tatu-bola)
   c.strokeStyle = T(TATU.band); c.lineWidth = 2;
@@ -252,20 +274,28 @@ function drawTatu(c, P){
   accBack(c, P, 'front', 17, -18, .85, -2, -37);
   // cabeça
   c.save(); c.translate(19, -20); c.rotate(run ? Math.sin(ph + 1) * .05 : 0);
-  c.beginPath(); c.ellipse(1, -6, 3.6, 8, -.35, 0, Math.PI * 2); fs(c, T(TATU.skin2)); // orelha
-  dot(c, 1.4, -6.2, 1.6, T('#E9A08A'));
-  c.beginPath();
-  c.moveTo(-3, -6);
-  c.bezierCurveTo(6, -9, 17, -4, 20, 2);
-  c.bezierCurveTo(18, 6, 6, 8, -3, 7);
-  c.closePath();
-  fs(c, vgrad(c, -9, 8, T(TATU.skin), T(TATU.skin2)));
-  dot(c, 19.5, 2, 2, '#2B1D10');
-  eye(c, 7, -1.5, 3.4, P, T(TATU.out));
-  c.fillStyle = 'rgba(244,114,182,.4)';
-  c.beginPath(); c.ellipse(9, 4, 2.6, 1.8, 0, 0, Math.PI * 2); c.fill();
-  accEyes(c, P, 7, -1.5, .75, false);
-  accHead(c, P, 7, -7, .8);
+  // orelhas em pé (redondinhas na ponta)
+  [[-1, -9, -.45, true], [3, -10, -.1, false]].forEach(([ex, ey, ea, far])=>{
+    c.beginPath(); c.ellipse(ex, ey, 3.8, 7.5, ea, 0, Math.PI * 2); fs(c, far ? T('#A8845C') : T(TATU.skin2));
+    c.fillStyle = T('#E9A08A'); c.beginPath(); c.ellipse(ex + .3, ey, 1.7, 4.6, ea, 0, Math.PI * 2); c.fill();
+  });
+  // cabeça redonda + focinho, com um contorno só
+  blob(c, ()=>{
+    c.beginPath(); c.arc(5, 0, 9.5, 0, Math.PI * 2);
+    c.moveTo(22, 2.5); c.ellipse(14.5, 2.5, 7.5, 5.2, .08, 0, Math.PI * 2);
+  }, vgrad(c, -10, 9, T(TATU.skin), T(TATU.skin2)));
+  c.fillStyle = 'rgba(255,255,255,.35)';
+  c.beginPath(); c.ellipse(2, -6, 4.5, 2.2, -.3, 0, Math.PI * 2); c.fill();
+  // narizinho
+  c.beginPath(); c.ellipse(21.3, 2, 2.2, 1.9, 0, 0, Math.PI * 2); c.fillStyle = '#5B3A29'; c.fill();
+  dot(c, 20.7, 1.3, .7, 'rgba(255,255,255,.7)');
+  // sorrisinho
+  c.lineWidth = 1.6; c.beginPath(); c.moveTo(14, 5.5); c.quadraticCurveTo(16.5, 7.8 + (P.happy || P.state === 'win' ? 1.5 : 0), 19, 5.5); c.stroke(); c.lineWidth = 2.1;
+  eye(c, 7, -1, 4.6, P, T(TATU.out));
+  c.fillStyle = 'rgba(244,114,182,.5)';
+  c.beginPath(); c.ellipse(10, 5, 3.2, 2, 0, 0, Math.PI * 2); c.fill();
+  accEyes(c, P, 7, -1, .9, false);
+  accHead(c, P, 5, -8.5, .85);
   c.restore();
   c.restore();
   legs(true);
@@ -310,9 +340,9 @@ function drawRobo(c, P){
   };
   arm(-10, -aa, false);
   // corpo
-  rr(c, -14, -36, 28, 24, 8);
+  rr(c, -14, -36, 28, 24, 12);
   fs(c, vgrad(c, -36, -12, T('#E2E8F0'), T(ROBO.metal2)));
-  rr(c, -8, -31, 16, 12, 4); fs(c, '#1E293B');
+  rr(c, -8, -31, 16, 12, 6); fs(c, '#1E293B');
   // coração-luz no peito
   c.save(); c.shadowColor = '#F87171'; c.shadowBlur = 6;
   c.fillStyle = (P.t % 1) < .5 ? '#F87171' : '#FCA5A5';
@@ -326,12 +356,15 @@ function drawRobo(c, P){
   c.beginPath(); c.moveTo(0, -24); c.lineTo(0, -32); c.stroke();
   c.save(); c.shadowColor = '#EF4444'; c.shadowBlur = (P.t % 1.2) < .6 ? 10 : 2;
   c.beginPath(); c.arc(0, -34, 4, 0, Math.PI * 2); fs(c, '#EF4444'); c.restore();
-  rr(c, -17, -25, 34, 26, 10);
-  fs(c, vgrad(c, -25, 1, T(ROBO.metal1), T('#A3B1C4')));
+  rr(c, -18, -27, 36, 29, 14);
+  fs(c, vgrad(c, -27, 2, T(ROBO.metal1), T('#A3B1C4')));
   // parafusos das orelhas
   c.beginPath(); c.arc(-17, -12, 4, 0, Math.PI * 2); fs(c, ROBO.accent);
   // visor
-  rr(c, -11, -20, 26, 15, 6); fs(c, '#0F172A');
+  rr(c, -12, -21, 28, 17, 8); fs(c, '#0F172A');
+  // bochechas rosadas no visor
+  c.fillStyle = 'rgba(244,114,182,.55)';
+  c.beginPath(); c.ellipse(-7, -7.5, 3, 1.6, 0, 0, Math.PI * 2); c.ellipse(12.5, -7.5, 3, 1.6, 0, 0, Math.PI * 2); c.fill();
   c.save();
   c.shadowColor = ROBO.glow; c.shadowBlur = 8;
   c.strokeStyle = ROBO.glow; c.fillStyle = ROBO.glow; c.lineWidth = 2.4;
@@ -343,7 +376,9 @@ function drawRobo(c, P){
   } else if(blink){
     [-3, 8].forEach(ex=>{ c.fillRect(ex - 3, -13, 6, 1.6); });
   } else {
-    [-3, 8].forEach(ex=>{ rr(c, ex - 2.5, -16.5, 5, 7, 2.5); c.fill(); });
+    [-3, 8].forEach(ex=>{ rr(c, ex - 3, -18, 6, 9, 3); c.fill(); });
+    c.shadowBlur = 0; c.fillStyle = '#FFFFFF';
+    [-3, 8].forEach(ex=>{ c.beginPath(); c.arc(ex + 1, -16, 1.1, 0, Math.PI * 2); c.fill(); });
   }
   c.restore();
   c.fillStyle = 'rgba(255,255,255,.55)';
@@ -904,4 +939,120 @@ Object.assign(ACC_EFFECT, {
   neve(c){ c.strokeStyle = '#38BDF8'; c.lineWidth = 1.8; c.lineCap = 'round';
     [[-8, 4, 7], [7, -6, 8], [10, 10, 4.5]].forEach(([x, y, r])=>{ for(let k = 0; k < 3; k++){ const a = k / 3 * Math.PI;
       c.beginPath(); c.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); c.stroke(); } }); },
+});
+
+// ============================================================
+// Acessórios mais fofinhos: formas curvas, um contorno só e brilho
+// (substituem os desenhos antigos mais "geométricos")
+// ============================================================
+function gloss(c, x, y, rx, ry, rot, a){
+  c.save(); c.fillStyle = `rgba(255,255,255,${a || .55})`;
+  c.beginPath(); c.ellipse(x, y, rx, ry, rot || 0, 0, Math.PI * 2); c.fill(); c.restore();
+}
+Object.assign(ACC_HEAD, {
+  chef(c){
+    c.strokeStyle = OUT; c.lineWidth = 1.8;
+    // nuvem fofinha com um contorno só
+    blob(c, ()=>{
+      c.beginPath();
+      c.arc(-8, -14, 7.5, 0, Math.PI * 2); c.moveTo(9, -21); c.arc(0, -21, 9, 0, Math.PI * 2);
+      c.moveTo(15.5, -14); c.arc(8, -14, 7.5, 0, Math.PI * 2);
+      c.moveTo(10, -8); c.ellipse(0, -8, 10, 6, 0, 0, Math.PI * 2);
+    }, vgrad(c, -30, -4, '#FFFFFF', '#E2E8F0'), 1.8);
+    // dobrinhas
+    c.strokeStyle = 'rgba(148,163,184,.8)'; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(-6, -16); c.quadraticCurveTo(-4, -12, -5, -9); c.moveTo(5, -18); c.quadraticCurveTo(6, -13, 4, -9); c.stroke();
+    // faixa
+    c.strokeStyle = OUT; c.lineWidth = 1.8;
+    c.beginPath(); c.moveTo(-10, -6); c.quadraticCurveTo(0, -9, 10, -6); c.lineTo(10, 0); c.quadraticCurveTo(0, -3, -10, 0); c.closePath();
+    fs(c, vgrad(c, -8, 0, '#F8FAFC', '#CBD5E1'));
+    gloss(c, -4, -24, 4, 2.2, -.4);
+  },
+  festa(c){
+    c.save(); c.rotate(-.18);
+    c.strokeStyle = OUT; c.lineWidth = 1.8;
+    c.beginPath(); c.moveTo(-10, 0);
+    c.quadraticCurveTo(-7, -14, 1, -26);
+    c.quadraticCurveTo(8, -14, 11, 0);
+    c.quadraticCurveTo(0, 3, -10, 0); c.closePath();
+    fs(c, vgrad(c, -26, 0, '#C4B5FD', '#7C3AED'));
+    c.save(); c.clip();
+    // listras curvas
+    c.strokeStyle = 'rgba(253,224,71,.9)'; c.lineWidth = 3;
+    [-6, -14].forEach(y => { c.beginPath(); c.moveTo(-12, y + 3); c.quadraticCurveTo(0, y - 2, 12, y + 3); c.stroke(); });
+    c.restore();
+    gloss(c, -3.5, -10, 1.6, 6, .25, .45);
+    // pompom e babadinho
+    c.strokeStyle = OUT; c.lineWidth = 1.6;
+    c.beginPath(); c.arc(1, -27.5, 4.4, 0, Math.PI * 2); fs(c, '#F472B6'); gloss(c, -.3, -29, 1.4, 1, 0, .7);
+    c.beginPath(); c.moveTo(-11, 0);
+    for(let k = 0; k <= 6; k++){ const x = -11 + k * 3.7; c.quadraticCurveTo(x + 1.8, 3.8, x + 3.7, 0.5); }
+    c.lineTo(11, 0); c.strokeStyle = '#DB2777'; c.lineWidth = 2; c.stroke();
+    c.restore();
+  },
+  cauboi(c){
+    c.strokeStyle = OUT; c.lineWidth = 1.8;
+    // aba curvadinha para cima nas pontas
+    c.beginPath(); c.moveTo(-22, -6);
+    c.quadraticCurveTo(-18, 1, 0, 1); c.quadraticCurveTo(18, 1, 22, -6);
+    c.quadraticCurveTo(16, -1.5, 0, -2.5); c.quadraticCurveTo(-16, -1.5, -22, -6); c.closePath();
+    fs(c, vgrad(c, -6, 1, '#B45309', '#78350F'));
+    // copa com amassadinho no meio
+    c.beginPath(); c.moveTo(-10, -2);
+    c.quadraticCurveTo(-11, -14, -6, -16); c.quadraticCurveTo(0, -12, 6, -16); c.quadraticCurveTo(11, -14, 10, -2);
+    c.quadraticCurveTo(0, -4, -10, -2); c.closePath();
+    fs(c, vgrad(c, -16, -2, '#D97706', '#92400E'));
+    c.fillStyle = '#7F1D1D'; c.beginPath(); c.moveTo(-10, -5); c.quadraticCurveTo(0, -7.5, 10, -5); c.lineTo(10, -2.5); c.quadraticCurveTo(0, -5, -10, -2.5); c.fill();
+    starPathP(c, 0, -4.5, 2.6, 1.1); c.fillStyle = '#FACC15'; c.fill();
+    gloss(c, -5, -11, 2, 3.5, .3, .35);
+  },
+  tiara(c){
+    c.save(); c.shadowColor = '#F0ABFC'; c.shadowBlur = 8;
+    c.strokeStyle = '#A16207'; c.lineWidth = 1.6;
+    // três arcos redondinhos
+    c.beginPath(); c.moveTo(-12, 0);
+    c.quadraticCurveTo(-12, -8, -7, -7); c.quadraticCurveTo(-4, -14, 0, -15);
+    c.quadraticCurveTo(4, -14, 7, -7); c.quadraticCurveTo(12, -8, 12, 0);
+    c.quadraticCurveTo(0, -4, -12, 0); c.closePath();
+    fs(c, vgrad(c, -15, 0, '#FEF9C3', '#FACC15'));
+    c.restore();
+    // pedrinhas
+    c.strokeStyle = '#9D174D'; c.lineWidth = 1;
+    c.beginPath(); c.ellipse(0, -8, 2.8, 3.4, 0, 0, Math.PI * 2); fs(c, '#EC4899');
+    [-7.5, 7.5].forEach(x => { c.beginPath(); c.arc(x, -4, 1.8, 0, Math.PI * 2); c.fillStyle = '#38BDF8'; c.fill(); });
+    gloss(c, -.8, -9.2, .9, 1.2, 0, .8);
+    [-6, 6].forEach(x => dot(c, x, -13, 1, '#FFFFFF'));
+  },
+  coroa(c){
+    c.save(); c.shadowColor = '#FDE047'; c.shadowBlur = 8;
+    c.strokeStyle = '#92400E'; c.lineWidth = 1.8;
+    c.beginPath(); c.moveTo(-12, 0);
+    c.quadraticCurveTo(-13, -8, -12, -14);
+    c.quadraticCurveTo(-8, -8, -6, -9); c.quadraticCurveTo(-3, -15, 0, -18);
+    c.quadraticCurveTo(3, -15, 6, -9); c.quadraticCurveTo(8, -8, 12, -14);
+    c.quadraticCurveTo(13, -8, 12, 0);
+    c.quadraticCurveTo(0, 2, -12, 0); c.closePath();
+    fs(c, vgrad(c, -18, 0, '#FEF08A', '#F59E0B'));
+    c.restore();
+    c.fillStyle = '#B45309'; c.beginPath(); c.moveTo(-12, -4); c.quadraticCurveTo(0, -6, 12, -4); c.lineTo(12, -1.5); c.quadraticCurveTo(0, -3.5, -12, -1.5); c.fill();
+    dot(c, 0, -8, 2.6, '#EF4444'); dot(c, -7, -6.5, 1.9, '#3B82F6'); dot(c, 7, -6.5, 1.9, '#22C55E');
+    gloss(c, -.8, -8.8, .8, .8, 0, .8);
+    [[-12, -14], [0, -18], [12, -14]].forEach(([x, y]) => { dot(c, x, y - 1, 2.3, '#FEF9C3'); });
+    gloss(c, -6, -11, 1.4, 3, .5, .4);
+  },
+  bone(c){
+    c.strokeStyle = OUT; c.lineWidth = 1.8;
+    // aba
+    c.beginPath(); c.moveTo(6, -1); c.quadraticCurveTo(18, -5, 26, -1); c.quadraticCurveTo(18, 3, 6, 2); c.closePath();
+    fs(c, vgrad(c, -4, 3, '#DC2626', '#991B1B'));
+    // copa redondinha
+    c.beginPath(); c.moveTo(-11, 1); c.bezierCurveTo(-13, -17, 13, -17, 11, 1); c.quadraticCurveTo(0, 3, -11, 1); c.closePath();
+    fs(c, vgrad(c, -14, 1, '#F87171', '#DC2626'));
+    c.strokeStyle = 'rgba(127,29,29,.45)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(-2, -6, -1, 1); c.stroke();
+    c.beginPath(); c.ellipse(4, -6, 4.2, 3.4, 0, 0, Math.PI * 2); c.fillStyle = '#fff'; c.fill();
+    c.fillStyle = '#DC2626'; c.font = '800 5.5px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('F', 4, -5.8);
+    dot(c, 0, -13, 1.8, '#7F1D1D');
+    gloss(c, -6, -8, 2, 3.4, .5, .4);
+  },
 });
