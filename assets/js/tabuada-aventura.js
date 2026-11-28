@@ -59,6 +59,33 @@ function markProgress(m, t, n){
 }
 let nextTimer = null;
 
+// ---------- uma ficha por tabuada ----------
+// Cada tabuada de cada operação (ex.: tabuada do 3 de somar) dá UMA ficha só.
+// Para ganhar a próxima a criança troca de número; quando acabar os 10
+// números de uma operação, passa para a próxima (somar → subtrair → ...).
+const FICHA_KEY = 'fp-tabuada-fichas-de';
+const MODES = ['somar', 'subtrair', 'multiplicar', 'dividir'];
+const OPNAME = {somar:'somar', subtrair:'subtrair', multiplicar:'multiplicar', dividir:'dividir'};
+let fichaFrom = (()=>{ try{ return JSON.parse(localStorage.getItem(FICHA_KEY)) || []; }catch(e){ return []; } })();
+const fichaUsed = (m = mode, t = table) => fichaFrom.includes(m + '-' + t);
+function useFicha(){
+  if(!fichaUsed()) fichaFrom.push(mode + '-' + table);
+  try{ localStorage.setItem(FICHA_KEY, JSON.stringify(fichaFrom)); }catch(e){}
+}
+// próxima tabuada que ainda dá ficha: primeiro nesta operação, depois nas próximas
+function nextFichaTable(){
+  const order = MODES.slice(MODES.indexOf(mode)).concat(MODES.slice(0, MODES.indexOf(mode)));
+  for(const m of order) for(let t = 1; t <= 10; t++) if(!fichaUsed(m, t)) return {m, t};
+  return null;
+}
+function fichaHint(){
+  const n = nextFichaTable();
+  if(!n) return 'Você já ganhou as fichas de todas as tabuadas!';
+  return n.m === mode
+    ? `Escolha outra tabuada, como a do ${n.t}!`
+    : `Agora troque para ${OPNAME[n.m]}!`;
+}
+
 // ============================================================
 // Escolher personagem
 // ============================================================
@@ -124,10 +151,12 @@ function renderTables(){
       b.title = `${stars} de 10 tabuadas de ${OPN} completas`;
     } else {
       const done = tableDone(mode, n), complete = done >= 10;
-      b.className = 'ta-table' + (n === table ? ' active' : '') + (complete ? ' done' : '');
+      const used = fichaUsed(mode, n);
+      b.className = 'ta-table' + (n === table ? ' active' : '') + (complete ? ' done' : '') + (used ? ' ficha-usada' : '');
       b.style.setProperty('--p', Math.min(10, done) * 10 + '%');
-      b.innerHTML = `${n}${complete ? '<span class="ta-table-star" aria-hidden="true">★</span>' : ''}<i class="ta-table-bar" aria-hidden="true"></i>`;
-      b.title = complete ? `Tabuada do ${n} de ${OPN}: completa! ⭐` : `Tabuada do ${n} de ${OPN}: ${done} de 10 contas acertadas`;
+      b.innerHTML = `${n}${complete ? '<span class="ta-table-star" aria-hidden="true">★</span>' : ''}${used ? '<span class="ta-table-ficha" aria-hidden="true">🎟️</span>' : ''}<i class="ta-table-bar" aria-hidden="true"></i>`;
+      b.title = (complete ? `Tabuada do ${n} de ${OPN}: completa! ⭐` : `Tabuada do ${n} de ${OPN}: ${done} de 10 contas acertadas`)
+        + (used ? ' (já deu ficha)' : '');
       b.setAttribute('aria-label', b.title);
     }
     b.setAttribute('aria-pressed', n === table);
@@ -202,7 +231,9 @@ function updateTrack(){
   taFill.style.width = pct + '%';
   taTrackChar.style.left = `calc(${pct}% * .9)`;
   const left = GOAL - hits;
-  taGoal.innerHTML = (left === 1 ? 'Só mais 1 acerto para a corrida!' : `Faltam ${left} acertos para a corrida!`)
+  taGoal.innerHTML = (fichaUsed()
+      ? `🎟️ Esta tabuada já deu ficha. ${fichaHint()}`
+      : left === 1 ? 'Só mais 1 acerto para a corrida!' : `Faltam ${left} acertos para a corrida!`)
     + (streak >= 2 ? ` <span class="ta-streak">🔥 ${streak} seguidas</span>` : '');
   qProgress.textContent = `🏁 ${runs} ${runs === 1 ? 'corrida' : 'corridas'}`;
   qScore.textContent = `${score} pontos`;
@@ -262,7 +293,14 @@ function choose(btn, v){
       say(`${current.a} ${SPOKEN[mode]} ${current.b}, igual a ${v}!`, 0.9);
     }
     const wait = justDone ? 3400 : 0;
-    if(hits >= GOAL) nextTimer = setTimeout(()=>{ hits = 0; updateTrack(); earnToken(); }, 1900 + wait);
+    if(hits >= GOAL && !fichaUsed()) nextTimer = setTimeout(()=>{ useFicha(); hits = 0; updateTrack(); renderTables(); earnToken(); }, 1900 + wait);
+    else if(hits >= GOAL) nextTimer = setTimeout(()=>{
+      // essa tabuada já deu ficha: precisa trocar de número para ganhar outra
+      hits = 0; updateTrack();
+      qQuestion.textContent = `🎟️ A tabuada do ${table} de ${OPNAME[mode]} já te deu uma ficha. ${fichaHint()}`;
+      say(`Essa tabuada já te deu uma ficha. ${fichaHint()}`, 0.95);
+      nextTimer = setTimeout(loadProblem, 4500);
+    }, 1900 + wait);
     else nextTimer = setTimeout(loadProblem, 1700 + wait);
   } else {
     btn.classList.add('wrong');

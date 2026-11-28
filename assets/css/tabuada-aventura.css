@@ -435,3 +435,7 @@ i.coin{
 }
 .ta-music-btn.off{opacity:.6;}
 .ta-overlay.show ~ .ta-music-btn{display:none;}
+
+/* tabuada que já deu ficha (cada tabuada dá uma ficha só) */
+.ta-table-ficha{position:absolute; left:-7px; top:-9px; font-size:12px; line-height:1; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));}
+.ta-table.ficha-usada:not(.active){opacity:.8;}
